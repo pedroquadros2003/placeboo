@@ -1,32 +1,11 @@
 #: import navigation_screen_manager navigation_screen_manager
-
-
-## Aqui definimos o nome da classe que será
-## o mainwidget
+#: import initial_acess initial_acess
 
 MyScreenManager:
 
+<MyScreenManager>:
+    InitialAccessScreen:
+        name: 'initial_access'
+    SignUpScreen:
+        name: 'sign_up'
 
-<MainMenu@BoxLayout>
-    orientation: "vertical"
-
-    Button:
-
-        text: "go to layouts"
-
-
-    Button: 
-
-        text: "go to widgets"
-  
-
-    Button:
-
-        text: "go to images"
-
-
-
-<MyScreenManager>: 
-    Screen:
-        name: "mainmenu"
-        MainMenu:
