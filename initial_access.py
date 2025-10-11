@@ -2,9 +2,29 @@ from kivy.uix.screenmanager import Screen
 from kivy.properties import StringProperty, BooleanProperty
 from kivy.lang import Builder
 import json
+import os
+from date_checker import get_days_for_month, MONTH_NAME_TO_NUM
+from box_layout_with_action_bar import BoxLayoutWithActionBar
+from spinner_with_arrow import SpinnerWithArrow
 
-Builder.load_file("initial_access.kv")
+Builder.load_file("initial_access.kv", encoding='utf-8')
 
+def check_session_and_get_start_screen():
+    """
+    Checks for a saved session and returns the appropriate start screen name.
+    This function is called once at app startup.
+    """
+    if os.path.exists('session.json'):
+        try:
+            with open('session.json', 'r') as f:
+                session_data = json.load(f)
+            if session_data.get('logged_in'):
+                print("Found active session. Going to home screen.")
+                return 'home'
+        except (json.JSONDecodeError, FileNotFoundError):
+            pass  # If file is corrupted or not found, default to initial_access
+    
+    return 'initial_access'
 
 class InitialAccessScreen(Screen):
     """
@@ -24,8 +44,34 @@ class LoginScreen(Screen):
     profile_type = StringProperty('')
 
     def do_login(self, login_email, login_password):
+        """
+        Validates user credentials against the list of accounts in account.json.
+        """
         print(f"Attempting login for: {login_email}")
-        # Here you would add logic to verify credentials
+
+        # Check if the account file exists.
+        if not os.path.exists('account.json'):
+            print("Login Error: No accounts found. Please sign up first.")
+            # TODO: Show a popup to the user
+            return
+
+        with open('account.json', 'r') as f:
+            accounts = json.load(f)
+
+        # Find the user in the list of accounts
+        for account in accounts:
+            # IMPORTANT: In a real-world application, use a secure password hashing comparison.
+            if account.get('email') == login_email and account.get('password') == login_password:
+                print("Login successful!")
+                # Save session state
+                with open('session.json', 'w') as f:
+                    json.dump({'logged_in': True, 'email': login_email}, f)
+                self.manager.reset_to('home')
+                return  # Exit the function on success
+
+        # If the loop completes, no user was found
+        print("Login Failed: Invalid email or password.")
+        # TODO: Show a popup to the user
 
     def go_to_signup(self):
         self.manager.get_screen('sign_up').profile_type = self.profile_type
@@ -38,6 +84,26 @@ class SignUpScreen(Screen):
     """
     profile_type = StringProperty('')
     is_also_patient = BooleanProperty(False)
+
+    def update_day_spinner(self):
+        """
+        Called when year or month changes.
+        Updates the 'day' spinner with the correct number of days.
+        """
+        year_text = self.ids.year_spinner.text
+        month_text = self.ids.month_spinner.text
+
+        if year_text != 'Year' and month_text != 'Month':
+            # Get the correct number of days
+            num_days = get_days_for_month(year_text, month_text)
+            # Update the spinner values
+            self.ids.day_spinner.values = [str(i) for i in range(1, num_days + 1)]
+            # Enable the spinner
+            self.ids.day_spinner.disabled = False
+        else:
+            # If year or month is not selected, disable the day spinner
+            self.ids.day_spinner.disabled = True
+            self.ids.day_spinner.text = 'Day'
 
     def create_account(self):
         """
@@ -55,21 +121,65 @@ class SignUpScreen(Screen):
             "profile_type": self.profile_type,
             "name": self.ids.name_input.text,
             "email": self.ids.email_input.text,
-            "password": self.ids.password_input.text, # Note: In a real app, you must hash the password!
+            "password": self.ids.password_input.text,  # DANGER: In a real app, you MUST hash the password!
         }
 
         # --- Gather patient-specific data if applicable ---
         is_patient = self.profile_type == 'patient' or self.is_also_patient
         if is_patient:
+            day = self.ids.day_spinner.text
+            month_name = self.ids.month_spinner.text
+            year = self.ids.year_spinner.text
+
+            # Create a dictionary for the date of birth
+            dob_dict = {}
+            if day != 'Day' and month_name != 'Month' and year != 'Year':
+                month_num = MONTH_NAME_TO_NUM.get(month_name)
+                dob_dict = {
+                    "day": day,
+                    "month": str(month_num),
+                    "year": year
+                }
+
             user_data["patient_info"] = {
                 "height_cm": self.ids.height_input.text,
-                "date_of_birth": self.ids.dob_input.text,
+                "date_of_birth": dob_dict,
                 "sex": self.ids.sex_input.text
             }
 
-        # --- Save data to a JSON file ---
+        # --- Load existing accounts and append the new one ---
+        accounts = []
+        if os.path.exists('account.json'):
+            try:
+                with open('account.json', 'r') as f:
+                    accounts = json.load(f)
+                    # Ensure it's a list
+                    if not isinstance(accounts, list):
+                        accounts = []
+            except json.JSONDecodeError:
+                accounts = []  # File is corrupted or empty, start fresh
+
+        # Check for duplicate email
+        if any(acc['email'] == user_data['email'] for acc in accounts):
+            print(f"Error: Account with email {user_data['email']} already exists.")
+            # TODO: Show a popup to the user
+            return
+
+        accounts.append(user_data)
         with open('account.json', 'w') as json_file:
-            json.dump(user_data, json_file, indent=4)
+            json.dump(accounts, json_file, indent=4)
 
         print(f"Account created successfully! Data saved to account.json")
-        # Here you would navigate to the main part of the app, e.g., app.manager.push('home_screen')
+        self.manager.reset_to('home')  # Go to home screen after successful signup
+        
+        # Also create a session for the new user
+        with open('session.json', 'w') as f:
+            json.dump({'logged_in': True, 'email': user_data['email']}, f)
+
+        self.manager.reset_to('home')  # Go to home screen after successful signup
+
+class HomeScreen(Screen):
+    """
+    The main screen after a user is logged in.
+    """
+    pass

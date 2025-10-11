@@ -1,0 +1,26 @@
+#:kivy 2.0.0
+
+<SpinnerWithArrow>:
+    size_hint_y: None
+    height: dp(48)
+
+    Spinner:
+        id: spinner
+        # Two-way binding:
+        # 1. Spinner's text is driven by the root's text property.
+        text: root.text 
+        # 2. When the spinner's text changes (user selection), update the root's text property.
+        on_text: root.text = self.text 
+        values: root.values
+        disabled: root.disabled
+        size_hint: 1, 1
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+        halign: 'left'
+        padding_x: dp(12)
+
+    Image:
+        source: 'images/arrow_down.png'
+        size_hint: None, None
+        size: dp(15), dp(15)
+        pos_hint: {'right': 0.98, 'center_y': 0.5}
+        opacity: 0 if root.disabled else 1

@@ -1,0 +1,23 @@
+[
+    {
+        "profile_type": "doctor",
+        "name": "pedro",
+        "email": "peu",
+        "password": "peu"
+    },
+    {
+        "profile_type": "doctor",
+        "name": "iago",
+        "email": "iago",
+        "password": "iago",
+        "patient_info": {
+            "height_cm": "123",
+            "date_of_birth": {
+                "day": "7",
+                "month": "7",
+                "year": "2017"
+            },
+            "sex": "Masculine"
+        }
+    }
+]

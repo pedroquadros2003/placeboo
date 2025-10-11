@@ -1,9 +1,33 @@
 from kivy.uix.screenmanager import ScreenManager
+from kivy.clock import Clock
+import os
+import json
 
 
 class NavigationScreenManager(ScreenManager):  # Example base class, adjust as needed
 	
     screen_stack = []
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # We use Clock.schedule_once to ensure this runs after the .kv rules have been applied
+        # and all screens are available in the manager.
+        Clock.schedule_once(self.check_session)
+
+    def check_session(self, dt):
+        """Checks for a saved session and sets the initial screen."""
+        start_screen = 'initial_access'
+        if os.path.exists('session.json'):
+            try:
+                with open('session.json', 'r') as f:
+                    session_data = json.load(f)
+                if session_data.get('logged_in'):
+                    print("Found active session. Going to home screen.")
+                    start_screen = 'home'
+            except (json.JSONDecodeError, FileNotFoundError):
+                pass  # If file is corrupted or not found, default to initial_access
+        
+        self.current = start_screen
 
     def push(self, screen_name):
         ## empilhamos a screen atual e colocamos uma nova
@@ -18,3 +42,11 @@ class NavigationScreenManager(ScreenManager):  # Example base class, adjust as n
             del self.screen_stack[-1]
             self.current = last_screen
             self.transition.direction = "right"
+
+    def reset_to(self, screen_name):
+        """
+        Clears the screen stack and sets the current screen.
+        This is used to set a new root screen, e.g., after login.
+        """
+        self.screen_stack.clear()
+        self.current = screen_name
