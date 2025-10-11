@@ -1,4 +1,4 @@
-
+#: import  box_layout_with_action_bar box_layout_with_action_bar
 
 <InitialAccessScreen>:
     BoxLayout:
@@ -27,30 +27,63 @@
             Button:
                 text: 'I am a patient'
                 font_size: '18sp'
-                on_press: root.on_profile_selection('patient'); app.manager.push('sign_up')
+                on_press: root.on_profile_selection('patient'); app.manager.push('login')
 
             Button:
                 text: 'I am a doctor/caregiver'
                 font_size: '18sp'
-                on_press: root.on_profile_selection('doctor'); app.manager.push('sign_up')
+                on_press: root.on_profile_selection('doctor'); app.manager.push('login')
 
-<SignUpScreen>:
-    BoxLayout:
-        orientation: 'vertical'
+<LoginScreen>:
+    BoxLayoutWithActionBar:
+        title: 'Login'
         canvas.before:
             Color:
                 rgba: 0.95, 0.95, 0.95, 1
             Rectangle:
                 pos: self.pos
                 size: self.size
+        GridLayout:
+            cols: 1
+            padding: dp(20)
+            spacing: dp(15)
 
-        # [R002] Top bar with back button
-        ActionBar:
-            ActionView:
-                ActionPrevious:
-                    title: 'Sign Up'
-                    with_previous: True
-                    on_release: app.manager.pop()
+            TextInput:
+                id: login_email
+                hint_text: 'Email Address'
+                size_hint_y: None
+                height: dp(48)
+
+            TextInput:
+                id: login_password
+                hint_text: 'Password'
+                password: True
+                size_hint_y: None
+                height: dp(48)
+
+            Button:
+                text: 'Login'
+                size_hint_y: None
+                height: dp(48)
+                on_press: root.do_login(login_email.text, login_password.text)
+
+            Button:
+                text: "Don't have an account? Sign Up"
+                size_hint_y: None
+                height: dp(48)
+                background_color: (0,0,0,0) # Transparent background
+                color: (0.2, 0.4, 0.8, 1) # Blue link-like color
+                on_press: root.go_to_signup()
+
+<SignUpScreen>:
+    BoxLayoutWithActionBar:
+        title: 'Sign Up'
+        canvas.before:
+            Color:
+                rgba: 0.95, 0.95, 0.95, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
 
         # ScrollView to accommodate all fields, especially on smaller screens
         ScrollView:
@@ -64,12 +97,18 @@
                 # Common fields [R003] & [R004]
                 TextInput:
                     id: name_input
+                    size_hint_y: None
+                    height: dp(48)
                     hint_text: 'Name'
                 TextInput:
                     id: email_input
+                    size_hint_y: None
+                    height: dp(48)
                     hint_text: 'Email Address'
                 TextInput:
                     id: password_input
+                    size_hint_y: None
+                    height: dp(48)
                     hint_text: 'Password'
                     password: True
 
@@ -98,14 +137,34 @@
 
                     TextInput:
                         id: height_input
+                        size_hint_y: None
+                        height: dp(48)
                         hint_text: 'Height (cm)'
                         input_filter: 'int'
                     TextInput:
                         id: dob_input
+                        size_hint_y: None
+                        height: dp(48)
                         hint_text: 'Date of Birth (YYYY-MM-DD)'
-                    TextInput:
-                        id: sex_input
-                        hint_text: 'Sex'
+                    RelativeLayout:
+                        size_hint_y: None
+                        height: dp(48)
+                        Spinner:
+                            id: sex_input
+                            text: 'Sex'
+                            values: ['Masculine', 'Feminine', 'Other']
+                            size_hint: 1, 1
+                            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                            color: (0, 0, 0, 1)
+                            halign: 'left'
+                            padding_x: dp(12)
+                        Label:
+                            text: '▾' # Down-pointing triangle character
+                            font_size: '20sp'
+                            color: (0, 0, 0, 0.5)
+                            size_hint: None, None
+                            size: self.texture_size
+                            pos_hint: {'right': 0.98, 'center_y': 0.5}
 
                 Button:
                     text: 'Create Account'

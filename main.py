@@ -4,6 +4,7 @@ from kivy.properties import ObjectProperty
 from navigation_screen_manager import NavigationScreenManager
 
 
+
 class MyScreenManager(NavigationScreenManager):
     pass
 

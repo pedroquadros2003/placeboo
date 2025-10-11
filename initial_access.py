@@ -3,8 +3,7 @@ from kivy.properties import StringProperty, BooleanProperty
 from kivy.lang import Builder
 import json
 
-
-Builder.load_file("initial_acess.kv")
+Builder.load_file("initial_access.kv")
 
 
 class InitialAccessScreen(Screen):
@@ -14,7 +13,23 @@ class InitialAccessScreen(Screen):
     """
     def on_profile_selection(self, profile_type: str):
         # Set the profile type on the sign_up screen so it knows which fields to show.
-        self.manager.get_screen('sign_up').profile_type = profile_type
+        # We also pass it to the login screen to be forwarded to the sign up screen if needed.
+        self.manager.get_screen('login').profile_type = profile_type
+
+class LoginScreen(Screen):
+    """
+    Login screen for existing users.
+    Provides an option to navigate to the SignUpScreen.
+    """
+    profile_type = StringProperty('')
+
+    def do_login(self, login_email, login_password):
+        print(f"Attempting login for: {login_email}")
+        # Here you would add logic to verify credentials
+
+    def go_to_signup(self):
+        self.manager.get_screen('sign_up').profile_type = self.profile_type
+        self.manager.push('sign_up')
 
 class SignUpScreen(Screen):
     """

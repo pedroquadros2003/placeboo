@@ -1,0 +1,14 @@
+
+
+<BoxLayoutWithActionBar>:
+
+ 
+    orientation: "vertical"
+    ActionBar:
+        ActionView:
+            ActionPrevious:
+                title: root.title
+                on_release: app.manager.pop() 
+                app_icon: "images/placebo_logo.png"
+                app_icon_height: "25dp"
+                app_icon_width: "25dp"
