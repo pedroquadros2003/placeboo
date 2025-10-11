@@ -9,23 +9,6 @@ from spinner_with_arrow import SpinnerWithArrow
 
 Builder.load_file("initial_access.kv", encoding='utf-8')
 
-def check_session_and_get_start_screen():
-    """
-    Checks for a saved session and returns the appropriate start screen name.
-    This function is called once at app startup.
-    """
-    if os.path.exists('session.json'):
-        try:
-            with open('session.json', 'r') as f:
-                session_data = json.load(f)
-            if session_data.get('logged_in'):
-                print("Found active session. Going to home screen.")
-                return 'home'
-        except (json.JSONDecodeError, FileNotFoundError):
-            pass  # If file is corrupted or not found, default to initial_access
-    
-    return 'initial_access'
-
 class InitialAccessScreen(Screen):
     """
     The very first screen of the application. Corresponds to requirement [R001].
