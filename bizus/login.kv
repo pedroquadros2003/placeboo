@@ -1,0 +1,31 @@
+<LoginScreen>:
+    orientation: 'vertical'
+    padding: 40
+    spacing: 20
+
+    Label:
+        text: 'Usuário'
+        font_size: 20
+    TextInput:
+        id: username
+        multiline: False
+        font_size: 18
+    Label:
+        text: 'Senha'
+        font_size: 20
+    TextInput:
+        id: password
+        password: True
+        multiline: False
+        font_size: 18
+    Button:
+        text: 'Entrar'
+        font_size: 20
+        size_hint_y: None
+        height: 50
+        on_press: root.do_login()
+    Label:
+        id: result
+        text: ''
+        font_size: 18
+        color: 1,0,0,1
