@@ -3,9 +3,9 @@ from kivy.properties import StringProperty, BooleanProperty
 from kivy.lang import Builder
 import json
 import os
-from date_checker import get_days_for_month, MONTH_NAME_TO_NUM
-from box_layout_with_action_bar import BoxLayoutWithActionBar
-from spinner_with_arrow import SpinnerWithArrow
+
+from auxiliary_classes.date_checker import get_days_for_month, MONTH_NAME_TO_NUM
+
 
 Builder.load_file("initial_access.kv", encoding='utf-8')
 

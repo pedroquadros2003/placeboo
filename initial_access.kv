@@ -1,5 +1,5 @@
-#: import  box_layout_with_action_bar box_layout_with_action_bar
-#: import  spinner_with_arrow spinner_with_arrow
+#: import box_layout_with_action_bar auxiliary_classes.box_layout_with_action_bar
+#: import spinner_with_arrow auxiliary_classes.spinner_with_arrow
 
 <InitialAccessScreen>:
     BoxLayout:
@@ -54,6 +54,7 @@
                 hint_text: 'Email Address'
                 size_hint_y: None
                 height: dp(48)
+                multiline: False
 
             TextInput:
                 id: login_password
@@ -61,6 +62,7 @@
                 password: True
                 size_hint_y: None
                 height: dp(48)
+                multiline: False
 
             Button:
                 text: 'Login'
@@ -117,17 +119,20 @@
                     size_hint_y: None
                     height: dp(48)
                     hint_text: 'Name'
+                    multiline: False
                 TextInput:
                     id: email_input
                     size_hint_y: None
                     height: dp(48)
                     hint_text: 'Email Address'
+                    multiline: False
                 TextInput:
                     id: password_input
                     size_hint_y: None
                     height: dp(48)
                     hint_text: 'Password'
                     password: True
+                    multiline: False
 
                 # [R004] Doctor/Caregiver specific checkbox
                 BoxLayout:
@@ -160,6 +165,7 @@
                         height: dp(48)
                         hint_text: 'Height (cm)'
                         input_filter: 'int'
+                        multiline: False
                     BoxLayout:
                         orientation: 'horizontal'
                         spacing: dp(10)

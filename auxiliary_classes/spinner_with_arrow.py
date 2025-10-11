@@ -2,7 +2,7 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.properties import StringProperty, ListProperty, BooleanProperty, AliasProperty
 from kivy.lang import Builder
 
-Builder.load_file('spinner_with_arrow.kv', encoding='utf-8')
+Builder.load_file('auxiliary_classes/spinner_with_arrow.kv', encoding='utf-8')
 
 class SpinnerWithArrow(RelativeLayout):
     """
