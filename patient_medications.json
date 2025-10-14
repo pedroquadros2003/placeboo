@@ -1,0 +1,20 @@
+{
+    "paciente.a@email.com": [
+        {
+            "id": "med1760407548",
+            "generic_name": "Ibuprofeno",
+            "presentation": "Comprimido",
+            "dosage": "",
+            "quantity": "",
+            "days_of_week": [
+                "Todos os dias"
+            ],
+            "times_of_day": [
+                "08:00"
+            ],
+            "start_date": "2025-10-13",
+            "end_date": "",
+            "observation": ""
+        }
+    ]
+}

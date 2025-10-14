@@ -1,0 +1,168 @@
+#: import spinner_with_arrow auxiliary_classes.spinner_with_arrow
+
+<MedicationsView>:
+    # This view will show only if NO patient is selected
+    # It must be declared FIRST so it's in the background.
+    BoxLayout:
+        opacity: 1 if not root.current_patient_email else 0
+        disabled: False if not root.current_patient_email else True
+        Label:
+            text: 'Selecione um paciente para ver as medicações.'
+            font_size: '18sp'
+            color: 0.3, 0.3, 0.3, 1
+
+    # This view will show content only if a patient is selected
+    ScrollView:
+        opacity: 1 if root.current_patient_email else 0
+        disabled: False if root.current_patient_email else True
+        # This is the main container for the entire scrollable content
+        BoxLayout:
+            orientation: 'vertical'
+            padding: dp(10)
+            spacing: dp(10)
+            size_hint_y: None
+            height: self.minimum_height # This makes the layout grow with its content
+
+            # [R014] The GridLayout itself now acts as the visual container for the list
+            GridLayout:
+                id: medications_list
+                cols: 1
+                size_hint_x: 1
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(10)
+                spacing: dp(5)
+                # The background is now handled by each MedicationItem
+ 
+            # [R014] Bottom area for operations
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(10)
+                spacing: dp(10)
+
+                SpinnerWithArrow:
+                    id: generic_name_spinner
+                    text: 'Selecione a Medicação'
+                    values: root.generic_med_list
+
+                # Grid for detailed medication inputs
+                GridLayout:
+                    cols: 2
+                    spacing: dp(10)
+                    size_hint_y: None
+                    height: self.minimum_height
+
+                    SpinnerWithArrow:
+                        id: presentation_input
+                        text: 'Apresentação'
+                        values: ['Comprimido', 'Cápsula', 'Solução Oral', 'Injetável', 'Adesivo', 'Outro']
+
+                    TextInput:
+                        id: dosage_input
+                        hint_text: 'Dosagem (ex: 50mg)'
+                        size_hint_y: None
+                        multiline: False
+                        height: dp(48)
+
+                    TextInput:
+                        id: quantity_input
+                        hint_text: 'Quantidade (ex.: 1 comprimido, 20 gotas etc.)'
+                        size_hint_y: None
+                        multiline: False
+                        height: dp(48)
+                    
+                    SpinnerWithArrow:
+                        id: times_input
+                        text: 'Horário'
+                        values: root.time_list
+
+                # Checkboxes for days of the week
+                BoxLayout:
+                    size_hint_y: None
+                    height: dp(30)
+                    Label:
+                        text: 'Dias:'
+                        color: 0,0,0,1
+                    # "Select All" Checkbox
+                    CheckBox:
+                        id: day_all
+                        color: 0,0,0,1
+                        on_active: root.toggle_all_days(self.active)
+                    Label:
+                        text: 'Todos'
+                        color: 0,0,0,1
+                    # Individual Day Checkboxes
+                    CheckBox:
+                        id: day_seg
+                        color: 0,0,0,1
+                        on_active: root.update_select_all_status()
+                    Label:
+                        text: 'S' # Segunda
+                        color: 0,0,0,1
+                    CheckBox:
+                        id: day_ter
+                        color: 0,0,0,1
+                        on_active: root.update_select_all_status()
+                    Label:
+                        text: 'T' # Terça
+                        color: 0,0,0,1
+                    CheckBox:
+                        id: day_qua
+                        color: 0,0,0,1
+                        on_active: root.update_select_all_status()
+                    Label:
+                        text: 'Q' # Quarta
+                        color: 0,0,0,1
+                    CheckBox:
+                        id: day_qui
+                        color: 0,0,0,1
+                        on_active: root.update_select_all_status()
+                    Label:
+                        text: 'Q' # Quinta
+                        color: 0,0,0,1
+                    CheckBox:
+                        id: day_sex
+                        color: 0,0,0,1
+                        on_active: root.update_select_all_status()
+                    Label:
+                        text: 'S' # Sexta
+                        color: 0,0,0,1
+                    CheckBox:
+                        id: day_sab
+                        color: 0,0,0,1
+                        on_active: root.update_select_all_status()
+                    Label:
+                        text: 'S' # Sábado
+                        color: 0,0,0,1
+                    CheckBox:
+                        id: day_dom
+                        color: 0,0,0,1
+                        on_active: root.update_select_all_status()
+                    Label:
+                        text: 'D' # Domingo
+                        color: 0,0,0,1
+
+                TextInput:
+                    id: observation_input
+                    hint_text: 'Observações para o genérico (opcional)'
+                    size_hint_y: None
+                    height: dp(96)
+
+                Button:
+                    text: 'Adicionar Medicação'
+                    size_hint_y: None
+                    height: dp(48)
+                    on_press: root.add_medication()
+
+<MedicationItem>:
+    size_hint_y: None
+    height: '90dp' # Fixed height
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 1 # White background
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(10)]

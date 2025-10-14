@@ -46,10 +46,21 @@ class LoginScreen(Screen):
             # IMPORTANT: In a real-world application, use a secure password hashing comparison.
             if account.get('email') == login_email and account.get('password') == login_password:
                 print("Login successful!")
+                profile_type = account.get('profile_type')
                 # Save session state
+                session_data = {
+                    'logged_in': True, 
+                    'email': login_email, 
+                    'profile_type': profile_type
+                }
                 with open('session.json', 'w') as f:
-                    json.dump({'logged_in': True, 'email': login_email}, f)
-                self.manager.reset_to('home')
+                    json.dump(session_data, f)
+                
+                # Redirect based on profile type
+                if profile_type == 'doctor':
+                    self.manager.reset_to('doctor_home')
+                else: # Default to patient home
+                    self.manager.reset_to('home')
                 return  # Exit the function on success
 
         # If the loop completes, no user was found
@@ -76,7 +87,7 @@ class SignUpScreen(Screen):
         year_text = self.ids.year_spinner.text
         month_text = self.ids.month_spinner.text
 
-        if year_text != 'Year' and month_text != 'Month':
+        if year_text != 'Ano' and month_text != 'Mês':
             # Get the correct number of days
             num_days = get_days_for_month(year_text, month_text)
             # Update the spinner values
@@ -86,7 +97,7 @@ class SignUpScreen(Screen):
         else:
             # If year or month is not selected, disable the day spinner
             self.ids.day_spinner.disabled = True
-            self.ids.day_spinner.text = 'Day'
+            self.ids.day_spinner.text = 'Dia'
 
     def create_account(self):
         """
@@ -116,7 +127,7 @@ class SignUpScreen(Screen):
 
             # Create a dictionary for the date of birth
             dob_dict = {}
-            if day != 'Day' and month_name != 'Month' and year != 'Year':
+            if day != 'Dia' and month_name != 'Mês' and year != 'Ano':
                 month_num = MONTH_NAME_TO_NUM.get(month_name)
                 dob_dict = {
                     "day": day,
@@ -153,13 +164,21 @@ class SignUpScreen(Screen):
             json.dump(accounts, json_file, indent=4)
 
         print(f"Account created successfully! Data saved to account.json")
-        self.manager.reset_to('home')  # Go to home screen after successful signup
         
-        # Also create a session for the new user
+        # Also create a session for the new user, including profile type
+        session_data = {
+            'logged_in': True,
+            'email': user_data['email'],
+            'profile_type': user_data['profile_type']
+        }
         with open('session.json', 'w') as f:
-            json.dump({'logged_in': True, 'email': user_data['email']}, f)
+            json.dump(session_data, f)
 
-        self.manager.reset_to('home')  # Go to home screen after successful signup
+        # Redirect to the correct home screen based on the new profile
+        if user_data['profile_type'] == 'doctor':
+            self.manager.reset_to('doctor_home')
+        else:
+            self.manager.reset_to('home')
 
 class HomeScreen(Screen):
     """

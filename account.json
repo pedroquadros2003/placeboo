@@ -1,23 +1,22 @@
 [
     {
         "profile_type": "doctor",
-        "name": "pedro",
+        "name": "peu",
         "email": "peu",
-        "password": "peu"
+        "password": "peu",
+        "linked_patients": [
+            "paciente.a@email.com"
+        ]
     },
     {
-        "profile_type": "doctor",
-        "name": "iago",
-        "email": "iago",
-        "password": "iago",
+        "profile_type": "patient",
+        "name": "Paciente A",
+        "email": "paciente.a@email.com",
+        "password": "123",
         "patient_info": {
-            "height_cm": "123",
-            "date_of_birth": {
-                "day": "7",
-                "month": "7",
-                "year": "2017"
-            },
-            "sex": "Masculine"
+            "height_cm": "175",
+            "date_of_birth": {},
+            "sex": "Masculino"
         }
     }
 ]

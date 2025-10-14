@@ -1,6 +1,8 @@
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty
+# Import the new module to make its widgets available
+import medication_view
 from navigation_screen_manager import NavigationScreenManager
 
 

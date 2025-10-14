@@ -16,18 +16,25 @@ class NavigationScreenManager(ScreenManager):  # Example base class, adjust as n
 
     def check_session(self, dt):
         """Checks for a saved session and sets the initial screen."""
-        start_screen = 'initial_access'
         if os.path.exists('session.json'):
             try:
                 with open('session.json', 'r') as f:
                     session_data = json.load(f)
+                
                 if session_data.get('logged_in'):
-                    print("Found active session. Going to home screen.")
-                    start_screen = 'home'
+                    profile_type = session_data.get('profile_type')
+                    print(f"Found active session for profile: {profile_type}")
+
+                    if profile_type == 'doctor':
+                        self.current = 'doctor_home'
+                    else:
+                        self.current = 'home'
+                    return
+
             except (json.JSONDecodeError, FileNotFoundError):
                 pass  # If file is corrupted or not found, default to initial_access
         
-        self.current = start_screen
+        self.current = 'initial_access'
 
     def push(self, screen_name):
         ## empilhamos a screen atual e colocamos uma nova

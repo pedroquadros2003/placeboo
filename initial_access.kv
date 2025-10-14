@@ -14,7 +14,7 @@
                 size: self.size
 
         Label:
-            text: 'Welcome to Placebo'
+            text: 'Bem-vindo ao Placebo'
             font_size: '24sp'
             color: 0, 0, 0, 1
             size_hint_y: 0.2
@@ -26,12 +26,12 @@
             pos_hint: {'center_y': 0.5}
 
             Button:
-                text: 'I am a patient'
+                text: 'Sou paciente'
                 font_size: '18sp'
                 on_press: root.on_profile_selection('patient'); app.manager.push('login')
 
             Button:
-                text: 'I am a doctor/caregiver'
+                text: 'Sou médico/cuidador'
                 font_size: '18sp'
                 on_press: root.on_profile_selection('doctor'); app.manager.push('login')
 
@@ -51,27 +51,27 @@
 
             TextInput:
                 id: login_email
-                hint_text: 'Email Address'
+                hint_text: 'Endereço de E-mail'
                 size_hint_y: None
                 height: dp(48)
                 multiline: False
 
             TextInput:
                 id: login_password
-                hint_text: 'Password'
+                hint_text: 'Senha'
                 password: True
                 size_hint_y: None
                 height: dp(48)
                 multiline: False
 
             Button:
-                text: 'Login'
+                text: 'Entrar'
                 size_hint_y: None
                 height: dp(48)
                 on_press: root.do_login(login_email.text, login_password.text)
 
             Button:
-                text: "Don't have an account? Sign Up"
+                text: "Não tem uma conta? Cadastre-se"
                 size_hint_y: None
                 height: dp(48)
                 background_color: (0,0,0,0) # Transparent background
@@ -96,7 +96,7 @@
 
 <SignUpScreen>:
     BoxLayoutWithActionBar:
-        title: 'Sign Up'
+        title: 'Cadastro'
         canvas.before:
             Color:
                 rgba: 0.95, 0.95, 0.95, 1
@@ -117,13 +117,13 @@
                 TextInput:
                     id: name_input
                     size_hint_y: None
-                    height: dp(48)
-                    hint_text: 'Name'
+                    height: dp(48) 
+                    hint_text: 'Nome'
                     multiline: False
                 TextInput:
                     id: email_input
                     size_hint_y: None
-                    height: dp(48)
+                    height: dp(48) 
                     hint_text: 'Email Address'
                     multiline: False
                 TextInput:
@@ -142,7 +142,7 @@
                     opacity: 1 if root.profile_type == 'doctor' else 0
                     disabled: True if root.profile_type != 'doctor' else False
                     Label:
-                        text: 'I am also a patient'
+                        text: 'Também sou paciente'
                         size_hint_x: 0.8
                         color: 0,0,0,1
                     Switch:
@@ -162,7 +162,7 @@
                     TextInput:
                         id: height_input
                         size_hint_y: None
-                        height: dp(48)
+                        height: dp(48) 
                         hint_text: 'Height (cm)'
                         input_filter: 'int'
                         multiline: False
@@ -174,29 +174,29 @@
 
                         SpinnerWithArrow:
                             id: day_spinner
-                            text: 'Day'
+                            text: 'Dia'
                             # Initially disabled, will be enabled and populated by the python function
                             values: []
                             disabled: True
 
                         SpinnerWithArrow:
                             id: month_spinner
-                            text: 'Month'
-                            values: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+                            text: 'Mês'
+                            values: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
                             on_text: root.update_day_spinner()
 
                         SpinnerWithArrow:
                             id: year_spinner
-                            text: 'Year'
+                            text: 'Ano'
                             values: [str(i) for i in range(2024, 1919, -1)]
                             on_text: root.update_day_spinner()
                     SpinnerWithArrow:
                         id: sex_input
-                        text: 'Sex'
-                        values: ['Masculine', 'Feminine', 'Other']
+                        text: 'Sexo'
+                        values: ['Masculino', 'Feminino', 'Outro']
 
                 Button:
-                    text: 'Create Account'
+                    text: 'Criar Conta'
                     size_hint_y: None
                     height: dp(48)
                     on_press: root.create_account()
