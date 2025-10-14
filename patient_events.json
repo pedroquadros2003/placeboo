@@ -1,0 +1,11 @@
+{
+    "paciente.a@email.com": [
+        {
+            "id": "evt1663805000",
+            "name": "Consulta com Cardiologista",
+            "description": "Retorno para mostrar exames. depois a gente V\u00ea",
+            "date": "2025-10-15",
+            "time": "14:00"
+        }
+    ]
+}

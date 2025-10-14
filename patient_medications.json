@@ -4,13 +4,34 @@
             "id": "med1760407548",
             "generic_name": "Ibuprofeno",
             "presentation": "Comprimido",
-            "dosage": "",
+            "dosage": "224 g",
             "quantity": "",
             "days_of_week": [
                 "Todos os dias"
             ],
             "times_of_day": [
-                "08:00"
+                "08:01"
+            ],
+            "start_date": "2025-10-13",
+            "end_date": "",
+            "observation": ""
+        },
+        {
+            "id": "med1760408657",
+            "generic_name": "Ibuprofeno",
+            "presentation": "Solu\u00e7\u00e3o Oral",
+            "dosage": "23 g",
+            "quantity": "34 cp",
+            "days_of_week": [
+                "Seg",
+                "Ter",
+                "Qui",
+                "Sex",
+                "Sab",
+                "Dom"
+            ],
+            "times_of_day": [
+                "05:56"
             ],
             "start_date": "2025-10-13",
             "end_date": "",

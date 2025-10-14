@@ -1,6 +1,7 @@
 #: import box_layout_with_action_bar auxiliary_classes.box_layout_with_action_bar
 #: import spinner_with_arrow auxiliary_classes.spinner_with_arrow
 #: import medication_view medication_view
+ #: import events_view events_view
 
 <DoctorHomeScreen>:
     BoxLayout:
@@ -34,6 +35,8 @@
             # [R012] The medications tab is shown by default
             DoctorMedicationsContentScreen:
                 name: 'doctor_medications'
+            DoctorEventsContentScreen:
+                name: 'doctor_events'
 
 
         # [R010] Bottom patient selection block
@@ -80,7 +83,7 @@
                     text: 'Exames/Consultas'
                     size_hint_y: None
                     height: dp(48)
-                    on_press: root.go_to_screen('doctor_exams')
+                    on_press: root.go_to_screen('doctor_events')
                 Button:
                     text: 'Diagnósticos'
                     size_hint_y: None
@@ -99,3 +102,6 @@
 
 <DoctorMedicationsContentScreen>:
     MedicationsView:
+
+<DoctorEventsContentScreen>:
+    EventsView:

@@ -18,24 +18,17 @@ class MedicationsView(RelativeLayout):
     """
     medications = ListProperty([])
     generic_med_list = ListProperty([])
-    time_list = ListProperty([])
+    hour_list = ListProperty([f"{h:02d}" for h in range(24)])
+    minute_list = ListProperty([f"{m:02d}" for m in range(60)])
     # This is dynamically set by DoctorHomeScreen
-    current_patient_email = StringProperty("") 
+    current_patient_email = StringProperty("")
+    editing_med_id = StringProperty(None, allownone=True)
 
     def on_kv_post(self, base_widget):
         """Load data when the screen is displayed."""
-        self._generate_time_list()
         self.load_generic_medications()
         self._updating_checkboxes = False # Flag to prevent recursion
         self.load_medications()
-
-    def _generate_time_list(self):
-        """Generates a list of times from 00:00 to 23:30 in 30-min intervals."""
-        times = []
-        for hour in range(24):
-            times.append(f"{hour:02d}:00")
-            times.append(f"{hour:02d}:30")
-        self.time_list = times
 
     def load_generic_medications(self):
         """Loads the list of generic medications from a JSON file."""
@@ -89,6 +82,14 @@ class MedicationsView(RelativeLayout):
             )
             remove_button.bind(on_press=partial(self.remove_medication, med.get('id')))
             item_container.add_widget(remove_button)
+
+            # Edit Button
+            edit_button = Button(
+                text='Editar', size_hint=(0.25, None), height='30dp',
+                pos_hint={'right': 0.95, 'top': 0.60}
+            )
+            edit_button.bind(on_press=partial(self.start_editing_medication, med))
+            item_container.add_widget(edit_button)
 
             # Schedule details
             quantity = med.get('quantity', '')
@@ -163,7 +164,8 @@ class MedicationsView(RelativeLayout):
         presentation = self.ids.presentation_input.text
         dosage = self.ids.dosage_input.text
         quantity = self.ids.quantity_input.text
-        time_selected = self.ids.times_input.text
+        hour = self.ids.hour_spinner.text
+        minute = self.ids.minute_spinner.text
         observation = self.ids.observation_input.text
 
         days_of_week = []
@@ -176,6 +178,15 @@ class MedicationsView(RelativeLayout):
         if len(days_of_week) == 7:
             days_of_week = ["Todos os dias"]
 
+        # Clear inputs after adding
+        self.clear_input_fields()
+
+
+        time_selected = "08:00" # Default time
+        if hour != 'Hora' and minute != 'Min':
+            time_selected = f"{hour}:{minute}"
+
+
         new_med = {
             "id": f"med{int(datetime.now().timestamp())}",
             "generic_name": generic_name,
@@ -183,7 +194,7 @@ class MedicationsView(RelativeLayout):
             "dosage": dosage,
             "quantity": quantity,
             "days_of_week": days_of_week if days_of_week else ["Todos os dias"],
-            "times_of_day": [time_selected] if time_selected != 'Horário' else ["08:00"],
+            "times_of_day": [time_selected],
             "start_date": datetime.now().strftime('%Y-%m-%d'),
             "end_date": "",
             "observation": observation
@@ -206,6 +217,101 @@ class MedicationsView(RelativeLayout):
 
         print(f"Added '{generic_name}' for patient {self.current_patient_email}")
         self.load_medications()
+
+    def start_editing_medication(self, med_data, *args):
+        """Populates the input fields with the data of the medication to be edited."""
+        self.editing_med_id = med_data.get('id')
+
+        self.ids.generic_name_spinner.text = med_data.get('generic_name', 'Selecione a Medicação')
+        self.ids.presentation_input.text = med_data.get('presentation', 'Apresentação')
+        self.ids.dosage_input.text = med_data.get('dosage', '')
+        self.ids.quantity_input.text = med_data.get('quantity', '')
+        self.ids.observation_input.text = med_data.get('observation', '')
+
+        # Set time spinners
+        time_str = med_data.get('times_of_day', ['08:00'])[0]
+        hour, minute = time_str.split(':')
+        self.ids.hour_spinner.text = hour
+        self.ids.minute_spinner.text = minute
+
+        # Set day checkboxes
+        days = med_data.get('days_of_week', [])
+        day_ids = ['day_seg', 'day_ter', 'day_qua', 'day_qui', 'day_sex', 'day_sab', 'day_dom']
+        if "Todos os dias" in days:
+            for day_id in day_ids: self.ids[day_id].active = True
+        else:
+            for day_id in day_ids:
+                day_name = day_id.split('_')[1].capitalize()
+                self.ids[day_id].active = day_name in days
+        self.update_select_all_status()
+
+    def save_medication_edit(self):
+        """Saves the changes to the currently edited medication."""
+        if not self.editing_med_id:
+            return
+
+        # --- Gather data from fields ---
+        generic_name = self.ids.generic_name_spinner.text
+        presentation = self.ids.presentation_input.text
+        dosage = self.ids.dosage_input.text
+        quantity = self.ids.quantity_input.text
+        hour = self.ids.hour_spinner.text
+        minute = self.ids.minute_spinner.text
+        observation = self.ids.observation_input.text
+        
+        days_of_week = []
+        day_ids = ['day_seg', 'day_ter', 'day_qua', 'day_qui', 'day_sex', 'day_sab', 'day_dom']
+        for day_key in day_ids:
+            if self.ids[day_key].active:
+                days_of_week.append(day_key.split('_')[1].capitalize())
+        if len(days_of_week) == 7:
+            days_of_week = ["Todos os dias"]
+
+        time_selected = f"{hour}:{minute}"
+
+        # --- Update the data in the JSON file ---
+        with open('patient_medications.json', 'r+', encoding='utf-8') as f:
+            all_meds = json.load(f)
+            patient_meds = all_meds.get(self.current_patient_email, [])
+            
+            for i, med in enumerate(patient_meds):
+                if med['id'] == self.editing_med_id:
+                    patient_meds[i].update({
+                        "generic_name": generic_name,
+                        "presentation": presentation,
+                        "dosage": dosage,
+                        "quantity": quantity,
+                        "days_of_week": days_of_week,
+                        "times_of_day": [time_selected],
+                        "observation": observation
+                    })
+                    break
+            
+            all_meds[self.current_patient_email] = patient_meds
+            f.seek(0)
+            json.dump(all_meds, f, indent=4)
+            f.truncate()
+
+        print(f"Updated medication {self.editing_med_id}")
+        self.cancel_edit() # Clear fields and exit edit mode
+        self.load_medications() # Refresh the list
+
+    def cancel_edit(self):
+        """Cancels the editing process and clears the fields."""
+        self.editing_med_id = None
+        self.clear_input_fields()
+
+    def clear_input_fields(self):
+        """Resets all input fields to their default state."""
+        self.ids.generic_name_spinner.text = 'Selecione a Medicação'
+        self.ids.presentation_input.text = 'Apresentação'
+        self.ids.dosage_input.text = ''
+        self.ids.quantity_input.text = ''
+        self.ids.observation_input.text = ''
+        self.ids.hour_spinner.text = 'Hora'
+        self.ids.minute_spinner.text = 'Min'
+        self.ids.day_all.active = False
+        self.toggle_all_days(False)
 
     def toggle_all_days(self, active_state):
         """

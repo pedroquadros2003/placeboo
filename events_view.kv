@@ -1,0 +1,116 @@
+ #: import spinner_with_arrow auxiliary_classes.spinner_with_arrow
+
+<EventsView>:
+    # This view will show only if NO patient is selected
+    BoxLayout:
+        opacity: 1 if not root.current_patient_email else 0
+        disabled: False if not root.current_patient_email else True
+        Label:
+            text: 'Selecione um paciente para ver os exames e consultas.'
+            font_size: '18sp'
+            color: 0.3, 0.3, 0.3, 1
+
+    # This view will show content only if a patient is selected
+    ScrollView:
+        opacity: 1 if root.current_patient_email else 0
+        disabled: False if root.current_patient_email else True
+        BoxLayout:
+            orientation: 'vertical'
+            padding: dp(10)
+            spacing: dp(10)
+            size_hint_y: None
+            height: self.minimum_height
+
+            # Container for the list of events
+            GridLayout:
+                id: events_list
+                cols: 1
+                size_hint_x: 1
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(10)
+                spacing: dp(5)
+                canvas.before:
+                    Color:
+                        rgba: 1, 1, 1, 1 # White background
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(10)]
+
+            # Area for adding new events
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(10)
+                spacing: dp(10)
+
+                TextInput:
+                    id: event_name_input
+                    hint_text: 'Nome do Exame/Consulta'
+                    size_hint_y: None
+                    height: dp(48)
+                    multiline: False
+
+                GridLayout:
+                    cols: 2
+                    spacing: dp(10)
+                    size_hint_y: None
+                    height: self.minimum_height
+
+                    TextInput:
+                        id: event_date_input
+                        hint_text: 'Data (AAAA-MM-DD)'
+                        size_hint_y: None
+                        height: dp(48)
+                        multiline: False
+
+                    BoxLayout:
+                        spacing: dp(10)
+                        SpinnerWithArrow:
+                            id: event_hour_spinner
+                            text: 'Hora'
+                            values: root.hour_list
+
+                        SpinnerWithArrow:
+                            id: event_minute_spinner
+                            text: 'Min'
+                            values: root.minute_list
+
+                TextInput:
+                    id: event_description_input
+                    hint_text: 'Descrição (opcional)'
+                    size_hint_y: None
+                    height: dp(96)
+
+                Button:
+                    opacity: 1 if not root.editing_event_id else 0
+                    disabled: True if root.editing_event_id else False
+                    text: 'Adicionar Exame/Consulta'
+                    size_hint_y: None
+                    height: dp(48)
+                    on_press: root.add_event()
+
+                BoxLayout:
+                    opacity: 1 if root.editing_event_id else 0
+                    disabled: False if root.editing_event_id else True
+                    size_hint_y: None
+                    height: dp(48) if root.editing_event_id else 0
+                    Button:
+                        text: 'Salvar Alteração'
+                        on_press: root.save_event_edit()
+                    Button:
+                        text: 'Cancelar'
+                        on_press: root.cancel_edit()
+
+<EventItem>:
+    size_hint_y: None
+    height: '90dp'
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 1 # White background
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(10)]

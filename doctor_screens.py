@@ -5,6 +5,7 @@ import json
 import os
 from datetime import datetime
 import medication_view # Import the new module
+import events_view # Import the new module
 
 # Loads the associated kv file
 Builder.load_file("doctor_screens.kv", encoding='utf-8')
@@ -85,9 +86,15 @@ class DoctorHomeScreen(Screen):
         if not patient_email:
             return
 
-        med_view = self.ids.content_manager.get_screen('doctor_medications').children[0]
-        med_view.current_patient_email = patient_email
-        med_view.load_medications()
+        # Update Medications View
+        med_screen = self.ids.content_manager.get_screen('doctor_medications')
+        med_screen.children[0].current_patient_email = patient_email
+        med_screen.children[0].load_medications()
+
+        # Update Events View
+        events_screen = self.ids.content_manager.get_screen('doctor_events')
+        events_screen.children[0].current_patient_email = patient_email
+        events_screen.children[0].load_events()
 
 
 class DoctorMenuScreen(Screen):
@@ -114,4 +121,8 @@ class DoctorMenuScreen(Screen):
 
 class DoctorMedicationsContentScreen(Screen):
     """A screen to host the MedicationsView widget inside the content manager."""
+    pass
+
+class DoctorEventsContentScreen(Screen):
+    """A screen to host the EventsView widget inside the content manager."""
     pass
