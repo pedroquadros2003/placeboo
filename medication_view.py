@@ -3,10 +3,12 @@ from kivy.lang import Builder
 from kivy.properties import ListProperty, StringProperty
 from kivy.uix.label import Label
 from kivy.uix.button import Button
+from kivy.clock import Clock
 import json
 import os
 from datetime import datetime
 from functools import partial
+from kivy.metrics import dp
 
 # Loads the associated kv file
 Builder.load_file("medication_view.kv", encoding='utf-8')
@@ -27,7 +29,9 @@ class MedicationsView(RelativeLayout):
     def on_kv_post(self, base_widget):
         """Load data when the screen is displayed."""
         self.load_generic_medications()
+        self._is_selecting_med = False # Flag to control search feedback loop
         self._updating_checkboxes = False # Flag to prevent recursion
+        # The on_text event is now handled directly in the .kv file
         self.load_medications()
 
     def load_generic_medications(self):
@@ -156,9 +160,15 @@ class MedicationsView(RelativeLayout):
         """
         Adds a new medication based on the inputs and updates the list.
         """
-        generic_name = self.ids.generic_name_spinner.text
-        if not generic_name or generic_name == 'Selecione a Medicação':
+        generic_name = self.ids.generic_name_input.text
+        if not generic_name or generic_name == 'Busque a Medicação (ex: Paracetamol)':
             print("Validation Error: Please select a medication.")
+            return
+        
+        # Validate if the medication exists in the generic list
+        if generic_name not in self.generic_med_list:
+            print(f"Validation Error: A medicação '{generic_name}' não é válida. Selecione uma da lista.")
+            # Future improvement: show a popup to the user.
             return
 
         presentation = self.ids.presentation_input.text
@@ -222,7 +232,7 @@ class MedicationsView(RelativeLayout):
         """Populates the input fields with the data of the medication to be edited."""
         self.editing_med_id = med_data.get('id')
 
-        self.ids.generic_name_spinner.text = med_data.get('generic_name', 'Selecione a Medicação')
+        self.ids.generic_name_input.text = med_data.get('generic_name', '')
         self.ids.presentation_input.text = med_data.get('presentation', 'Apresentação')
         self.ids.dosage_input.text = med_data.get('dosage', '')
         self.ids.quantity_input.text = med_data.get('quantity', '')
@@ -251,7 +261,13 @@ class MedicationsView(RelativeLayout):
             return
 
         # --- Gather data from fields ---
-        generic_name = self.ids.generic_name_spinner.text
+        generic_name = self.ids.generic_name_input.text
+        # Validate if the medication exists in the generic list
+        if generic_name not in self.generic_med_list:
+            print(f"Validation Error: A medicação '{generic_name}' não é válida. Selecione uma da lista.")
+            # Future improvement: show a popup to the user.
+            return
+
         presentation = self.ids.presentation_input.text
         dosage = self.ids.dosage_input.text
         quantity = self.ids.quantity_input.text
@@ -303,7 +319,7 @@ class MedicationsView(RelativeLayout):
 
     def clear_input_fields(self):
         """Resets all input fields to their default state."""
-        self.ids.generic_name_spinner.text = 'Selecione a Medicação'
+        self.ids.generic_name_input.text = ''
         self.ids.presentation_input.text = 'Apresentação'
         self.ids.dosage_input.text = ''
         self.ids.quantity_input.text = ''
@@ -312,6 +328,9 @@ class MedicationsView(RelativeLayout):
         self.ids.minute_spinner.text = 'Min'
         self.ids.day_all.active = False
         self.toggle_all_days(False)
+        # Hide search results
+        self.ids.med_search_results_scroll.height = 0
+        self.ids.med_search_results.clear_widgets()
 
     def toggle_all_days(self, active_state):
         """
@@ -341,6 +360,73 @@ class MedicationsView(RelativeLayout):
         if 'day_all' in self.ids:
             self.ids.day_all.active = all_checked
         self._updating_checkboxes = False
+
+    def filter_generic_medications(self, search_text):
+        """Filters the generic medication list based on user input."""
+        if self._is_selecting_med: # Ignore text changes made by the app itself
+            return
+
+        results_grid = self.ids.med_search_results
+        results_scroll = self.ids.med_search_results_scroll
+        results_grid.clear_widgets()
+
+        if not search_text:
+            results_scroll.height = 0
+            return
+
+        # Case-insensitive search
+        search_text_lower = search_text.lower()
+        matches = [med for med in self.generic_med_list if med.lower().startswith(search_text_lower)]
+
+        if not matches:
+            results_scroll.height = 0
+            return
+
+        for med_name in matches: # Show all results
+            btn = Button(
+                text=med_name,
+                size_hint=(0.5, None), # Button takes 50% of the container width
+                height=dp(40),
+                background_color=(0.9, 0.9, 0.9, 1),
+                color=(0,0,0,1)
+            )
+            btn.bind(on_press=partial(self.select_generic_medication, med_name))
+
+            # Create a container to center the button
+            container = RelativeLayout(
+                size_hint_y=None,
+                height=dp(40)
+            )
+            # Center the button inside the container
+            btn.pos_hint = {'center_x': 0.5, 'center_y': 0.5}
+            container.add_widget(btn)
+
+            results_grid.add_widget(container)
+
+        results_scroll.height = len(matches) * dp(40) # The height calculation remains the same
+
+    def select_generic_medication(self, med_name, *args):
+        """Called when a medication is selected from the search results."""
+        print(f"DEBUG: Botão '{med_name}' clicado. A função select_generic_medication foi chamada.")
+        self._is_selecting_med = True  # Set flag to prevent filter from running
+
+        # Set the text. The handler will see the flag and do nothing.
+        self.ids.generic_name_input.text = med_name
+
+        # Use Clock.schedule_once to reset the flag on the next frame.
+        # This ensures the text update event is fully processed before the flag is reset.
+        # We also hide the results and restore focus here to ensure a clean state.
+        Clock.schedule_once(self.reset_selection_flag)
+
+    def reset_selection_flag(self, *args):
+        """
+        Resets the selection flag, hides search results, and restores focus to the input.
+        This is called on the next frame to avoid event conflicts.
+        """
+        self.ids.med_search_results_scroll.height = 0 # Hide results
+        self.ids.med_search_results.clear_widgets() # Clear the old buttons
+        self._is_selecting_med = False
+        self.ids.generic_name_input.focus = True # Explicitly restore focus
 
 class MedicationItem(RelativeLayout):
     """

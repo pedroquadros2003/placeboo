@@ -2,7 +2,6 @@
 
 <MedicationsView>:
     # This view will show only if NO patient is selected
-    # It must be declared FIRST so it's in the background.
     BoxLayout:
         opacity: 1 if not root.current_patient_email else 0
         disabled: False if not root.current_patient_email else True
@@ -15,6 +14,7 @@
     ScrollView:
         opacity: 1 if root.current_patient_email else 0
         disabled: False if root.current_patient_email else True
+        auto_scroll: False
         # This is the main container for the entire scrollable content
         BoxLayout:
             orientation: 'vertical'
@@ -42,10 +42,28 @@
                 padding: dp(10)
                 spacing: dp(10)
 
-                SpinnerWithArrow:
-                    id: generic_name_spinner
-                    text: 'Selecione a Medicação'
-                    values: root.generic_med_list
+                # Container to center the search input field
+                RelativeLayout:
+                    size_hint_y: None
+                    height: dp(48)
+                    TextInput:
+                        id: generic_name_input
+                        hint_text: 'Busque a Medicação (ex: Paracetamol)'
+                        size_hint: 0.5, 1
+                        pos_hint: {'center_x': 0.5}
+                        multiline: False
+                        on_text: root.filter_generic_medications(self.text)
+
+                # Search results container - using a BoxLayout to avoid nested ScrollView issues
+                BoxLayout:
+                    id: med_search_results_scroll
+                    size_hint_y: None
+                    height: 0 # Initially hidden
+                    GridLayout:
+                        id: med_search_results
+                        cols: 1
+                        size_hint_y: None
+                        height: self.minimum_height
 
                 # Grid for detailed medication inputs
                 GridLayout:
