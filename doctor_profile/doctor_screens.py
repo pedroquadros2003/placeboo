@@ -4,16 +4,16 @@ from kivy.properties import ListProperty, StringProperty, DictProperty
 import json
 import os
 from datetime import datetime
-import medication_view # Import the new module
-import events_view # Import the new module
-import diagnostics_view # Import the new module
-import doctor_settings_view # Import the new module
-import patient_management_view # Import the new module
-import patient_settings_view # Import the new module
-import patient_evolution_view # Import the new module
+from doctor_profile import medication_view
+from doctor_profile import events_view
+from doctor_profile import diagnostics_view
+from doctor_profile import doctor_settings_view
+from doctor_profile import patient_management_view
+from doctor_profile import patient_settings_view
+from doctor_profile import patient_evolution_view
 
 # Loads the associated kv file
-Builder.load_file("doctor_screens.kv", encoding='utf-8')
+Builder.load_file("doctor_profile/doctor_screens.kv", encoding='utf-8')
 
 class DoctorHomeScreen(Screen):
     """
@@ -32,21 +32,26 @@ class DoctorHomeScreen(Screen):
         self.load_and_set_date()
         self.load_linked_patients()
 
+    def _get_main_dir_path(self, filename):
+        """Constructs the full path to a file in the main project directory."""
+        # Assumes main.py is in the parent directory of 'doctor_profile'
+        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+
     def load_linked_patients(self):
         """Loads the doctor's linked patients to populate the spinner."""
         doctor_email = ""
         # Get logged-in doctor's email from session
-        if os.path.exists('session.json'):
-            with open('session.json', 'r') as f:
+        if os.path.exists(self._get_main_dir_path('session.json')):
+            with open(self._get_main_dir_path('session.json'), 'r') as f:
                 session_data = json.load(f)
                 if session_data.get('profile_type') == 'doctor':
                     doctor_email = session_data.get('email')
 
-        if not doctor_email or not os.path.exists('account.json'):
+        if not doctor_email or not os.path.exists(self._get_main_dir_path('account.json')):
             self.patient_list = ["Nenhum paciente vinculado"]
             return
 
-        with open('account.json', 'r', encoding='utf-8') as f:
+        with open(self._get_main_dir_path('account.json'), 'r', encoding='utf-8') as f:
             accounts = json.load(f)
 
         doctor_account = next((acc for acc in accounts if acc['email'] == doctor_email), None)
@@ -70,9 +75,9 @@ class DoctorHomeScreen(Screen):
         If the file doesn't exist or is invalid, it uses the current system date.
         """
         date_str = ""
-        if os.path.exists('app_data.json'):
+        if os.path.exists(self._get_main_dir_path('app_data.json')):
             try:
-                with open('app_data.json', 'r') as f:
+                with open(self._get_main_dir_path('app_data.json'), 'r') as f:
                     data = json.load(f)
                 date_from_json = data.get("current_date")  # Expected format: "YYYY-MM-DD"
                 if date_from_json:

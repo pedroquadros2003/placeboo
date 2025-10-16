@@ -5,7 +5,7 @@ import os
 import json
 
 # Loads the associated kv file
-Builder.load_file("doctor_settings_view.kv", encoding='utf-8')
+Builder.load_file("doctor_profile/doctor_settings_view.kv", encoding='utf-8')
 
 class DoctorSettingsView(RelativeLayout):
     """

@@ -5,7 +5,7 @@ from kivy.uix.label import Label
 from kivy.metrics import dp
 
 # Loads the associated kv file
-Builder.load_file("graph_view_screen.kv", encoding='utf-8')
+Builder.load_file("doctor_profile/graph_view_screen.kv", encoding='utf-8')
 
 class GraphViewScreen(Screen):
     """

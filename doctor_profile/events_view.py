@@ -13,7 +13,7 @@ from kivy.metrics import dp
 from auxiliary_classes.date_checker import get_days_for_month, MONTH_NAME_TO_NUM
 
 # Loads the associated kv file
-Builder.load_file("events_view.kv", encoding='utf-8')
+Builder.load_file("doctor_profile/events_view.kv", encoding='utf-8')
 
 class EventsView(RelativeLayout):
     """

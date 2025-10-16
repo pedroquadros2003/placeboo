@@ -12,7 +12,7 @@ from functools import partial
 from kivy.metrics import dp
 
 # Loads the associated kv file
-Builder.load_file("medication_view.kv", encoding='utf-8')
+Builder.load_file("doctor_profile/medication_view.kv", encoding='utf-8')
 
 class MedicationsView(RelativeLayout):
     """

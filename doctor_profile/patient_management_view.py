@@ -8,7 +8,7 @@ import json
 import os
 
 # Loads the associated kv file
-Builder.load_file("patient_management_view.kv", encoding='utf-8')
+Builder.load_file("doctor_profile/patient_management_view.kv", encoding='utf-8')
 
 class PatientManagementView(RelativeLayout):
     """

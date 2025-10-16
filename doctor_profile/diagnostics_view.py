@@ -12,7 +12,7 @@ from datetime import datetime
 from functools import partial
 
 # Loads the associated kv file
-Builder.load_file("diagnostics_view.kv", encoding='utf-8')
+Builder.load_file("doctor_profile/diagnostics_view.kv", encoding='utf-8')
 
 class DiagnosticsView(RelativeLayout):
     """
