@@ -18,5 +18,20 @@
             "date_of_birth": {},
             "sex": "Masculino"
         }
+    },
+    {
+        "profile_type": "patient",
+        "name": "a",
+        "email": "a",
+        "password": "a",
+        "patient_info": {
+            "height_cm": "32",
+            "date_of_birth": {
+                "day": "21",
+                "month": "7",
+                "year": "2020"
+            },
+            "sex": "Masculino"
+        }
     }
 ]

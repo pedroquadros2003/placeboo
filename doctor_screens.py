@@ -6,6 +6,8 @@ import os
 from datetime import datetime
 import medication_view # Import the new module
 import events_view # Import the new module
+import diagnostics_view # Import the new module
+import doctor_settings_view # Import the new module
 
 # Loads the associated kv file
 Builder.load_file("doctor_screens.kv", encoding='utf-8')
@@ -96,6 +98,11 @@ class DoctorHomeScreen(Screen):
         events_screen.children[0].current_patient_email = patient_email
         events_screen.children[0].load_events()
 
+        # Update Diagnostics View
+        diagnostics_screen = self.ids.content_manager.get_screen('doctor_diagnostics')
+        diagnostics_screen.children[0].current_patient_email = patient_email
+        # The load_diagnostics method is called automatically by the on_current_patient_email property
+
 
 class DoctorMenuScreen(Screen):
     """
@@ -104,8 +111,8 @@ class DoctorMenuScreen(Screen):
     """
     def go_to_screen(self, screen_name):
         # Special handling for app settings, which is a separate screen
-        if screen_name == 'app_settings':
-            if screen_name in self.manager.screen_names:
+        if screen_name == 'doctor_settings':
+            if self.manager.has_screen(screen_name):
                 self.manager.push(screen_name)
             else:
                 print(f"Error: Screen '{screen_name}' not found.")
@@ -125,4 +132,12 @@ class DoctorMedicationsContentScreen(Screen):
 
 class DoctorEventsContentScreen(Screen):
     """A screen to host the EventsView widget inside the content manager."""
+    pass
+
+class DoctorDiagnosticsContentScreen(Screen):
+    """A screen to host the DiagnosticsView widget inside the content manager."""
+    pass
+
+class DoctorSettingsScreen(Screen):
+    """A screen to host the DoctorSettingsView widget."""
     pass

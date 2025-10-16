@@ -79,26 +79,6 @@ class SignUpScreen(Screen):
     profile_type = StringProperty('')
     is_also_patient = BooleanProperty(False)
 
-    def update_day_spinner(self):
-        """
-        Called when year or month changes.
-        Updates the 'day' spinner with the correct number of days.
-        """
-        year_text = self.ids.year_spinner.text
-        month_text = self.ids.month_spinner.text
-
-        if year_text != 'Ano' and month_text != 'Mês':
-            # Get the correct number of days
-            num_days = get_days_for_month(year_text, month_text)
-            # Update the spinner values
-            self.ids.day_spinner.values = [str(i) for i in range(1, num_days + 1)]
-            # Enable the spinner
-            self.ids.day_spinner.disabled = False
-        else:
-            # If year or month is not selected, disable the day spinner
-            self.ids.day_spinner.disabled = True
-            self.ids.day_spinner.text = 'Dia'
-
     def create_account(self):
         """
         Gathers data from the input fields and saves it to a JSON file.
@@ -121,19 +101,34 @@ class SignUpScreen(Screen):
         # --- Gather patient-specific data if applicable ---
         is_patient = self.profile_type == 'patient' or self.is_also_patient
         if is_patient:
-            day = self.ids.day_spinner.text
+            day = self.ids.day_input.text
             month_name = self.ids.month_spinner.text
             year = self.ids.year_spinner.text
 
+            # --- Add validation for patient-specific fields ---
+            if not self.ids.height_input.text or day == 'Dia' or month_name == 'Mês' or year == 'Ano' or self.ids.sex_input.text == 'Sexo':
+                print("Validation Error: Para pacientes, todos os campos (altura, data de nascimento, sexo) são obrigatórios.")
+                # TODO: Show a popup to the user
+                return
+
             # Create a dictionary for the date of birth
             dob_dict = {}
-            if day != 'Dia' and month_name != 'Mês' and year != 'Ano':
-                month_num = MONTH_NAME_TO_NUM.get(month_name)
-                dob_dict = {
-                    "day": day,
-                    "month": str(month_num),
-                    "year": year
-                }
+            if day and day != 'Dia' and month_name != 'Mês' and year != 'Ano':
+                try:
+                    num_days_in_month = get_days_for_month(year, month_name)
+                    day_int = int(day)
+                    if not (1 <= day_int <= num_days_in_month):
+                        raise ValueError("Dia inválido para o mês selecionado.")
+                    
+                    month_num = MONTH_NAME_TO_NUM.get(month_name)
+                    dob_dict = {
+                        "day": day,
+                        "month": str(month_num),
+                        "year": year
+                    }
+                except (ValueError, KeyError):
+                    print(f"Validation Error: Data de nascimento inválida. Valores recebidos: Dia='{day}', Mês='{month_name}', Ano='{year}'")
+                    return # Stop account creation if date is bad
 
             user_data["patient_info"] = {
                 "height_cm": self.ids.height_input.text,
@@ -179,6 +174,11 @@ class SignUpScreen(Screen):
             self.manager.reset_to('doctor_home')
         else:
             self.manager.reset_to('home')
+
+    def enforce_text_limit(self, text_input, max_length):
+        """Enforces a maximum character limit on a TextInput."""
+        if len(text_input.text) > max_length:
+            text_input.text = text_input.text[:max_length]
 
 class HomeScreen(Screen):
     """

@@ -1,5 +1,6 @@
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.lang import Builder
+from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import ListProperty, StringProperty
 from kivy.uix.label import Label
 from kivy.uix.button import Button
@@ -70,11 +71,12 @@ class MedicationsView(RelativeLayout):
                 color=(0,0,0,1),
                 halign='left',
                 valign='middle',
-                size_hint=(0.65, None),
+                size_hint=(0.60, None),
                 height='30dp',
                 pos_hint={'x': 0.05, 'top': 0.95}
             )
-            name_label.bind(width=lambda s, w: s.setter('text_size')(s, (w, None)))
+            # Dynamically adjust font_size to prevent wrapping
+            name_label.bind(width=lambda s, w: s.setter('font_size')(s, 0.4 * s.height if s.texture_size[0] > w else '16sp'))
             item_container.add_widget(name_label)
 
             # Remove Button
@@ -89,7 +91,7 @@ class MedicationsView(RelativeLayout):
 
             # Edit Button
             edit_button = Button(
-                text='Editar', size_hint=(0.25, None), height='30dp',
+                text='Ver/Editar', size_hint=(0.25, None), height='30dp',
                 pos_hint={'right': 0.95, 'top': 0.60}
             )
             edit_button.bind(on_press=partial(self.start_editing_medication, med))
@@ -100,19 +102,26 @@ class MedicationsView(RelativeLayout):
             presentation = med.get('presentation', '')
             times = ', '.join(med.get('times_of_day', []))
             days = ', '.join(med.get('days_of_week', []))
+            
+            # Create a vertical BoxLayout to hold schedule and observation labels
+            details_layout = BoxLayout(
+                orientation='vertical',
+                size_hint=(0.60, None),
+                height='50dp',
+                pos_hint={'x': 0.05, 'top': 0.60} # Adjusted top position
+            )
+
+            # Schedule Label
             schedule_text = f"Tomar {quantity} {presentation.lower()}(s) às {times} ({days})"
-            bottom_label = Label(
+            schedule_label = Label(
                 text=schedule_text,
                 color=(0.3, 0.3, 0.3, 1),
-                halign='left',
-                valign='middle',
-                font_size='12sp',
-                size_hint=(0.9, None),
-                height='40dp',
-                pos_hint={'center_x': 0.5, 'y': 0.05}
+                halign='left', valign='top', font_size='12sp'
             )
-            bottom_label.bind(width=lambda s, w: s.setter('text_size')(s, (w, None)))
-            item_container.add_widget(bottom_label)
+            schedule_label.bind(width=lambda s, w: s.setter('text_size')(s, (w, None)))
+            details_layout.add_widget(schedule_label)
+
+            item_container.add_widget(details_layout)
 
             med_list_widget.add_widget(item_container)
 
@@ -427,6 +436,16 @@ class MedicationsView(RelativeLayout):
         self.ids.med_search_results.clear_widgets() # Clear the old buttons
         self._is_selecting_med = False
         self.ids.generic_name_input.focus = True # Explicitly restore focus
+
+    def enforce_text_limit(self, text_input, max_length):
+        """Enforces a maximum character limit on a TextInput."""
+        if len(text_input.text) > max_length:
+            text_input.text = text_input.text[:max_length]
+
+    def prevent_newlines(self, text_input):
+        """Removes newline characters from a TextInput's text."""
+        if '\n' in text_input.text:
+            text_input.text = text_input.text.replace('\n', '')
 
 class MedicationItem(RelativeLayout):
     """

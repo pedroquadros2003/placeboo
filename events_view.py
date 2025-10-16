@@ -2,11 +2,15 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.lang import Builder
 from kivy.properties import ListProperty, StringProperty
 from kivy.uix.label import Label
+from kivy.uix.boxlayout import BoxLayout
 import json
+from kivy.clock import Clock
 import os
 from datetime import datetime
 from functools import partial
 from kivy.uix.button import Button
+from kivy.metrics import dp
+from auxiliary_classes.date_checker import get_days_for_month, MONTH_NAME_TO_NUM
 
 # Loads the associated kv file
 Builder.load_file("events_view.kv", encoding='utf-8')
@@ -19,12 +23,15 @@ class EventsView(RelativeLayout):
     events = ListProperty([])
     hour_list = ListProperty([f"{h:02d}" for h in range(24)])
     minute_list = ListProperty([f"{m:02d}" for m in range(60)])
+    year_list = ListProperty([])
     # This is dynamically set by DoctorHomeScreen
     current_patient_email = StringProperty("")
     editing_event_id = StringProperty(None, allownone=True)
 
     def on_kv_post(self, base_widget):
         """Load data when the screen is displayed."""
+        current_year = datetime.now().year
+        self.year_list = [str(y) for y in range(current_year + 5, current_year - 5, -1)]
         self.load_events()
 
     def load_events(self):
@@ -67,53 +74,63 @@ class EventsView(RelativeLayout):
                 formatted_date = datetime.strptime(date_str, '%Y-%m-%d').strftime('%d/%m/%Y')
             except (ValueError, TypeError):
                 formatted_date = date_str # Fallback to original string if format is wrong
-            name_text = f"[b]{event.get('name', 'N/A')}[/b] - {formatted_date} às {event.get('time')}"
+            
+            name_text = f"[b]{event.get('name', 'N/A')}[/b]\n{formatted_date} às {event.get('time')}"
             name_label = Label(
-                text=name_text, markup=True, color=(0,0,0,1),
-                halign='left', valign='middle', size_hint=(0.65, None),
-                height='30dp', pos_hint={'x': 0.05, 'top': 0.95}
+                text=name_text, markup=True, color=(0,0,0,1), halign='left', valign='top', size_hint=(0.60, None),
+                height=dp(45), pos_hint={'x': 0.05, 'top': 0.95}
             )
             name_label.bind(width=lambda s, w: s.setter('text_size')(s, (w, None)))
+            name_label.bind(width=lambda s, w: s.setter('font_size')(s, 0.4 * s.height if s.texture_size[0] > w else '16sp'))
             item_container.add_widget(name_label)
 
-            # Remove Button
-            remove_button = Button(
-                text='Remover', size_hint=(0.25, None), height='30dp',
+            # Create a vertical BoxLayout for the buttons
+            button_layout = BoxLayout(
+                orientation='vertical',
+                size_hint=(0.25, None),
+                height=dp(65), # Height for two buttons + spacing
+                spacing=dp(5),
                 pos_hint={'right': 0.95, 'top': 0.95}
             )
+
+            remove_button = Button(text='Remover')
             remove_button.bind(on_press=partial(self.remove_event, event.get('id')))
-            item_container.add_widget(remove_button)
+            button_layout.add_widget(remove_button)
 
-            # Edit Button
-            edit_button = Button(
-                text='Editar', size_hint=(0.25, None), height='30dp',
-                pos_hint={'right': 0.95, 'top': 0.60}
-            )
+            edit_button = Button(text='Ver/Editar')
             edit_button.bind(on_press=partial(self.start_editing_event, event))
-            item_container.add_widget(edit_button)
+            button_layout.add_widget(edit_button)
 
-            # Description
-            description_label = Label(
-                text=event.get('description', ''), color=(0.3, 0.3, 0.3, 1),
-                halign='left', valign='middle', font_size='12sp',
-                size_hint=(0.9, None), height='40dp',
-                pos_hint={'center_x': 0.5, 'y': 0.05}
-            )
-            description_label.bind(width=lambda s, w: s.setter('text_size')(s, (w, None)))
-            item_container.add_widget(description_label)
+            item_container.add_widget(button_layout)
 
             events_list_widget.add_widget(item_container)
 
     def add_event(self):
         """Adds a new event based on the inputs and updates the list."""
         name = self.ids.event_name_input.text
-        date = self.ids.event_date_input.text
+        day = self.ids.day_input.text
+        month_name = self.ids.event_month_spinner.text
+        year = self.ids.event_year_spinner.text
         hour = self.ids.event_hour_spinner.text
         minute = self.ids.event_minute_spinner.text
         description = self.ids.event_description_input.text
 
-        if not name or not date or hour == 'Hora' or minute == 'Min':
-            print("Validation Error: Name, Date, and Time are required.")
+        if not name or day == 'Dia' or month_name == 'Mês' or year == 'Ano' or hour == 'Hora' or minute == 'Min':
+            print("Validation Error: Nome, Data completa e Hora são obrigatórios.")
+            return
+
+        # --- Date Validation ---
+        try:
+            num_days_in_month = get_days_for_month(year, month_name)
+            day_int = int(day)
+            if not (1 <= day_int <= num_days_in_month):
+                raise ValueError("Dia inválido para o mês selecionado.")
+
+            month_num = MONTH_NAME_TO_NUM[month_name]
+            date_obj = datetime(int(year), month_num, day_int)
+            date = date_obj.strftime('%Y-%m-%d')
+        except (ValueError, KeyError):
+            print(f"Validation Error: Data inválida. Valores recebidos: Dia='{day}', Mês='{month_name}', Ano='{year}'")
             return
 
         self.clear_input_fields()
@@ -171,7 +188,14 @@ class EventsView(RelativeLayout):
         self.editing_event_id = event_data.get('id')
 
         self.ids.event_name_input.text = event_data.get('name', '')
-        self.ids.event_date_input.text = event_data.get('date', '')
+        
+        date_str = event_data.get('date', '')
+        if date_str:
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+            self.ids.event_year_spinner.text = str(date_obj.year)
+            self.ids.event_month_spinner.text = list(MONTH_NAME_TO_NUM.keys())[date_obj.month - 1]
+            self.ids.day_input.text = str(date_obj.day)
+
         self.ids.event_description_input.text = event_data.get('description', '')
 
         time_str = event_data.get('time', '08:00')
@@ -186,10 +210,26 @@ class EventsView(RelativeLayout):
 
         # --- Gather data from fields ---
         name = self.ids.event_name_input.text
-        date = self.ids.event_date_input.text
+        day = self.ids.day_input.text
+        month_name = self.ids.event_month_spinner.text
+        year = self.ids.event_year_spinner.text
         hour = self.ids.event_hour_spinner.text
         minute = self.ids.event_minute_spinner.text
         description = self.ids.event_description_input.text
+
+        # --- Date Validation ---
+        try:
+            num_days_in_month = get_days_for_month(year, month_name)
+            day_int = int(day)
+            if not (1 <= day_int <= num_days_in_month):
+                raise ValueError("Dia inválido para o mês selecionado.")
+
+            month_num = MONTH_NAME_TO_NUM[month_name]
+            date_obj = datetime(int(year), month_num, day_int)
+            date = date_obj.strftime('%Y-%m-%d')
+        except (ValueError, KeyError):
+            print(f"Validation Error: Data inválida ao salvar. Valores recebidos: Dia='{day}', Mês='{month_name}', Ano='{year}'")
+            return
         time = f"{hour}:{minute}"
 
         # --- Update the data in the JSON file ---
@@ -224,10 +264,17 @@ class EventsView(RelativeLayout):
     def clear_input_fields(self):
         """Resets all input fields to their default state."""
         self.ids.event_name_input.text = ''
-        self.ids.event_date_input.text = ''
+        self.ids.event_year_spinner.text = 'Ano'
+        self.ids.event_month_spinner.text = 'Mês'
+        self.ids.day_input.text = ''
         self.ids.event_description_input.text = ''
         self.ids.event_hour_spinner.text = 'Hora'
         self.ids.event_minute_spinner.text = 'Min'
+
+    def enforce_text_limit(self, text_input, max_length):
+        """Enforces a maximum character limit on a TextInput."""
+        if len(text_input.text) > max_length:
+            text_input.text = text_input.text[:max_length]
 
 class EventItem(RelativeLayout):
     """

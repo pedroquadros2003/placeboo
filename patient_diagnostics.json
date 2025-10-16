@@ -1,0 +1,18 @@
+{
+    "paciente.a@email.com": [
+        {
+            "id": "diag1760579955",
+            "cid_code": "L23.9",
+            "name": "Dermatite al\u00e9rgica de contato de causa n\u00e3o especificada",
+            "description": "",
+            "date_added": "2025-10-15 22:59:15"
+        },
+        {
+            "id": "diag1760579853",
+            "cid_code": "E11d",
+            "name": "Diabetes mellitus n\u00e3o-insulino-dependente",
+            "description": "ede",
+            "date_added": "2025-10-15 22:57:33"
+        }
+    ]
+}

@@ -172,24 +172,22 @@
                         size_hint_y: None
                         height: dp(48)
 
-                        SpinnerWithArrow:
-                            id: day_spinner
-                            text: 'Dia'
-                            # Initially disabled, will be enabled and populated by the python function
-                            values: []
-                            disabled: True
+                        TextInput:
+                            id: day_input
+                            hint_text: 'Dia'
+                            input_filter: 'int'
+                            multiline: False
+                            on_text: root.enforce_text_limit(self, 2)
 
                         SpinnerWithArrow:
                             id: month_spinner
                             text: 'Mês'
                             values: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-                            on_text: root.update_day_spinner()
 
                         SpinnerWithArrow:
                             id: year_spinner
                             text: 'Ano'
                             values: [str(i) for i in range(2024, 1919, -1)]
-                            on_text: root.update_day_spinner()
                     SpinnerWithArrow:
                         id: sex_input
                         text: 'Sexo'

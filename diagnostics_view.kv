@@ -1,0 +1,95 @@
+<DiagnosticsView>:
+    # This view will show only if NO patient is selected
+    BoxLayout:
+        opacity: 1 if not root.current_patient_email else 0
+        disabled: False if not root.current_patient_email else True
+        Label:
+            text: 'Selecione um paciente para ver os detalhes.'
+            font_size: '14sp'
+            color: 0.3, 0.3, 0.3, 1
+
+    # This view will show content only if a patient is selected
+    ScrollView:
+        opacity: 1 if root.current_patient_email else 0
+        disabled: False if root.current_patient_email else True
+        BoxLayout:
+            orientation: 'vertical'
+            padding: dp(10)
+            spacing: dp(10)
+            size_hint_y: None
+            height: self.minimum_height
+
+            GridLayout:
+                id: diagnostics_list
+                cols: 1
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: dp(15)
+
+            # Area for adding/editing diagnostics
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(10)
+                spacing: dp(10)
+
+                # Container to center the CID-10 search input
+                RelativeLayout:
+                    size_hint_y: None
+                    height: dp(48)
+                    TextInput:
+                        id: diagnostic_cid_input
+                        hint_text: 'Busque o Código CID-10 ou nome'
+                        size_hint: 0.75, 1
+                        pos_hint: {'center_x': 0.5}
+                        multiline: False
+                        on_text: root.filter_cid_codes(self.text)
+
+                # Search results container
+                BoxLayout:
+                    id: cid_search_results_scroll
+                    size_hint_y: None
+                    height: 0 # Initially hidden
+                    GridLayout:
+                        id: cid_search_results
+                        cols: 1
+                        size_hint_y: None
+                        height: self.minimum_height
+
+                TextInput:
+                    id: diagnostic_name_input
+                    hint_text: 'Nome da Condição'
+                    size_hint_y: None
+                    height: dp(48)
+
+                TextInput:
+                    id: diagnostic_description_input
+                    hint_text: 'Descrição da condição (opcional)'
+                    size_hint_y: None
+                    height: dp(96)
+                    on_text: root.enforce_text_limit(self, 100)
+
+                Button:
+                    opacity: 1 if not root.editing_diagnostic_id else 0
+                    disabled: True if root.editing_diagnostic_id else False
+                    text: 'Adicionar Diagnóstico'
+                    size_hint_y: None
+                    height: dp(48)
+                    on_press: root.add_diagnostic()
+
+                BoxLayout:
+                    opacity: 1 if root.editing_diagnostic_id else 0
+                    disabled: False if root.editing_diagnostic_id else True
+                    size_hint_y: None
+                    height: dp(48) if root.editing_diagnostic_id else 0
+                    Button:
+                        text: 'Salvar Alteração'
+                        on_press: root.save_diagnostic_edit()
+                    Button:
+                        text: 'Cancelar'
+                        on_press: root.cancel_edit()
+
+<DiagnosticItem>:
+    size_hint_y: None
+    height: '60dp'

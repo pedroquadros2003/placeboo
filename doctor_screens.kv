@@ -2,6 +2,8 @@
 #: import spinner_with_arrow auxiliary_classes.spinner_with_arrow
 #: import medication_view medication_view
  #: import events_view events_view
+ #: import diagnostics_view diagnostics_view
+ #: import doctor_settings_view doctor_settings_view
 
 <DoctorHomeScreen>:
     BoxLayout:
@@ -37,6 +39,8 @@
                 name: 'doctor_medications'
             DoctorEventsContentScreen:
                 name: 'doctor_events'
+            DoctorDiagnosticsContentScreen:
+                name: 'doctor_diagnostics'
 
 
         # [R010] Bottom patient selection block
@@ -98,10 +102,16 @@
                     text: 'Configurações do Aplicativo'
                     size_hint_y: None
                     height: dp(48)
-                    on_press: root.go_to_screen('app_settings')
+                    on_press: root.go_to_screen('doctor_settings')
 
 <DoctorMedicationsContentScreen>:
     MedicationsView:
 
 <DoctorEventsContentScreen>:
     EventsView:
+
+<DoctorDiagnosticsContentScreen>:
+    DiagnosticsView:
+
+<DoctorSettingsScreen>:
+    DoctorSettingsView:

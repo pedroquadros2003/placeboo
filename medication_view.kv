@@ -6,8 +6,8 @@
         opacity: 1 if not root.current_patient_email else 0
         disabled: False if not root.current_patient_email else True
         Label:
-            text: 'Selecione um paciente para ver as medicações.'
-            font_size: '18sp'
+            text: 'Selecione um paciente para ver os detalhes.'
+            font_size: '14sp'
             color: 0.3, 0.3, 0.3, 1
 
     # This view will show content only if a patient is selected
@@ -52,6 +52,7 @@
                         size_hint: 0.5, 1
                         pos_hint: {'center_x': 0.5}
                         multiline: False
+                        font_size: '13sp'
                         on_text: root.filter_generic_medications(self.text)
 
                 # Search results container - using a BoxLayout to avoid nested ScrollView issues
@@ -81,15 +82,18 @@
                         id: dosage_input
                         hint_text: 'Dosagem (ex: 50mg)'
                         size_hint_y: None
-                        multiline: False
+                        multiline: False # Keep single line for dosage
+                        font_size: '13sp'
                         height: dp(48)
 
                     TextInput:
                         id: quantity_input
                         hint_text: 'Quantidade (ex.: 1 comprimido, 20 gotas etc.)'
                         size_hint_y: None
-                        multiline: False
-                        height: dp(48)
+                        font_size: '13sp'
+                        multiline: True # Allow multiline input
+                        height: dp(64) # Increased height
+                        on_text: root.prevent_newlines(self)
                     
                     BoxLayout:
                         spacing: dp(10)
@@ -105,77 +109,116 @@
 
 
 
-                # Checkboxes for days of the week
                 BoxLayout:
+                    orientation: 'vertical'
                     size_hint_y: None
-                    height: dp(30)
+                    height: self.minimum_height
+                    spacing: dp(5)
+
                     Label:
                         text: 'Dias:'
                         color: 0,0,0,1
-                    # "Select All" Checkbox
-                    CheckBox:
-                        id: day_all
-                        color: 0,0,0,1
-                        on_active: root.toggle_all_days(self.active)
-                    Label:
-                        text: 'Todos'
-                        color: 0,0,0,1
-                    # Individual Day Checkboxes
-                    CheckBox:
-                        id: day_seg
-                        color: 0,0,0,1
-                        on_active: root.update_select_all_status()
-                    Label:
-                        text: 'S' # Segunda
-                        color: 0,0,0,1
-                    CheckBox:
-                        id: day_ter
-                        color: 0,0,0,1
-                        on_active: root.update_select_all_status()
-                    Label:
-                        text: 'T' # Terça
-                        color: 0,0,0,1
-                    CheckBox:
-                        id: day_qua
-                        color: 0,0,0,1
-                        on_active: root.update_select_all_status()
-                    Label:
-                        text: 'Q' # Quarta
-                        color: 0,0,0,1
-                    CheckBox:
-                        id: day_qui
-                        color: 0,0,0,1
-                        on_active: root.update_select_all_status()
-                    Label:
-                        text: 'Q' # Quinta
-                        color: 0,0,0,1
-                    CheckBox:
-                        id: day_sex
-                        color: 0,0,0,1
-                        on_active: root.update_select_all_status()
-                    Label:
-                        text: 'S' # Sexta
-                        color: 0,0,0,1
-                    CheckBox:
-                        id: day_sab
-                        color: 0,0,0,1
-                        on_active: root.update_select_all_status()
-                    Label:
-                        text: 'S' # Sábado
-                        color: 0,0,0,1
-                    CheckBox:
-                        id: day_dom
-                        color: 0,0,0,1
-                        on_active: root.update_select_all_status()
-                    Label:
-                        text: 'D' # Domingo
-                        color: 0,0,0,1
+                        size_hint_y: None
+                        height: self.texture_size[1]
+                        halign: 'left'
+                        padding: [dp(5), 0]
+
+                    # Checkboxes for days of the week
+                    BoxLayout:
+                        size_hint_y: None
+                        height: dp(30)
+                        spacing: dp(4)
+                        padding: [dp(5), 0]
+                        # "Select All" Checkbox
+                        CheckBox:
+                            id: day_all
+                            size_hint_x: None
+                            width: dp(24)
+                            color: 0,0,0,1
+                            on_active: root.toggle_all_days(self.active)
+                        Label:
+                            text: '#'
+                            color: 0,0,0,1
+                        # Individual Day Checkboxes
+                        CheckBox:
+                            id: day_seg
+                            color: 0,0,0,1
+                            on_active: root.update_select_all_status()
+                            size_hint_x: None
+                            width: dp(24)
+                        Label:
+                            text: 'S' # Segunda
+                            color: 0,0,0,1
+                            font_size: '12sp'
+                        CheckBox:
+                            id: day_ter
+                            color: 0,0,0,1
+                            on_active: root.update_select_all_status()
+                            size_hint_x: None
+                            width: dp(24)
+                        Label:
+                            text: 'T' # Terça
+                            color: 0,0,0,1
+                            font_size: '12sp'
+                        CheckBox:
+                            id: day_qua
+                            color: 0,0,0,1
+                            on_active: root.update_select_all_status()
+                            size_hint_x: None
+                            width: dp(24)
+                        Label:
+                            text: 'Q' # Quarta
+                            color: 0,0,0,1
+                            font_size: '12sp'
+                        CheckBox:
+                            id: day_qui
+                            color: 0,0,0,1
+                            on_active: root.update_select_all_status()
+                            size_hint_x: None
+                            width: dp(24)
+                        Label:
+                            text: 'Q' # Quinta
+                            color: 0,0,0,1
+                            font_size: '12sp'
+                        CheckBox:
+                            id: day_sex
+                            color: 0,0,0,1
+                            on_active: root.update_select_all_status()
+                            size_hint_x: None
+                            width: dp(24)
+                        Label:
+                            text: 'S' # Sexta
+                            color: 0,0,0,1
+                            font_size: '12sp'
+                        CheckBox:
+                            id: day_sab
+                            color: 0,0,0,1
+                            on_active: root.update_select_all_status()
+                            size_hint_x: None
+                            width: dp(24)
+                        Label:
+                            text: 'S' # Sábado
+                            color: 0,0,0,1
+                            font_size: '12sp'
+                        CheckBox:
+                            id: day_dom
+                            color: 0,0,0,1
+                            on_active: root.update_select_all_status()
+                            size_hint_x: None
+                            width: dp(24)
+                        Label:
+                            text: 'D' # Domingo
+                            color: 0,0,0,1
+                            font_size: '12sp'
+
 
                 TextInput:
                     id: observation_input
                     hint_text: 'Observações para o genérico (opcional)'
                     size_hint_y: None
+                    font_size: '13sp'
                     height: dp(96)
+                    on_text: root.enforce_text_limit(self, 100)
 
                 Button:
                     # This button is only visible in "add" mode
@@ -202,10 +245,3 @@
 <MedicationItem>:
     size_hint_y: None
     height: '90dp' # Fixed height
-    canvas.before:
-        Color:
-            rgba: 1, 1, 1, 1 # White background
-        RoundedRectangle:
-            pos: self.pos
-            size: self.size
-            radius: [dp(10)]
