@@ -49,10 +49,10 @@
                     TextInput:
                         id: generic_name_input
                         hint_text: 'Busque a Medicação (ex: Paracetamol)'
-                        size_hint: 0.5, 1
+                        size_hint: 0.8, 1
                         pos_hint: {'center_x': 0.5}
                         multiline: False
-                        font_size: '13sp'
+                        font_size: '12sp'
                         on_text: root.filter_generic_medications(self.text)
 
                 # Search results container - using a BoxLayout to avoid nested ScrollView issues

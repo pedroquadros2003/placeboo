@@ -4,6 +4,9 @@
  #: import events_view events_view
  #: import diagnostics_view diagnostics_view
  #: import doctor_settings_view doctor_settings_view
+ #: import patient_management_view patient_management_view
+ #: import patient_settings_view patient_settings_view
+ #: import patient_evolution_view patient_evolution_view
 
 <DoctorHomeScreen>:
     BoxLayout:
@@ -41,6 +44,12 @@
                 name: 'doctor_events'
             DoctorDiagnosticsContentScreen:
                 name: 'doctor_diagnostics'
+            PatientManagementScreen:
+                name: 'patient_management'
+            DoctorPatientSettingsContentScreen:
+                name: 'patient_settings'
+            DoctorPatientEvolutionContentScreen:
+                name: 'doctor_evolution'
 
 
         # [R010] Bottom patient selection block
@@ -74,6 +83,16 @@
                 height: self.minimum_height
 
                 Button:
+                    text: 'Configurações do Aplicativo'
+                    size_hint_y: None
+                    height: dp(48)
+                    on_press: root.go_to_screen('doctor_settings')
+                Button:
+                    text: 'Gerenciar Pacientes'
+                    size_hint_y: None
+                    height: dp(48)
+                    on_press: root.go_to_screen('patient_management')
+                Button:
                     text: 'Configurações do Paciente'
                     size_hint_y: None
                     height: dp(48)
@@ -98,11 +117,6 @@
                     size_hint_y: None
                     height: dp(48)
                     on_press: root.go_to_screen('doctor_evolution')
-                Button:
-                    text: 'Configurações do Aplicativo'
-                    size_hint_y: None
-                    height: dp(48)
-                    on_press: root.go_to_screen('doctor_settings')
 
 <DoctorMedicationsContentScreen>:
     MedicationsView:
@@ -115,3 +129,16 @@
 
 <DoctorSettingsScreen>:
     DoctorSettingsView:
+
+<PatientManagementScreen@Screen>:
+    on_enter: patient_management_view.on_enter()
+    PatientManagementView:
+        id: patient_management_view
+
+<DoctorPatientSettingsContentScreen>:
+    PatientSettingsView:
+
+<DoctorPatientEvolutionContentScreen>:
+    on_enter: evolution_view.on_enter()
+    PatientEvolutionView:
+        id: evolution_view

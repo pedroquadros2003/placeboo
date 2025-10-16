@@ -3,6 +3,7 @@ from kivy.properties import StringProperty, BooleanProperty
 from kivy.lang import Builder
 import json
 import os
+import random
 
 from auxiliary_classes.date_checker import get_days_for_month, MONTH_NAME_TO_NUM
 
@@ -25,6 +26,11 @@ class LoginScreen(Screen):
     Provides an option to navigate to the SignUpScreen.
     """
     profile_type = StringProperty('')
+
+    def on_leave(self, *args):
+        """Clear input fields when leaving the screen."""
+        self.ids.login_email.text = ''
+        self.ids.login_password.text = ''
 
     def do_login(self, login_email, login_password):
         """
@@ -79,6 +85,49 @@ class SignUpScreen(Screen):
     profile_type = StringProperty('')
     is_also_patient = BooleanProperty(False)
 
+    def on_leave(self, *args):
+        """Clear all input fields when leaving the screen."""
+        self.ids.name_input.text = ''
+        self.ids.email_input.text = ''
+        self.ids.password_input.text = ''
+        self.ids.height_input.text = ''
+        self.ids.day_input.text = ''
+        self.ids.month_spinner.text = 'Mês'
+        self.ids.year_spinner.text = 'Ano'
+        self.ids.sex_input.text = 'Sexo'
+        self.ids.is_also_patient_switch.active = False
+
+    def _generate_unique_id(self, id_type):
+        """
+        Generates a unique 8-digit numeric ID for a given profile type (doctor or patient).
+        It checks for uniqueness against a corresponding JSON file.
+        """
+        filename = f"{id_type}_ids.json"
+        existing_ids = []
+        if os.path.exists(filename):
+            try:
+                with open(filename, 'r') as f:
+                    existing_ids = json.load(f)
+            except json.JSONDecodeError:
+                pass # File is empty or corrupt, will be overwritten
+
+        while True:
+            new_id = str(random.randint(10000000, 99999999))
+            if new_id not in existing_ids:
+                # Save the new ID to the list
+                existing_ids.append(new_id)
+                with open(filename, 'w') as f:
+                    json.dump(existing_ids, f, indent=4)
+                return new_id
+
+    def _load_accounts(self):
+        """Safely loads accounts from the JSON file."""
+        if os.path.exists('account.json'):
+            with open('account.json', 'r') as f:
+                try: return json.load(f)
+                except json.JSONDecodeError: return []
+        return []
+
     def create_account(self):
         """
         Gathers data from the input fields and saves it to a JSON file.
@@ -90,6 +139,8 @@ class SignUpScreen(Screen):
             # In a real app, you would show a popup here.
             return
 
+        accounts = self._load_accounts()
+
         # --- Gather common data ---
         user_data = {
             "profile_type": self.profile_type,
@@ -97,6 +148,10 @@ class SignUpScreen(Screen):
             "email": self.ids.email_input.text,
             "password": self.ids.password_input.text,  # DANGER: In a real app, you MUST hash the password!
         }
+
+        # Generate and add the unique ID based on profile type
+        user_id = self._generate_unique_id(self.profile_type)
+        user_data['id'] = user_id
 
         # --- Gather patient-specific data if applicable ---
         is_patient = self.profile_type == 'patient' or self.is_also_patient
@@ -135,19 +190,12 @@ class SignUpScreen(Screen):
                 "date_of_birth": dob_dict,
                 "sex": self.ids.sex_input.text
             }
+            # The patient code is now the main user ID
+            user_data["patient_info"]["patient_code"] = user_id
+
 
         # --- Load existing accounts and append the new one ---
-        accounts = []
-        if os.path.exists('account.json'):
-            try:
-                with open('account.json', 'r') as f:
-                    accounts = json.load(f)
-                    # Ensure it's a list
-                    if not isinstance(accounts, list):
-                        accounts = []
-            except json.JSONDecodeError:
-                accounts = []  # File is corrupted or empty, start fresh
-
+        
         # Check for duplicate email
         if any(acc['email'] == user_data['email'] for acc in accounts):
             print(f"Error: Account with email {user_data['email']} already exists.")

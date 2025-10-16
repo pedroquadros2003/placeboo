@@ -1,0 +1,143 @@
+from kivy.uix.relativelayout import RelativeLayout
+from kivy.lang import Builder
+from kivy.properties import StringProperty, DictProperty
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.checkbox import CheckBox
+from kivy.uix.label import Label
+import json
+import os
+
+# Loads the associated kv file
+Builder.load_file("patient_settings_view.kv", encoding='utf-8')
+
+class PatientSettingsView(RelativeLayout):
+    """
+    A view for the doctor to configure which health metrics a patient should track.
+    Corresponds to requirement [R013].
+    """
+    current_patient_email = StringProperty("")
+    
+    # List of available health metrics for tracking
+    AVAILABLE_METRICS = {
+        'weight': 'Peso (kg)',
+        'blood_glucose': 'Glicemia (mg/dL)',
+        'blood_pressure': 'Pressão Arterial (mmHg)',
+        'heart_rate': 'Frequência Cardíaca (bpm)',
+        'temperature': 'Temperatura (°C)',
+        'oxygen_saturation': 'Saturação de Oxigênio (%)'
+    }
+
+    def on_current_patient_email(self, instance, value):
+        """When the patient changes, load their specific settings."""
+        if value:
+            self.load_settings()
+        else:
+            self.ids.settings_grid.clear_widgets()
+
+    def load_settings(self):
+        """Loads the saved settings for the current patient and populates the checkboxes."""
+        settings_grid = self.ids.settings_grid
+        settings_grid.clear_widgets()
+
+        patient_settings = self._get_patient_settings()
+
+        for key, description in self.AVAILABLE_METRICS.items():
+            container = BoxLayout(size_hint_y=None, height='48dp')
+            
+            checkbox = CheckBox(size_hint_x=0.2, color=(0,0,0,1))
+            checkbox.active = key in patient_settings.get('tracked_metrics', [])
+            checkbox.metric_key = key # Store the key in the checkbox
+
+            label = Label(text=description, color=(0,0,0,1), halign='left', valign='middle')
+            label.bind(size=label.setter('text_size'))
+
+            container.add_widget(checkbox)
+            container.add_widget(label)
+            settings_grid.add_widget(container)
+
+    def save_settings(self):
+        """Saves the selected metrics for the current patient."""
+        if not self.current_patient_email:
+            print("Error: No patient selected to save settings for.")
+            return
+
+        # Get old settings to find out which metrics were removed
+        old_settings = self._get_patient_settings()
+        old_tracked_metrics = old_settings.get('tracked_metrics', [])
+
+        new_selected_metrics = []
+        for container in self.ids.settings_grid.children:
+            checkbox = container.children[1] # Checkbox is the second child added
+            if checkbox.active:
+                new_selected_metrics.append(checkbox.metric_key)
+
+        # --- Save new settings to account.json ---
+        if not os.path.exists('account.json'):
+            return
+
+        with open('account.json', 'r+', encoding='utf-8') as f:
+            try:
+                accounts = json.load(f)
+            except json.JSONDecodeError:
+                accounts = []
+
+            # Find the patient and update their settings
+            for i, acc in enumerate(accounts):
+                if acc.get('email') == self.current_patient_email:
+                    if 'patient_info' not in acc:
+                        accounts[i]['patient_info'] = {}
+                    accounts[i]['patient_info']['tracked_metrics'] = new_selected_metrics
+                    break
+            
+            # Write the updated accounts list back to the file
+            f.seek(0)
+            json.dump(accounts, f, indent=4)
+            f.truncate()
+
+        # --- Remove data for unselected metrics from patient_evolution.json ---
+        metrics_to_remove = set(old_tracked_metrics) - set(new_selected_metrics)
+        if metrics_to_remove and old_settings.get('id'):
+            patient_id = old_settings.get('id')
+            if os.path.exists('patient_evolution.json'):
+                with open('patient_evolution.json', 'r+', encoding='utf-8') as f:
+                    try:
+                        all_evolutions = json.load(f)
+                        patient_evolution = all_evolutions.get(patient_id, {})
+                        
+                        if patient_evolution:
+                            # Iterate through each day's record and remove the unselected metric
+                            for date_record in patient_evolution.values():
+                                for metric_key in metrics_to_remove:
+                                    if metric_key in date_record:
+                                        del date_record[metric_key]
+                            
+                            all_evolutions[patient_id] = patient_evolution
+                            f.seek(0)
+                            json.dump(all_evolutions, f, indent=4)
+                            f.truncate()
+                            print(f"Removed data for metrics {list(metrics_to_remove)} for patient {patient_id}")
+
+                    except json.JSONDecodeError:
+                        pass # File is empty or corrupt
+
+        print(f"Settings saved for {self.current_patient_email}: {new_selected_metrics}")
+        # TODO: Show a confirmation popup to the user.
+
+    def _get_patient_settings(self):
+        """Helper to safely load settings for the current patient."""
+        if not self.current_patient_email or not os.path.exists('account.json'):
+            return {}
+        
+        try:
+            with open('account.json', 'r', encoding='utf-8') as f:
+                accounts = json.load(f)
+            
+            patient_account = next((acc for acc in accounts if acc.get('email') == self.current_patient_email), None)
+            if patient_account:
+                # Return a combined dict with patient_info and the top-level ID
+                settings = patient_account.get('patient_info', {})
+                settings['id'] = patient_account.get('id')
+                return settings
+            return {}
+        except (json.JSONDecodeError, FileNotFoundError):
+            return {}

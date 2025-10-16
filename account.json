@@ -5,8 +5,11 @@
         "email": "peu",
         "password": "peu",
         "linked_patients": [
-            "paciente.a@email.com"
-        ]
+            "20000001",
+            "20000002",
+            "20000003"
+        ],
+        "id": "10000001"
     },
     {
         "profile_type": "patient",
@@ -16,22 +19,48 @@
         "patient_info": {
             "height_cm": "175",
             "date_of_birth": {},
-            "sex": "Masculino"
-        }
+            "sex": "Masculino",
+            "patient_code": "20000001",
+            "tracked_metrics": [
+                "temperature",
+                "weight"
+            ],
+            "responsible_doctors": [
+                "10000001"
+            ]
+        },
+        "id": "20000001"
     },
     {
         "profile_type": "patient",
-        "name": "a",
-        "email": "a",
-        "password": "a",
+        "name": "Paciente B",
+        "email": "paciente.b@email.com",
+        "password": "123",
         "patient_info": {
-            "height_cm": "32",
-            "date_of_birth": {
-                "day": "21",
-                "month": "7",
-                "year": "2020"
-            },
-            "sex": "Masculino"
-        }
+            "height_cm": "160",
+            "date_of_birth": {},
+            "sex": "Feminino",
+            "patient_code": "20000002",
+            "responsible_doctors": [
+                "10000001"
+            ]
+        },
+        "id": "20000002"
+    },
+    {
+        "profile_type": "patient",
+        "name": "Paciente C",
+        "email": "paciente.c@email.com",
+        "password": "123",
+        "patient_info": {
+            "height_cm": "180",
+            "date_of_birth": {},
+            "sex": "Masculino",
+            "patient_code": "20000003",
+            "responsible_doctors": [
+                "10000001"
+            ]
+        },
+        "id": "20000003"
     }
 ]

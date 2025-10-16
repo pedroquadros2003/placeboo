@@ -20,3 +20,10 @@
                 size_hint_y: None
                 height: dp(48)
                 on_press: root.logout()
+            
+            Button:
+                text: 'Deletar Conta'
+                size_hint_y: None
+                height: dp(48)
+                background_color: 1, 0.2, 0.2, 1 # Red color to indicate danger
+                on_press: root.delete_account()

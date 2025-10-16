@@ -8,6 +8,9 @@ import medication_view # Import the new module
 import events_view # Import the new module
 import diagnostics_view # Import the new module
 import doctor_settings_view # Import the new module
+import patient_management_view # Import the new module
+import patient_settings_view # Import the new module
+import patient_evolution_view # Import the new module
 
 # Loads the associated kv file
 Builder.load_file("doctor_screens.kv", encoding='utf-8')
@@ -47,13 +50,14 @@ class DoctorHomeScreen(Screen):
             accounts = json.load(f)
 
         doctor_account = next((acc for acc in accounts if acc['email'] == doctor_email), None)
-        linked_patient_emails = doctor_account.get('linked_patients', []) if doctor_account else []
+        linked_patient_ids = doctor_account.get('linked_patients', []) if doctor_account else []
 
         patient_names = []
         self.patient_map = {}
-        for email in linked_patient_emails:
-            patient_account = next((acc for acc in accounts if acc['email'] == email), None)
+        for patient_id in linked_patient_ids:
+            patient_account = next((acc for acc in accounts if acc.get('id') == patient_id), None)
             if patient_account:
+                email = patient_account.get('email')
                 name = patient_account.get('name', email)
                 patient_names.append(name)
                 self.patient_map[name] = email
@@ -103,6 +107,16 @@ class DoctorHomeScreen(Screen):
         diagnostics_screen.children[0].current_patient_email = patient_email
         # The load_diagnostics method is called automatically by the on_current_patient_email property
 
+        # Update Patient Settings View
+        patient_settings_screen = self.ids.content_manager.get_screen('patient_settings')
+        patient_settings_screen.children[0].current_patient_email = patient_email
+        # The load_settings method is called automatically by the on_current_patient_email property
+
+        # Update Patient Evolution View
+        patient_evolution_screen = self.ids.content_manager.get_screen('doctor_evolution')
+        patient_evolution_screen.children[0].current_patient_email = patient_email
+        # The view will clear itself via on_current_patient_email
+
 
 class DoctorMenuScreen(Screen):
     """
@@ -140,4 +154,12 @@ class DoctorDiagnosticsContentScreen(Screen):
 
 class DoctorSettingsScreen(Screen):
     """A screen to host the DoctorSettingsView widget."""
+    pass
+
+class DoctorPatientSettingsContentScreen(Screen):
+    """A screen to host the PatientSettingsView widget."""
+    pass
+
+class DoctorPatientEvolutionContentScreen(Screen):
+    """A screen to host the PatientEvolutionView widget."""
     pass

@@ -1,0 +1,39 @@
+<PatientSettingsView>:
+    # Message shown when no patient is selected
+    BoxLayout:
+        opacity: 1 if not root.current_patient_email else 0
+        disabled: False if not root.current_patient_email else True
+        Label:
+            text: 'Selecione um paciente para ver os detalhes.'
+            font_size: '14sp'
+            color: 0.3, 0.3, 0.3, 1
+            halign: 'center'
+
+    # Main content, shown when a patient is selected
+    BoxLayout:
+        orientation: 'vertical'
+        opacity: 1 if root.current_patient_email else 0
+        disabled: False if root.current_patient_email else True
+        canvas.before:
+            Color:
+                rgba: 0.95, 0.95, 0.95, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        
+        ScrollView:
+            GridLayout:
+                id: settings_grid
+                cols: 1
+                padding: dp(20)
+                spacing: dp(10)
+                size_hint_y: None
+                height: self.minimum_height
+
+        BoxLayout:
+            size_hint_y: None
+            height: dp(60)
+            padding: dp(10)
+            Button:
+                text: 'Salvar Configurações'
+                on_press: root.save_settings()

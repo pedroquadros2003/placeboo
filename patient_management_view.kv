@@ -1,0 +1,40 @@
+<PatientManagementView>:
+    BoxLayout:
+        orientation: 'vertical'
+        canvas.before:
+            Color:
+                rgba: 0.95, 0.95, 0.95, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        ScrollView:
+            BoxLayout:
+                orientation: 'vertical'
+                padding: dp(10)
+                spacing: dp(10)
+                size_hint_y: None
+                height: self.minimum_height
+
+                GridLayout:
+                    id: patient_list
+                    cols: 1
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: dp(5)
+
+                BoxLayout:
+                    orientation: 'horizontal'
+                    size_hint_y: None
+                    height: dp(48)
+                    spacing: dp(10)
+                    padding: [0, dp(20), 0, 0] # Add some top padding
+
+                    TextInput:
+                        id: patient_code_input
+                        hint_text: 'Código do Paciente (8 dígitos)'
+                        input_filter: 'int'
+                        on_text: root.enforce_text_limit(self, 8)
+                    Button:
+                        text: 'Adicionar'
+                        size_hint_x: 0.4
+                        on_press: root.add_patient()
