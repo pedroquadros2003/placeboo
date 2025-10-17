@@ -1,0 +1,18 @@
+<PatientAppSettingsView>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(20) # Adicionado padding
+        spacing: dp(20) # Adicionado espaçamento
+
+        Button:
+            text: 'Sair da Conta'
+            size_hint_y: None
+            height: dp(48)
+            on_press: root.logout()
+        
+        Button:
+            text: 'Deletar Conta'
+            size_hint_y: None
+            height: dp(48)
+            background_color: 1, 0.2, 0.2, 1 # Cor vermelha para indicar perigo
+            on_press: root.delete_account()

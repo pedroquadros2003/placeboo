@@ -1,0 +1,102 @@
+#: import box_layout_with_action_bar auxiliary_classes.box_layout_with_action_bar
+#: import PatientMedicationsView patient_profile.patient_medication_view
+#: import PatientEvolutionView patient_profile.patient_evolution_view
+#: import PatientEventsView patient_profile.patient_events_view
+#: import PatientAppSettingsView patient_profile.patient_settings_view.PatientAppSettingsView
+#: import AddDoctorView patient_profile.add_doctor_view.AddDoctorView
+
+<PatientHomeScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        canvas.before:
+            Color:
+                rgba: 0.95, 0.95, 0.95, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        # [R023] Bloco de opções superior
+        ActionBar:
+            ActionView:
+                use_separator: True
+                ActionPrevious:
+                    title: root.title
+                    with_previous: False
+                    app_icon: "images/placebo_logo.png"
+                    app_icon_height: "25dp"
+                    app_icon_width: "25dp" 
+                ActionButton:
+                    icon: 'images/three_bars_icon.png'
+                    on_press: app.manager.push('patient_menu')
+
+        # Área de conteúdo principal
+        ScreenManager:
+            id: content_manager
+            PatientMedicationsScreen:
+                name: 'patient_medications'
+            PatientEventsScreen:
+                name: 'patient_events'
+            PatientEvolutionScreen:
+                name: 'patient_evolution'
+
+        # [R022] Barra de ações inferior
+        BoxLayout:
+            id: action_bar
+            size_hint_y: None
+            height: dp(60)
+            padding: dp(5)
+            spacing: dp(5)
+            canvas.before:
+                Color:
+                    rgba: 0.85, 0.85, 0.85, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            Button:
+                text: 'Evolução'
+                on_press: root.change_content('patient_evolution')
+            Button:
+                text: 'Medicações'
+                on_press: root.change_content('patient_medications')
+            Button:
+                text: 'Exames'
+                on_press: root.change_content('patient_events')
+
+<PatientMenuScreen>:
+    BoxLayoutWithActionBar:
+        title: 'Menu'
+        ScrollView:
+            GridLayout:
+                cols: 1
+                padding: dp(20)
+                spacing: dp(15)
+                size_hint_y: None
+                height: self.minimum_height
+
+                Button:
+                    text: 'Configurações do Aplicativo'
+                    size_hint_y: None
+                    height: dp(48)
+                    on_press: root.go_to_screen('patient_app_settings')
+                Button:
+                    text: 'Adicionar Médico'
+                    size_hint_y: None
+                    height: dp(48)
+                    on_press: root.go_to_screen('add_doctor')
+
+<PatientEventsScreen>:
+
+<PatientMedicationsScreen>:
+<PatientEvolutionScreen>:
+
+<PatientAppSettingsScreen>: # Esta tela será empilhada no gerenciador principal
+    BoxLayoutWithActionBar:
+        title: 'Configurações do Aplicativo'
+        # A view de conteúdo real
+        PatientAppSettingsView:
+
+<AddDoctorScreen>: # Esta tela será empilhada no gerenciador principal
+    BoxLayoutWithActionBar:
+        title: 'Adicionar Médico'
+        # A view de conteúdo real
+        AddDoctorView:

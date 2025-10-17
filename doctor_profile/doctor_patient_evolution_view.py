@@ -13,9 +13,9 @@ import os
 from auxiliary_classes.date_checker import get_days_for_month, MONTH_NAME_TO_NUM
 
 # Loads the associated kv file
-Builder.load_file("doctor_profile/patient_evolution_view.kv", encoding='utf-8')
+Builder.load_file("doctor_profile/doctor_patient_evolution_view.kv", encoding='utf-8')
 
-class PatientEvolutionView(RelativeLayout):
+class DoctorPatientEvolutionView(RelativeLayout):
     """
     A view for the doctor to input and track a patient's health metrics over time.
     """

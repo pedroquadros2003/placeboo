@@ -6,7 +6,7 @@
 #: import DoctorSettingsView doctor_profile.doctor_settings_view
 #: import PatientManagementView doctor_profile.patient_management_view
 #: import PatientSettingsView doctor_profile.patient_settings_view
-#: import PatientEvolutionView doctor_profile.patient_evolution_view
+#: import DoctorPatientEvolutionView doctor_profile.doctor_patient_evolution_view
 
 <DoctorHomeScreen>:
     BoxLayout:
@@ -140,5 +140,5 @@
 
 <DoctorPatientEvolutionContentScreen>:
     on_enter: evolution_view.on_enter()
-    PatientEvolutionView:
+    DoctorPatientEvolutionView:
         id: evolution_view

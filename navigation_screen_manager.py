@@ -28,7 +28,7 @@ class NavigationScreenManager(ScreenManager):  # Example base class, adjust as n
                     if profile_type == 'doctor':
                         self.current = 'doctor_home'
                     else:
-                        self.current = 'home'
+                        self.current = 'patient_home'
                     return
 
             except (json.JSONDecodeError, FileNotFoundError):

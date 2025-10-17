@@ -10,7 +10,7 @@ from doctor_profile import diagnostics_view
 from doctor_profile import doctor_settings_view
 from doctor_profile import patient_management_view
 from doctor_profile import patient_settings_view
-from doctor_profile import patient_evolution_view
+from doctor_profile import doctor_patient_evolution_view
 
 # Loads the associated kv file
 Builder.load_file("doctor_profile/doctor_screens.kv", encoding='utf-8')

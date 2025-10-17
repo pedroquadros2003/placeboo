@@ -1,21 +1,8 @@
 #: import spinner_with_arrow auxiliary_classes.spinner_with_arrow
 
 <PatientEvolutionView>:
-    # Message shown when no patient is selected
-    BoxLayout:
-        opacity: 1 if not root.current_patient_email else 0
-        disabled: False if not root.current_patient_email else True
-        Label:
-            text: 'Selecione um paciente para registrar a evolução.'
-            font_size: '14sp'
-            color: 0.3, 0.3, 0.3, 1
-            halign: 'center'
-
-    # Main content, shown when a patient is selected
     BoxLayout:
         orientation: 'vertical'
-        opacity: 1 if root.current_patient_email else 0
-        disabled: False if root.current_patient_email else True
         canvas.before:
             Color:
                 rgba: 0.95, 0.95, 0.95, 1
@@ -23,7 +10,7 @@
                 pos: self.pos
                 size: self.size
         
-        # Date Selection Container
+        # Container para Seleção de Data
         BoxLayout:
             orientation: 'vertical'
             size_hint_y: None
@@ -70,18 +57,17 @@
                 font_size: '13sp'
                 on_press: root.fill_today_date()
 
-
-        # Area for dynamic metric inputs
+        # Área para os campos de métricas dinâmicas
         ScrollView:
             GridLayout:
                 id: metrics_grid
                 cols: 1
-                padding: [dp(10), dp(30), dp(10), dp(10)] # Added top padding
+                padding: [dp(10), dp(30), dp(10), dp(10)]
                 spacing: dp(10)
                 size_hint_y: None
                 height: self.minimum_height
 
-        # Save Button
+        # Botão de Salvar
         BoxLayout:
             size_hint_y: None
             height: dp(60)
@@ -89,40 +75,3 @@
             Button:
                 text: 'Salvar Dados do Dia'
                 on_press: root.save_evolution_data()
-
-        # Graph Generation Area
-        BoxLayout:
-            orientation: 'vertical'
-            size_hint_y: None
-            height: self.minimum_height
-            padding: [dp(10), dp(20), dp(10), dp(10)] # Top padding
-            spacing: dp(10)
-
-            Label:
-                text: 'Gerar Relatório:'
-                color: 0,0,0,1
-                size_hint_y: None
-                height: self.texture_size[1]
-                halign: 'left'
-
-            SpinnerWithArrow:
-                id: metric_graph_spinner
-                text: 'Selecione a Métrica'
-                font_size: '12sp'
-                values: root.graph_metric_list
-            
-            BoxLayout:
-                orientation: 'horizontal'
-                size_hint_y: None
-                height: dp(48)
-                spacing: dp(10)
-                Button:
-                    text: 'Últimos 7 dias'
-                    font_size: '13sp'
-                    disabled: metric_graph_spinner.text == 'Selecione a Métrica'
-                    on_press: root.generate_report(7)
-                Button:
-                    text: 'Últimos 30 dias'
-                    font_size: '13sp'
-                    disabled: metric_graph_spinner.text == 'Selecione a Métrica'
-                    on_press: root.generate_report(30)

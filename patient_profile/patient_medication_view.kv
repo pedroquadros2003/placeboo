@@ -1,0 +1,23 @@
+#: import box_layout_with_action_bar auxiliary_classes.box_layout_with_action_bar
+
+<PatientMedicationsView>:
+    ScrollView:
+        BoxLayout:
+            orientation: 'vertical'
+            padding: dp(10)
+            spacing: dp(10)
+            size_hint_y: None
+            height: self.minimum_height
+
+            GridLayout:
+                id: medications_list
+                cols: 1
+                size_hint_x: 1
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(10)
+                spacing: dp(5)
+
+<MedicationItem>:
+    size_hint_y: None
+    height: '90dp' # Altura fixa para cada item

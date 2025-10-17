@@ -66,7 +66,7 @@ class LoginScreen(Screen):
                 if profile_type == 'doctor':
                     self.manager.reset_to('doctor_home')
                 else: # Default to patient home
-                    self.manager.reset_to('home')
+                    self.manager.reset_to('patient_home')
                 return  # Exit the function on success
 
         # If the loop completes, no user was found
@@ -221,15 +221,9 @@ class SignUpScreen(Screen):
         if user_data['profile_type'] == 'doctor':
             self.manager.reset_to('doctor_home')
         else:
-            self.manager.reset_to('home')
+            self.manager.reset_to('patient_home')
 
     def enforce_text_limit(self, text_input, max_length):
         """Enforces a maximum character limit on a TextInput."""
         if len(text_input.text) > max_length:
             text_input.text = text_input.text[:max_length]
-
-class HomeScreen(Screen):
-    """
-    The main screen after a user is logged in.
-    """
-    pass

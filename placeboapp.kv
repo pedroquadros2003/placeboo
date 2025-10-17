@@ -1,25 +1,32 @@
-#: import navigation_screen_manager navigation_screen_manager
-#: import initial_access initial_access
-#: import doctor_screens doctor_profile.doctor_screens
-#: import graph_view_screen doctor_profile.graph_view_screen
-
-
-MyScreenManager:
+#:kivy 2.0.0
 
 <MyScreenManager>:
+    # Telas de acesso inicial
     InitialAccessScreen:
         name: 'initial_access'
-    SignUpScreen:
-        name: 'sign_up'
     LoginScreen:
         name: 'login'
-    HomeScreen:
-        name: 'home'
+    SignUpScreen:
+        name: 'sign_up'
+
+    # Telas principais após o login
+    PatientHomeScreen:
+        name: 'patient_home'
     DoctorHomeScreen:
         name: 'doctor_home'
+
+    # Telas de menu e configurações que são "empilhadas" sobre as telas principais
+    PatientMenuScreen:
+        name: 'patient_menu'
     DoctorMenuScreen:
         name: 'doctor_menu'
+    PatientAppSettingsScreen:
+        name: 'patient_app_settings'
+    AddDoctorScreen:
+        name: 'add_doctor'
     DoctorSettingsScreen:
         name: 'doctor_settings'
+
+    # Tela para visualização de gráficos
     GraphViewScreen:
         name: 'graph_view'

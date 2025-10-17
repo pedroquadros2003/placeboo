@@ -1,0 +1,21 @@
+<AddDoctorView>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(20)
+        spacing: dp(20)
+
+        Label:
+            text: 'Adicionar Médico/Cuidador'
+            font_size: '20sp'
+            color: 0, 0, 0, 1
+            size_hint_y: 0.2
+
+        TextInput:
+            hint_text: 'Insira o código de 8 dígitos do médico'
+            size_hint_y: None
+            height: dp(48)
+
+        Button:
+            text: 'Vincular Médico'
+            size_hint_y: None
+            height: dp(48)

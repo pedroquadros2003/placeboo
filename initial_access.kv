@@ -78,22 +78,6 @@
                 color: (0.2, 0.4, 0.8, 1) # Blue link-like color
                 on_press: root.go_to_signup()
 
-<HomeScreen>:
-    BoxLayout:
-        orientation: 'vertical'
-        padding: dp(20)
-        spacing: dp(20)
-        canvas.before:
-            Color:
-                rgba: 0.95, 0.95, 0.95, 1
-            Rectangle:
-                pos: self.pos
-                size: self.size
-        Button:
-            text: 'Entrar'
-            font_size: '24sp'
-            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-
 <SignUpScreen>:
     BoxLayoutWithActionBar:
         title: 'Cadastro'
