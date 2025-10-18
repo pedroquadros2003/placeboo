@@ -30,6 +30,21 @@ class PatientAppSettingsView(RelativeLayout):
         
         App.get_running_app().manager.reset_to('initial_access')
 
+    def change_password(self):
+        """Navigates to the change password screen."""
+        session_path = self._get_main_dir_path('session.json')
+        if os.path.exists(session_path):
+            with open(session_path, 'r', encoding='utf-8') as f:
+                session_data = json.load(f)
+            user_email = session_data.get('email')
+            if user_email:
+                change_password_screen = App.get_running_app().manager.get_screen('change_password')
+                change_password_screen.ids.change_password_view_content.current_user_email = user_email
+                App.get_running_app().manager.push('change_password')
+            else:
+                print("Erro: Email do usuário não encontrado na sessão.")
+                # TODO: Show popup
+
     def delete_account(self):
         """
         Deleta todos os dados associados à conta do paciente atual.

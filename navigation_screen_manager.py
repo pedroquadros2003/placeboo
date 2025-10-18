@@ -14,11 +14,16 @@ class NavigationScreenManager(ScreenManager):  # Example base class, adjust as n
         # and all screens are available in the manager.
         Clock.schedule_once(self.check_session)
 
+    def _get_main_dir_path(self, filename):
+        """Constructs the full path to a file in the main project directory."""
+        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+
     def check_session(self, dt):
         """Checks for a saved session and sets the initial screen."""
-        if os.path.exists('session.json'):
+        session_path = self._get_main_dir_path('session.json')
+        if os.path.exists(session_path):
             try:
-                with open('session.json', 'r') as f:
+                with open(session_path, 'r', encoding='utf-8') as f:
                     session_data = json.load(f)
                 
                 if session_data.get('logged_in'):

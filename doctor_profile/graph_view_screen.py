@@ -35,9 +35,8 @@ class GraphViewScreen(Screen):
         report_grid.add_widget(header_label)
 
         # Add blank rows for spacing
-        report_grid.add_widget(Label(text=''))
-        report_grid.add_widget(Label(text=''))
-        report_grid.add_widget(Label(text=''))
+        report_grid.add_widget(Label(text='', size_hint_y=None, height=dp(10))) # Espaçador para a coluna 1
+        report_grid.add_widget(Label(text='', size_hint_y=None, height=dp(10))) # Espaçador para a coluna 2
 
         # Add data rows
         for i, (date_label, value) in enumerate(self.data_points):

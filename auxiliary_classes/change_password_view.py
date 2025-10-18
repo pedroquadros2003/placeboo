@@ -1,0 +1,104 @@
+from kivy.uix.relativelayout import RelativeLayout
+from kivy.lang import Builder
+from kivy.properties import StringProperty
+from kivy.app import App
+import os
+import json
+
+# Loads the associated kv file
+Builder.load_file("auxiliary_classes/change_password_view.kv", encoding='utf-8')
+
+class ChangePasswordView(RelativeLayout):
+    """
+    View genérica para permitir que um usuário mude sua senha.
+    """
+    current_user_email = StringProperty('')
+
+    def _get_main_dir_path(self, filename):
+        """Constrói o caminho completo para um arquivo no diretório principal do projeto (PlaceboSRC)."""
+        # Assumes this file is in 'auxiliary_classes' subfolder.
+        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+
+    def change_password(self):
+        """
+        Processa a mudança de senha do usuário.
+        Verifica a senha atual, valida a nova senha e atualiza o account.json.
+        """
+        current_password = self.ids.current_password_input.text
+        new_password = self.ids.new_password_input.text
+        confirm_new_password = self.ids.confirm_new_password_input.text
+
+        if not self.current_user_email:
+            print("Erro: Email do usuário não definido. Não é possível mudar a senha.")
+            # TODO: Show popup
+            return
+
+        if not current_password or not new_password or not confirm_new_password:
+            print("Erro: Todos os campos são obrigatórios.")
+            # TODO: Show popup
+            return
+
+        if new_password != confirm_new_password:
+            print("Erro: Nova senha e confirmação não coincidem.")
+            # TODO: Show popup
+            return
+        
+        if len(new_password) < 3: # Basic password strength check
+            print("Erro: A nova senha deve ter pelo menos 3 caracteres.")
+            # TODO: Show popup
+            return
+
+        accounts_path = self._get_main_dir_path('account.json')
+        if not os.path.exists(accounts_path):
+            print("Erro: Arquivo de contas não encontrado.")
+            # TODO: Show popup
+            return
+
+        with open(accounts_path, 'r+', encoding='utf-8') as f:
+            try:
+                accounts = json.load(f)
+            except json.JSONDecodeError:
+                accounts = []
+            
+            user_found = False
+            for i, account in enumerate(accounts):
+                if account.get('email') == self.current_user_email:
+                    user_found = True
+                    if account.get('password') == current_password: # DANGER: In a real app, you MUST hash the password!
+                        accounts[i]['password'] = new_password
+                        f.seek(0)
+                        json.dump(accounts, f, indent=4)
+                        f.truncate()
+                        print("Senha alterada com sucesso!")
+                        # TODO: Show success popup
+                        self.clear_fields()
+                        App.get_running_app().manager.pop() # Go back to previous screen
+                        return
+                    else:
+                        print("Erro: Senha atual incorreta.")
+                        # TODO: Show popup
+                        return
+            
+            if not user_found:
+                print("Erro: Usuário não encontrado no arquivo de contas.")
+                # TODO: Show popup
+
+    def cancel(self):
+        """Cancela a operação e retorna à tela anterior."""
+        self.clear_fields()
+        App.get_running_app().manager.pop()
+
+    def clear_fields(self):
+        """Limpa todos os campos de entrada de senha."""
+        self.ids.current_password_input.text = ''
+        self.ids.new_password_input.text = ''
+        self.ids.confirm_new_password_input.text = ''
+
+# Define a screen que hospeda a view
+from kivy.uix.screenmanager import Screen
+class ChangePasswordScreen(Screen):
+    """Tela para hospedar a ChangePasswordView."""
+    current_user_email = StringProperty('') # Propriedade para passar o email do usuário
+    def on_enter(self, *args):
+        # Limpa os campos ao entrar na tela para garantir um estado limpo
+        self.ids.change_password_view_content.clear_fields()

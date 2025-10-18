@@ -30,13 +30,14 @@ from navigation_screen_manager import NavigationScreenManager
 # Importa as telas para que o Kivy as reconheça ao carregar os arquivos .kv
 from initial_access import InitialAccessScreen, LoginScreen, SignUpScreen
 from patient_profile.patient_screens import PatientHomeScreen, PatientMenuScreen
-from patient_profile.patient_screens import PatientAppSettingsScreen, AddDoctorScreen # Novas: Importa estas como telas de nível superior
+from patient_profile.patient_screens import PatientAppSettingsScreen, AddDoctorScreen 
 from doctor_profile.doctor_screens import DoctorHomeScreen, DoctorMenuScreen, DoctorSettingsScreen
 from doctor_profile.graph_view_screen import GraphViewScreen
  
 # Importa as classes de view que não são telas, mas são usadas nos arquivos .kv
 from patient_profile.add_doctor_view import AddDoctorView
 from patient_profile.patient_settings_view import PatientAppSettingsView
+from auxiliary_classes.change_password_view import ChangePasswordScreen # Import the screen
 
 
 class MyScreenManager(NavigationScreenManager):

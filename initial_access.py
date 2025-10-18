@@ -32,22 +32,30 @@ class LoginScreen(Screen):
         self.ids.login_email.text = ''
         self.ids.login_password.text = ''
 
+    def _get_main_dir_path(self, filename):
+        """Constructs the full path to a file in the main project directory."""
+        return os.path.join(os.path.dirname(__file__), filename)
+
     def do_login(self, login_email, login_password):
         """
         Validates user credentials against the list of accounts in account.json.
         """
         print(f"Attempting login for: {login_email}")
 
+        accounts_path = self._get_main_dir_path('account.json')
+        session_path = self._get_main_dir_path('session.json')
+
         # Check if the account file exists.
-        if not os.path.exists('account.json'):
+        if not os.path.exists(accounts_path):
             print("Login Error: No accounts found. Please sign up first.")
             # TODO: Show a popup to the user
             return
 
-        with open('account.json', 'r') as f:
+        with open(accounts_path, 'r', encoding='utf-8') as f:
             accounts = json.load(f)
 
         # Find the user in the list of accounts
+        user_found = False
         for account in accounts:
             # IMPORTANT: In a real-world application, use a secure password hashing comparison.
             if account.get('email') == login_email and account.get('password') == login_password:
@@ -59,13 +67,14 @@ class LoginScreen(Screen):
                     'email': login_email, 
                     'profile_type': profile_type
                 }
-                with open('session.json', 'w') as f:
+                with open(session_path, 'w', encoding='utf-8') as f:
                     json.dump(session_data, f)
                 
                 # Redirect based on profile type
                 if profile_type == 'doctor':
                     self.manager.reset_to('doctor_home')
                 else: # Default to patient home
+                    user_found = True
                     self.manager.reset_to('patient_home')
                 return  # Exit the function on success
 
@@ -97,10 +106,14 @@ class SignUpScreen(Screen):
         self.ids.sex_input.text = 'Sexo'
         self.ids.is_also_patient_switch.active = False
 
+    def _get_main_dir_path(self, filename):
+        """Constructs the full path to a file in the main project directory."""
+        return os.path.join(os.path.dirname(__file__), filename)
+
     def _generate_unique_id(self, id_type):
         """
         Generates a unique 8-digit numeric ID for a given profile type (doctor or patient).
-        It checks for uniqueness against a corresponding JSON file.
+        It checks for uniqueness against a corresponding JSON file in the main project directory.
         """
         filename = f"{id_type}_ids.json"
         existing_ids = []
@@ -112,18 +125,19 @@ class SignUpScreen(Screen):
                 pass # File is empty or corrupt, will be overwritten
 
         while True:
-            new_id = str(random.randint(10000000, 99999999))
+            new_id = str(random.randint(10000000, 99999999)) # 8-digit ID
             if new_id not in existing_ids:
                 # Save the new ID to the list
                 existing_ids.append(new_id)
-                with open(filename, 'w') as f:
+                with open(self._get_main_dir_path(filename), 'w', encoding='utf-8') as f:
                     json.dump(existing_ids, f, indent=4)
                 return new_id
 
     def _load_accounts(self):
         """Safely loads accounts from the JSON file."""
-        if os.path.exists('account.json'):
-            with open('account.json', 'r') as f:
+        accounts_path = self._get_main_dir_path('account.json')
+        if os.path.exists(accounts_path):
+            with open(accounts_path, 'r', encoding='utf-8') as f:
                 try: return json.load(f)
                 except json.JSONDecodeError: return []
         return []
@@ -202,14 +216,17 @@ class SignUpScreen(Screen):
             # TODO: Show a popup to the user
             return
 
+        accounts_path = self._get_main_dir_path('account.json')
+        session_path = self._get_main_dir_path('session.json')
+
         accounts.append(user_data)
-        with open('account.json', 'w') as json_file:
+        with open(accounts_path, 'w', encoding='utf-8') as json_file:
             json.dump(accounts, json_file, indent=4)
 
         print(f"Account created successfully! Data saved to account.json")
         
         # Also create a session for the new user, including profile type
-        session_data = {
+        session_data = { 
             'logged_in': True,
             'email': user_data['email'],
             'profile_type': user_data['profile_type']
@@ -217,7 +234,7 @@ class SignUpScreen(Screen):
         with open('session.json', 'w') as f:
             json.dump(session_data, f)
 
-        # Redirect to the correct home screen based on the new profile
+        # Redirect to the correct home screen based on the new profile 
         if user_data['profile_type'] == 'doctor':
             self.manager.reset_to('doctor_home')
         else:

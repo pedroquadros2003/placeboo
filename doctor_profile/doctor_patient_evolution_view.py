@@ -154,7 +154,7 @@ class DoctorPatientEvolutionView(RelativeLayout):
                     self.metric_inputs['blood_pressure_systolic'] = systolic_input
                     self.metric_inputs['blood_pressure_diastolic'] = diastolic_input
                 else: # For all other metrics
-                    text_input = TextInput(hint_text="Valor", multiline=False, size_hint_x=0.4, input_filter='float')
+                    text_input = TextInput(hint_text="Valor", multiline=False, size_hint_x=0.4, input_filter='float', halign='right', size_hint_y=None, height=dp(32))
                     text_input.text = evolution_data.get(metric_key, '')
                     container.add_widget(text_input)
                     self.metric_inputs[metric_key] = text_input

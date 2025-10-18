@@ -3,7 +3,7 @@
         "profile_type": "doctor",
         "name": "peu",
         "email": "peu",
-        "password": "peu",
+        "password": "123",
         "linked_patients": [
             "20000001",
             "20000002",
@@ -15,7 +15,7 @@
         "profile_type": "patient",
         "name": "Paciente A",
         "email": "paciente.a@email.com",
-        "password": "123",
+        "password": "aaa",
         "patient_info": {
             "height_cm": "175",
             "date_of_birth": {},
