@@ -1,0 +1,43 @@
+<ManageDoctorsView>:
+    BoxLayout:
+        orientation: 'vertical'
+        canvas.before:
+            Color:
+                rgba: 0.95, 0.95, 0.95, 1 # Fundo cinza claro padrão
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        ScrollView:
+            GridLayout:
+                cols: 1
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(10)
+                spacing: dp(15)
+
+                Label:
+                    text: 'Convites Pendentes'
+                    font_size: '18sp'
+                    color: 0,0,0,1
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                GridLayout:
+                    id: invitations_list
+                    cols: 1
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: dp(5)
+
+                Label:
+                    text: 'Meus Médicos'
+                    font_size: '18sp'
+                    color: 0,0,0,1
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                    padding: [0, dp(20), 0, 0]
+                GridLayout:
+                    id: linked_doctors_list
+                    cols: 1
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: dp(5)

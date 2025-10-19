@@ -3,7 +3,6 @@
 #: import PatientEvolutionView patient_profile.patient_evolution_view
 #: import PatientEventsView patient_profile.patient_events_view
 #: import PatientAppSettingsView patient_profile.patient_settings_view.PatientAppSettingsView
-#: import AddDoctorView patient_profile.add_doctor_view.AddDoctorView
 
 <PatientHomeScreen>:
     BoxLayout:
@@ -85,12 +84,13 @@
                     height: dp(48)
                     on_press: root.go_to_screen('patient_app_settings')
                 Button:
-                    text: 'Adicionar Médico'
+                    text: 'Gerenciar Médicos'
                     size_hint_y: None
                     height: dp(48)
-                    on_press: root.go_to_screen('add_doctor')
+                    on_press: root.go_to_screen('manage_doctors')
 
 <PatientEventsScreen>:
+    PatientEventsView:
 
 <PatientMedicationsScreen>:
 <PatientEvolutionScreen>:
@@ -107,14 +107,8 @@
         # A view de conteúdo real
         PatientAppSettingsView:
 
-<AddDoctorScreen>: # Esta tela será empilhada no gerenciador principal
+<ManageDoctorsScreen>:
     BoxLayoutWithActionBar:
-        title: 'Adicionar Médico'
-        canvas.before:
-            Color:
-                rgba: 1, 1, 1, 1 # Cor branca
-            Rectangle:
-                pos: self.pos
-                size: self.size
+        title: 'Gerenciar Médicos'
         # A view de conteúdo real
-        AddDoctorView:
+        ManageDoctorsView:

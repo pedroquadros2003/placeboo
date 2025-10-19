@@ -31,10 +31,9 @@
 
                     TextInput:
                         id: patient_code_input
-                        hint_text: 'Código do Paciente (8 dígitos)'
-                        input_filter: 'int'
-                        on_text: root.enforce_text_limit(self, 8)
+                        hint_text: 'Usuário do Paciente'
+                        multiline: False
                     Button:
-                        text: 'Adicionar'
+                        text: 'Convidar'
                         size_hint_x: 0.4
-                        on_press: root.add_patient()
+                        on_press: root.invite_patient()

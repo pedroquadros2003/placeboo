@@ -9,7 +9,7 @@ from patient_profile.patient_medication_view import PatientMedicationsView
 from patient_profile.patient_evolution_view import PatientEvolutionView
 from patient_profile.patient_events_view import PatientEventsView
 from patient_profile.patient_settings_view import PatientAppSettingsView
-from patient_profile.add_doctor_view import AddDoctorView
+from patient_profile.manage_doctors_view import ManageDoctorsScreen
 
 class PatientHomeScreen(Screen):
     """
@@ -67,8 +67,8 @@ class PatientHomeScreen(Screen):
 class PatientMenuScreen(Screen):
     """Tela de menu para o paciente."""
     def go_to_screen(self, screen_name):
-        # Tratamento especial para configurações do aplicativo e adicionar médico, que são telas separadas
-        if screen_name in ['patient_app_settings', 'add_doctor']:
+        # Tratamento especial para telas que são empilhadas no gerenciador principal
+        if screen_name in ['patient_app_settings', 'manage_doctors']:
             if self.manager.has_screen(screen_name):
                 self.manager.push(screen_name)
             else:
@@ -91,12 +91,7 @@ class PatientAppSettingsScreen(Screen):
     """Tela para hospedar a view de configurações do app do paciente."""
     pass
 
-class AddDoctorScreen(Screen):
-    """Tela para hospedar a view de adicionar médico."""
-    pass
-
 Builder.load_file("patient_profile/patient_screens.kv", encoding='utf-8')
 
 # É importante carregar os novos arquivos KV depois de definir as classes
 Builder.load_file("patient_profile/patient_settings_view.kv", encoding='utf-8')
-Builder.load_file("patient_profile/add_doctor_view.kv", encoding='utf-8')

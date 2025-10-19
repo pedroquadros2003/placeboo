@@ -64,7 +64,7 @@ class ChangePasswordView(RelativeLayout):
                         f.seek(0)
                         json.dump(accounts, f, indent=4)
                         f.truncate()
-                        App.get_running_app().show_error_popup("Senha alterada com sucesso!") # Can be styled differently
+                        App.get_running_app().show_success_popup("Senha alterada com sucesso!")
                         self.clear_fields()
                         App.get_running_app().manager.pop() # Go back to previous screen
                         return

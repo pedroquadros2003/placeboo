@@ -17,9 +17,7 @@ class PatientEventsView(RelativeLayout):
     logged_in_patient_info = DictProperty({})
 
     def on_kv_post(self, base_widget):
-        """Called after the kv file is loaded. Binds properties and loads initial data."""
-        self.bind(logged_in_patient_info=self.load_events)
-        # Load patient info, which will then trigger loading events via the binding.
+        """Called after the kv rules are applied. Loads initial data."""
         self.load_logged_in_patient_info()
 
     def _get_main_dir_path(self, filename):
@@ -44,8 +42,8 @@ class PatientEventsView(RelativeLayout):
         if patient_user and os.path.exists(accounts_path):
             with open(accounts_path, 'r', encoding='utf-8') as f:
                 accounts = json.load(f)
-            # This property change will trigger load_events
             self.logged_in_patient_info = next((acc for acc in accounts if acc.get('user') == patient_user), {})
+            self.load_events() # Call load_events directly after loading patient info
         
         if not self.logged_in_patient_info:
             print("No patient logged in or session data is invalid.")
@@ -89,7 +87,7 @@ class PatientEventsView(RelativeLayout):
 
         if not self.events:
             events_list_widget.add_widget(
-                Label(text='Nenhum exame ou consulta cadastrado.', color=(0,0,0,1), halign='center')
+                Label(text='Nenhum exame ou consulta cadastrado.', color=(0,0,0,1))
             )
             return
 

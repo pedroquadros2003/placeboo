@@ -301,7 +301,7 @@ class MedicationsView(RelativeLayout):
         with open(medications_path, 'w', encoding='utf-8') as f:
             json.dump(all_meds, f, indent=4)
 
-        print(f"Added '{generic_name}' for patient {self.current_patient_user}")
+        App.get_running_app().show_success_popup(f"Medicação '{generic_name}' adicionada.")
         self.load_medications()
 
     def start_editing_medication(self, med_data, *args):
@@ -385,7 +385,7 @@ class MedicationsView(RelativeLayout):
             json.dump(all_meds, f, indent=4)
             f.truncate()
 
-        print(f"Updated medication {self.editing_med_id}")
+        App.get_running_app().show_success_popup(f"Medicação atualizada.")
         self.cancel_edit() # Clear fields and exit edit mode
         self.load_medications() # Refresh the list
 

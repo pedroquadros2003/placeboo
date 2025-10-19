@@ -114,5 +114,5 @@ class PatientAppSettingsView(RelativeLayout):
                     json.dump(data, f, indent=4)
                     f.truncate()
 
-        print(f"Conta e todos os dados associados para {patient_user} foram deletados.")
+        App.get_running_app().show_success_popup(f"Conta e todos os dados associados para {patient_user} foram deletados.")
         self.logout() # Faz o logout para limpar a sessão e retornar à tela inicial

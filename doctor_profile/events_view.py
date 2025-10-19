@@ -238,7 +238,7 @@ class EventsView(RelativeLayout):
         with open(events_path, 'w', encoding='utf-8') as f:
             json.dump(all_events, f, indent=4)
 
-        print(f"Added event '{name}' for patient {self.current_patient_user}")
+        App.get_running_app().show_success_popup(f"Evento '{name}' adicionado.")
         self.load_events()
 
     def remove_event(self, event_id, *args):
@@ -259,7 +259,7 @@ class EventsView(RelativeLayout):
                 json.dump(all_events, f, indent=4)
                 f.truncate()
             print(f"Removed event {event_id} and updated file.")
-        except (json.JSONDecodeError, FileNotFoundError, KeyError):
+        except (json.JSONDecodeError, FileNotFoundError, KeyError) as e:
             print("Error updating patient_events.json")
 
     def start_editing_event(self, event_data, *args):
@@ -332,7 +332,7 @@ class EventsView(RelativeLayout):
             json.dump(all_events, f, indent=4)
             f.truncate()
 
-        print(f"Updated event {self.editing_event_id}")
+        App.get_running_app().show_success_popup(f"Evento atualizado.")
         self.cancel_edit()
         self.load_events()
 

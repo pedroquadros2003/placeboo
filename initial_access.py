@@ -248,7 +248,7 @@ class SignUpScreen(Screen):
         with open(accounts_path, 'w', encoding='utf-8') as json_file:
             json.dump(accounts, json_file, indent=4)
 
-        print(f"Account created successfully! Data saved to account.json")
+        App.get_running_app().show_success_popup("Conta criada com sucesso!")
         
         # Also create a session for the new user, including profile type
         session_data = { 

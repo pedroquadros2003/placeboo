@@ -12,7 +12,7 @@
     
     canvas.before:
         Color:
-            rgba: 0.8, 0.2, 0.2, self.opacity # Vermelho, com opacidade ligada à do widget
+            rgba: root.bg_color[0], root.bg_color[1], root.bg_color[2], root.bg_color[3] * self.opacity # Cor de fundo customizável
         RoundedRectangle:
             pos: self.pos
             size: self.size

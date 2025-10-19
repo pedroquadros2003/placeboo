@@ -96,5 +96,5 @@ class DoctorSettingsView(RelativeLayout):
                 except (json.JSONDecodeError, FileNotFoundError):
                     pass
 
-        print(f"Account and all associated data for {doctor_user} have been deleted.")
+        App.get_running_app().show_success_popup(f"Conta e todos os dados associados para {doctor_user} foram deletados.")
         self.logout() # Log out to clear session and return to initial screen

@@ -98,65 +98,64 @@ class PatientManagementView(RelativeLayout):
 
             patient_list_widget.add_widget(item_container)
 
-    def add_patient(self):
-        """Links a new patient to the doctor using a 6-digit code."""
-        code = self.ids.patient_code_input.text
-        if not code or len(code) != 8:
-            App.get_running_app().show_error_popup("Por favor, insira um código de 8 dígitos.")
+    def invite_patient(self):
+        """Sends an invitation to a patient by their username."""
+        patient_user_to_invite = self.ids.patient_code_input.text
+        if not patient_user_to_invite:
+            App.get_running_app().show_error_popup("Por favor, insira o nome de usuário do paciente.")
             return
 
         doctor_user = self._get_doctor_user()
         accounts_path = self._get_main_dir_path('account.json')
         if not doctor_user or not os.path.exists(accounts_path):
+            App.get_running_app().show_error_popup("Erro ao identificar o médico logado.")
             return
 
         with open(accounts_path, 'r+', encoding='utf-8') as f:
             accounts = json.load(f)
             
-            # Find patient by code
-            patient_account = next((acc for acc in accounts if acc.get('id') == code and acc.get('profile_type') == 'patient'), None)
+            # Find patient by username OR name, making it more flexible
+            patient_account = next((
+                acc for acc in accounts 
+                if (acc.get('user') == patient_user_to_invite or acc.get('name') == patient_user_to_invite) 
+                and acc.get('profile_type') == 'patient'
+            ), None)
             if not patient_account:
-                App.get_running_app().show_error_popup(f"Paciente com código {code} não encontrado.")
+                App.get_running_app().show_error_popup(f"Paciente '{patient_user_to_invite}' não encontrado.")
                 return
 
             patient_id = patient_account['id']
 
-            # Find doctor and update linked_patients
-            doctor_id = None
-            for i, acc in enumerate(accounts):
-                if acc['user'] == doctor_user:
-                    doctor_id = acc.get('id')
-                    if 'linked_patients' not in acc:
-                        accounts[i]['linked_patients'] = []
-                    
-                    if patient_id in accounts[i]['linked_patients']:
-                        App.get_running_app().show_error_popup("Este paciente já está vinculado.")
-                        self.ids.patient_code_input.text = ''
-                        return
+            # Find doctor to get their ID
+            doctor_account = next((acc for acc in accounts if acc.get('user') == doctor_user), None)
+            if not doctor_account:
+                App.get_running_app().show_error_popup("Erro crítico: Conta do médico não encontrada.")
+                return
+            doctor_id = doctor_account.get('id')
 
-                    accounts[i]['linked_patients'].append(patient_id)
-                    break
-            
-            if not doctor_id: return
+            # Check if patient is already linked to this doctor
+            if 'linked_patients' in doctor_account and patient_id in doctor_account['linked_patients']:
+                App.get_running_app().show_error_popup("Este paciente já está vinculado a você.")
+                return
 
-            # Find patient and update responsible_doctors
+            # Find patient again to modify their account data
             for i, acc in enumerate(accounts):
                 if acc.get('id') == patient_id:
-                    if 'patient_info' not in acc: accounts[i]['patient_info'] = {}
-                    if 'responsible_doctors' not in acc['patient_info']: accounts[i]['patient_info']['responsible_doctors'] = []
+                    if 'invitations' not in acc:
+                        accounts[i]['invitations'] = []
                     
-                    if doctor_id not in accounts[i]['patient_info']['responsible_doctors']:
-                        accounts[i]['patient_info']['responsible_doctors'].append(doctor_id)
+                    if doctor_id not in acc['invitations']:
+                        accounts[i]['invitations'].append(doctor_id)
+                        App.get_running_app().show_error_popup(f"Convite enviado para {patient_user_to_invite}.") # Success popup
+                    else:
+                        App.get_running_app().show_error_popup("Um convite já foi enviado para este paciente.")
                     break
 
             # Save changes back to file
             f.seek(0)
             json.dump(accounts, f, indent=4)
             f.truncate()
-
-        print(f"Paciente {patient_id} vinculado com sucesso ao doutor {doctor_id}.")
         self.ids.patient_code_input.text = ''
-        self.load_linked_patients()
 
     def remove_patient(self, patient_name, *args):
         """Unlinks a patient from the doctor."""
@@ -205,8 +204,3 @@ class PatientManagementView(RelativeLayout):
             with open(session_path, 'r') as f:
                 return json.load(f).get('user')
         return None
-
-    def enforce_text_limit(self, text_input, max_length):
-        """Enforces a maximum character limit on a TextInput."""
-        if len(text_input.text) > max_length:
-            text_input.text = text_input.text[:max_length]

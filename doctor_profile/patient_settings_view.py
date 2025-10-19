@@ -126,8 +126,7 @@ class PatientSettingsView(RelativeLayout):
                     except json.JSONDecodeError:
                         pass # File is empty or corrupt
 
-        print(f"Settings saved for {self.current_patient_user}: {new_selected_metrics}")
-        # TODO: Show a confirmation popup to the user.
+        App.get_running_app().show_success_popup(f"Configurações salvas para {self.current_patient_user}.")
 
     def _get_patient_settings(self):
         """Helper to safely load settings for the current patient."""

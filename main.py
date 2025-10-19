@@ -20,12 +20,11 @@ from navigation_screen_manager import NavigationScreenManager
 # Importa as telas para que o Kivy as reconheça ao carregar os arquivos .kv
 from initial_access import InitialAccessScreen, LoginScreen, SignUpScreen
 from patient_profile.patient_screens import PatientHomeScreen, PatientMenuScreen
-from patient_profile.patient_screens import PatientAppSettingsScreen, AddDoctorScreen 
+from patient_profile.patient_screens import PatientAppSettingsScreen, ManageDoctorsScreen
 from doctor_profile.doctor_screens import DoctorHomeScreen, DoctorMenuScreen, DoctorSettingsScreen
 from doctor_profile.graph_view_screen import GraphViewScreen
  
 # Importa as classes de view que não são telas, mas são usadas nos arquivos .kv
-from patient_profile.add_doctor_view import AddDoctorView
 from patient_profile.patient_settings_view import PatientAppSettingsView
 from auxiliary_classes.popup_label import PopupLabel
 from auxiliary_classes.change_password_view import ChangePasswordScreen # Import the screen
@@ -41,9 +40,16 @@ class PlaceboApp (App):  ## Aplicações em Kivy terminam em App
         self.manager = MyScreenManager()
         return self.manager
 
-    def show_error_popup(self, message):
-        """Exibe um popup de erro na parte inferior da tela."""
-        popup = PopupLabel()
-        popup.show(text=message)
+    def show_popup(self, message, is_success=False):
+        """Exibe um popup (erro ou sucesso) na parte inferior da tela."""
+        popup = PopupLabel(text=message)
+        if is_success:
+            popup.bg_color = (0.2, 0.8, 0.2, 1) # Green for success
+        else:
+            popup.bg_color = (0.8, 0.2, 0.2, 1) # Red for error
+        popup.show(message)
+
+    def show_error_popup(self, message): self.show_popup(message, is_success=False)
+    def show_success_popup(self, message): self.show_popup(message, is_success=True)
 
 PlaceboApp().run()

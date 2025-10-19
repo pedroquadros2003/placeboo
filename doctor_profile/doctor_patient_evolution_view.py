@@ -206,7 +206,7 @@ class DoctorPatientEvolutionView(RelativeLayout):
         with open(evolution_path, 'w', encoding='utf-8') as f:
             json.dump(all_evolutions, f, indent=4)
 
-        print(f"Dados de evolução salvos para o paciente {patient_id} na data {date_str}.")
+        App.get_running_app().show_success_popup(f"Dados de evolução salvos para {patient_id} em {date_str}.")
         # TODO: Show confirmation popup
 
     def generate_report(self, days):
