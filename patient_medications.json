@@ -48,5 +48,44 @@
             "end_date": "",
             "observation": ""
         }
+    ],
+    "e_patient_profile": [
+        {
+            "id": "med1760902752",
+            "generic_name": "Paracetamol",
+            "presentation": "Solu\u00e7\u00e3o Oral",
+            "dosage": "50 g",
+            "quantity": "1 cp",
+            "days_of_week": [
+                "Todos os dias"
+            ],
+            "times_of_day": [
+                "19:06"
+            ],
+            "start_date": "2025-10-19",
+            "end_date": "",
+            "observation": "ofdnoejjjjjjjjjjjjjjjjjaosijofdnoejjjjjjjjjjjjjjjjjaosijofdnoejjjjjjjjjjjjjjjjjaosijofdnoejjjjjjjjjjofdnoejjjjjjjjjjjjjjjjjaosijofdnoejjjjjjjjjjjjjjjjjaosijofdnoejjjjjjjjjjjjjjjjjaosijofdnoejjjjjjjjjjofdnoejjjjjjjjjjjjjjjjjaosijofdnoejjjjjjjjjjjjjjjjjaosijofdnoejjjjjjjjjjjjjjjjjaosijofdnoejjjjjjjjjj"
+        },
+        {
+            "id": "med1760903890",
+            "generic_name": "Fluoxoretina Periploplerifl\u00e1gica",
+            "presentation": "Injet\u00e1vel",
+            "dosage": "40 g",
+            "quantity": "1cp ",
+            "days_of_week": [
+                "Seg",
+                "Ter",
+                "Qua",
+                "Qui",
+                "Sex",
+                "Sab"
+            ],
+            "times_of_day": [
+                "06:24"
+            ],
+            "start_date": "2025-10-19",
+            "end_date": "",
+            "observation": "ofdnoejjjjjjjjjjjjjjjjjaosijofdnoejjjjjjjjjjjjjjjjjaosijofdnoejjjjjjjjjjjjjjjjjaosijofdnoejjjjjjjjjj"
+        }
     ]
 }

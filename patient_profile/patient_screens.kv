@@ -65,6 +65,12 @@
 <PatientMenuScreen>:
     BoxLayoutWithActionBar:
         title: 'Menu'
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1 # Cor branca
+            Rectangle:
+                pos: self.pos
+                size: self.size
         ScrollView:
             GridLayout:
                 cols: 1
@@ -92,11 +98,23 @@
 <PatientAppSettingsScreen>: # Esta tela será empilhada no gerenciador principal
     BoxLayoutWithActionBar:
         title: 'Configurações do Aplicativo'
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1 # Cor branca
+            Rectangle:
+                pos: self.pos
+                size: self.size
         # A view de conteúdo real
         PatientAppSettingsView:
 
 <AddDoctorScreen>: # Esta tela será empilhada no gerenciador principal
     BoxLayoutWithActionBar:
         title: 'Adicionar Médico'
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1 # Cor branca
+            Rectangle:
+                pos: self.pos
+                size: self.size
         # A view de conteúdo real
         AddDoctorView:

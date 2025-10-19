@@ -44,38 +44,29 @@ class PatientEvolutionView(RelativeLayout):
         """Carrega os dados do paciente logado a partir de session.json e account.json."""
         session_path = self._get_main_dir_path('session.json')
         accounts_path = self._get_main_dir_path('account.json')
-        patient_email = ""
+        patient_user = ""
 
         if os.path.exists(session_path):
             try:
                 with open(session_path, 'r') as f:
                     session_data = json.load(f)
                 if session_data.get('logged_in') and session_data.get('profile_type') == 'patient':
-                    patient_email = session_data.get('email')
+                    patient_user = session_data.get('user')
             except (json.JSONDecodeError, FileNotFoundError):
                 print("Erro ao carregar session.json.")
 
-        if patient_email and os.path.exists(accounts_path):
+        if patient_user and os.path.exists(accounts_path):
             with open(accounts_path, 'r', encoding='utf-8') as f:
                 accounts = json.load(f)
-            self.logged_in_patient_info = next((acc for acc in accounts if acc.get('email') == patient_email), {})
+            self.logged_in_patient_info = next((acc for acc in accounts if acc.get('user') == patient_user), {})
         
         if not self.logged_in_patient_info:
             print("Nenhum paciente logado ou dados de sessão inválidos.")
 
     def fill_today_date(self):
         """Preenche os seletores de data com a data atual (de app_data.json ou do sistema)."""
+        # Use the system's current date directly
         date_obj = datetime.now()
-        app_data_path = self._get_main_dir_path('app_data.json')
-        if os.path.exists(app_data_path):
-            try:
-                with open(app_data_path, 'r') as f:
-                    data = json.load(f)
-                date_from_json = data.get("current_date")
-                if date_from_json:
-                    date_obj = datetime.strptime(date_from_json, '%Y-%m-%d')
-            except (json.JSONDecodeError, ValueError, FileNotFoundError):
-                pass
 
         self.ids.day_input.text = str(date_obj.day)
         self.ids.year_spinner.text = str(date_obj.year)

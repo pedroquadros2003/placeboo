@@ -12,7 +12,7 @@ class ChangePasswordView(RelativeLayout):
     """
     View genérica para permitir que um usuário mude sua senha.
     """
-    current_user_email = StringProperty('')
+    current_user_name = StringProperty('')
 
     def _get_main_dir_path(self, filename):
         """Constrói o caminho completo para um arquivo no diretório principal do projeto (PlaceboSRC)."""
@@ -28,8 +28,8 @@ class ChangePasswordView(RelativeLayout):
         new_password = self.ids.new_password_input.text
         confirm_new_password = self.ids.confirm_new_password_input.text
 
-        if not self.current_user_email:
-            print("Erro: Email do usuário não definido. Não é possível mudar a senha.")
+        if not self.current_user_name:
+            print("Erro: Nome de usuário não definido. Não é possível mudar a senha.")
             # TODO: Show popup
             return
 
@@ -62,7 +62,7 @@ class ChangePasswordView(RelativeLayout):
             
             user_found = False
             for i, account in enumerate(accounts):
-                if account.get('email') == self.current_user_email:
+                if account.get('user') == self.current_user_name:
                     user_found = True
                     if account.get('password') == current_password: # DANGER: In a real app, you MUST hash the password!
                         accounts[i]['password'] = new_password
@@ -98,7 +98,7 @@ class ChangePasswordView(RelativeLayout):
 from kivy.uix.screenmanager import Screen
 class ChangePasswordScreen(Screen):
     """Tela para hospedar a ChangePasswordView."""
-    current_user_email = StringProperty('') # Propriedade para passar o email do usuário
+    current_user_name = StringProperty('') # Propriedade para passar o nome de usuário
     def on_enter(self, *args):
         # Limpa os campos ao entrar na tela para garantir um estado limpo
         self.ids.change_password_view_content.clear_fields()

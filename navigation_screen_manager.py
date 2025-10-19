@@ -16,7 +16,7 @@ class NavigationScreenManager(ScreenManager):  # Example base class, adjust as n
 
     def _get_main_dir_path(self, filename):
         """Constructs the full path to a file in the main project directory."""
-        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+        return os.path.join(os.path.dirname(__file__), filename)
 
     def check_session(self, dt):
         """Checks for a saved session and sets the initial screen."""

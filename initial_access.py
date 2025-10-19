@@ -29,18 +29,18 @@ class LoginScreen(Screen):
 
     def on_leave(self, *args):
         """Clear input fields when leaving the screen."""
-        self.ids.login_email.text = ''
+        self.ids.login_user.text = ''
         self.ids.login_password.text = ''
 
     def _get_main_dir_path(self, filename):
         """Constructs the full path to a file in the main project directory."""
         return os.path.join(os.path.dirname(__file__), filename)
 
-    def do_login(self, login_email, login_password):
+    def do_login(self, login_user, login_password):
         """
         Validates user credentials against the list of accounts in account.json.
         """
-        print(f"Attempting login for: {login_email}")
+        print(f"Attempting login for: {login_user}")
 
         accounts_path = self._get_main_dir_path('account.json')
         session_path = self._get_main_dir_path('session.json')
@@ -58,13 +58,13 @@ class LoginScreen(Screen):
         user_found = False
         for account in accounts:
             # IMPORTANT: In a real-world application, use a secure password hashing comparison.
-            if account.get('email') == login_email and account.get('password') == login_password:
+            if account.get('user') == login_user and account.get('password') == login_password:
                 print("Login successful!")
                 profile_type = account.get('profile_type')
                 # Save session state
                 session_data = {
-                    'logged_in': True, 
-                    'email': login_email, 
+                    'logged_in': True,
+                    'user': login_user,
                     'profile_type': profile_type
                 }
                 with open(session_path, 'w', encoding='utf-8') as f:
@@ -79,7 +79,7 @@ class LoginScreen(Screen):
                 return  # Exit the function on success
 
         # If the loop completes, no user was found
-        print("Login Failed: Invalid email or password.")
+        print("Login Failed: Invalid user or password.")
         # TODO: Show a popup to the user
 
     def go_to_signup(self):
@@ -97,7 +97,7 @@ class SignUpScreen(Screen):
     def on_leave(self, *args):
         """Clear all input fields when leaving the screen."""
         self.ids.name_input.text = ''
-        self.ids.email_input.text = ''
+        self.ids.user_input.text = ''
         self.ids.password_input.text = ''
         self.ids.height_input.text = ''
         self.ids.day_input.text = ''
@@ -117,9 +117,10 @@ class SignUpScreen(Screen):
         """
         filename = f"{id_type}_ids.json"
         existing_ids = []
-        if os.path.exists(filename):
+        ids_path = self._get_main_dir_path(filename)
+        if os.path.exists(ids_path):
             try:
-                with open(filename, 'r') as f:
+                with open(ids_path, 'r') as f:
                     existing_ids = json.load(f)
             except json.JSONDecodeError:
                 pass # File is empty or corrupt, will be overwritten
@@ -148,24 +149,24 @@ class SignUpScreen(Screen):
         """
         # --- Basic Validation (check if fields are empty) ---
         # A more robust validation would be needed for a real application.
-        if not self.ids.name_input.text or not self.ids.email_input.text or not self.ids.password_input.text:
-            print("Error: Name, Email, and Password are required.")
+        if not self.ids.name_input.text or not self.ids.user_input.text or not self.ids.password_input.text:
+            print("Erro: Nome, Usuário e Senha são obrigatórios.")
             # In a real app, you would show a popup here.
             return
 
         accounts = self._load_accounts()
 
         # --- Gather common data ---
-        user_data = {
+        base_user_data = {
             "profile_type": self.profile_type,
             "name": self.ids.name_input.text,
-            "email": self.ids.email_input.text,
+            "user": self.ids.user_input.text,
             "password": self.ids.password_input.text,  # DANGER: In a real app, you MUST hash the password!
         }
 
         # Generate and add the unique ID based on profile type
-        user_id = self._generate_unique_id(self.profile_type)
-        user_data['id'] = user_id
+        user_id = self._generate_unique_id(base_user_data['profile_type'])
+        base_user_data['id'] = user_id
 
         # --- Gather patient-specific data if applicable ---
         is_patient = self.profile_type == 'patient' or self.is_also_patient
@@ -199,27 +200,55 @@ class SignUpScreen(Screen):
                     print(f"Validation Error: Data de nascimento inválida. Valores recebidos: Dia='{day}', Mês='{month_name}', Ano='{year}'")
                     return # Stop account creation if date is bad
 
-            user_data["patient_info"] = {
+            patient_specific_info = {
                 "height_cm": self.ids.height_input.text,
                 "date_of_birth": dob_dict,
                 "sex": self.ids.sex_input.text
             }
-            # The patient code is now the main user ID
-            user_data["patient_info"]["patient_code"] = user_id
-
+            # If it's a regular patient, add info to the base data
+            if self.profile_type == 'patient':
+                base_user_data["patient_info"] = patient_specific_info
+                base_user_data["patient_info"]["patient_code"] = user_id
 
         # --- Load existing accounts and append the new one ---
         
-        # Check for duplicate email
-        if any(acc['email'] == user_data['email'] for acc in accounts):
-            print(f"Error: Account with email {user_data['email']} already exists.")
+        # Check for duplicate user
+        if any(acc['user'] == base_user_data['user'] for acc in accounts):
+            print(f"Error: Account with user {base_user_data['user']} already exists.")
             # TODO: Show a popup to the user
             return
 
         accounts_path = self._get_main_dir_path('account.json')
         session_path = self._get_main_dir_path('session.json')
 
-        accounts.append(user_data)
+        # --- Handle the "Doctor is also a Patient" case ---
+        if self.profile_type == 'doctor' and self.is_also_patient:
+            # 1. Create the patient account for the doctor
+            patient_id = self._generate_unique_id('patient')
+            doctor_as_patient_account = {
+                "profile_type": "patient",
+                "name": base_user_data['name'],
+                # Create a unique, internal username for this patient profile
+                "user": f"{base_user_data['user']}_patient_profile",
+                "password": "internal_use_only", # This account is not for direct login
+                "id": patient_id,
+                "patient_info": patient_specific_info
+            }
+            doctor_as_patient_account["patient_info"]["patient_code"] = patient_id
+            # The doctor is responsible for their own patient profile
+            doctor_as_patient_account["patient_info"]["responsible_doctors"] = [base_user_data['id']]
+            accounts.append(doctor_as_patient_account)
+
+            # 2. Update the doctor account to link to this new patient profile
+            base_user_data['linked_patients'] = [patient_id]
+            # Add a flag to easily identify this doctor as a self-patient
+            base_user_data['self_patient_id'] = patient_id
+
+            print(f"Created patient profile ({patient_id}) for doctor {base_user_data['id']}.")
+
+        # Add the main account (doctor or patient) to the list
+        accounts.append(base_user_data)
+
         with open(accounts_path, 'w', encoding='utf-8') as json_file:
             json.dump(accounts, json_file, indent=4)
 
@@ -228,14 +257,14 @@ class SignUpScreen(Screen):
         # Also create a session for the new user, including profile type
         session_data = { 
             'logged_in': True,
-            'email': user_data['email'],
-            'profile_type': user_data['profile_type']
+            'user': base_user_data['user'],
+            'profile_type': base_user_data['profile_type']
         }
-        with open('session.json', 'w') as f:
+        with open(session_path, 'w', encoding='utf-8') as f:
             json.dump(session_data, f)
 
         # Redirect to the correct home screen based on the new profile 
-        if user_data['profile_type'] == 'doctor':
+        if base_user_data['profile_type'] == 'doctor':
             self.manager.reset_to('doctor_home')
         else:
             self.manager.reset_to('patient_home')

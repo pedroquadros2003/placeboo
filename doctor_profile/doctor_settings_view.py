@@ -20,7 +20,8 @@ class DoctorSettingsView(RelativeLayout):
         Logs the user out by deleting the session file and returning to the initial screen.
         """
         print("Logging out...")
-        if os.path.exists('session.json'):
+        session_path = self._get_main_dir_path('session.json')
+        if os.path.exists(session_path):
             try:
                 os.remove(self._get_main_dir_path('session.json'))
                 print("Session file deleted.")
@@ -35,13 +36,13 @@ class DoctorSettingsView(RelativeLayout):
         if os.path.exists(session_path):
             with open(session_path, 'r', encoding='utf-8') as f:
                 session_data = json.load(f)
-            user_email = session_data.get('email')
-            if user_email:
+            user_name = session_data.get('user')
+            if user_name:
                 change_password_screen = App.get_running_app().manager.get_screen('change_password')
-                change_password_screen.ids.change_password_view_content.current_user_email = user_email
+                change_password_screen.ids.change_password_view_content.current_user_name = user_name
                 App.get_running_app().manager.push('change_password')
             else:
-                print("Erro: Email do usuário não encontrado na sessão.")
+                print("Erro: Usuário não encontrado na sessão.")
                 # TODO: Show popup
 
     def delete_account(self):
@@ -49,25 +50,27 @@ class DoctorSettingsView(RelativeLayout):
         Deletes all data associated with the current doctor's account.
         This is a destructive and irreversible action.
         """
-        # Get current doctor's email and ID from session
-        if not os.path.exists('session.json'): return
-        with open(self._get_main_dir_path('session.json'), 'r', encoding='utf-8') as f:
+        session_path = self._get_main_dir_path('session.json')
+        # Get current doctor's user and ID from session
+        if not os.path.exists(session_path): return
+        with open(session_path, 'r', encoding='utf-8') as f:
             session_data = json.load(f)
-        doctor_email = session_data.get('email')
-        if not doctor_email: return
+        doctor_user = session_data.get('user')
+        if not doctor_user: return
 
         # --- Update account.json ---
-        if os.path.exists('account.json'):
-            with open('account.json', 'r+', encoding='utf-8') as f:
+        accounts_path = self._get_main_dir_path('account.json')
+        if os.path.exists(accounts_path):
+            with open(accounts_path, 'r+', encoding='utf-8') as f:
                 try:
                     accounts = json.load(f)
                     
                     # Get doctor ID before removing the account
-                    doctor_account = next((acc for acc in accounts if acc.get('email') == doctor_email), None)
+                    doctor_account = next((acc for acc in accounts if acc.get('user') == doctor_user), None)
                     doctor_id = doctor_account.get('id') if doctor_account else None
 
                     # Remove the doctor's account
-                    accounts = [acc for acc in accounts if acc.get('email') != doctor_email]
+                    accounts = [acc for acc in accounts if acc.get('user') != doctor_user]
 
                     # Unlink this doctor from any patient's responsible_doctors list
                     for i, acc in enumerate(accounts):
@@ -80,8 +83,9 @@ class DoctorSettingsView(RelativeLayout):
                     f.truncate()
 
                     # --- Update doctor_ids.json ---
-                    if doctor_id and os.path.exists('doctor_ids.json'):
-                        with open('doctor_ids.json', 'r+', encoding='utf-8') as id_f:
+                    doctor_ids_path = self._get_main_dir_path('doctor_ids.json')
+                    if doctor_id and os.path.exists(doctor_ids_path):
+                        with open(doctor_ids_path, 'r+', encoding='utf-8') as id_f:
                             doctor_ids = json.load(id_f)
                             if doctor_id in doctor_ids:
                                 doctor_ids.remove(doctor_id)
@@ -92,5 +96,5 @@ class DoctorSettingsView(RelativeLayout):
                 except (json.JSONDecodeError, FileNotFoundError):
                     pass
 
-        print(f"Account and all associated data for {doctor_email} have been deleted.")
+        print(f"Account and all associated data for {doctor_user} have been deleted.")
         self.logout() # Log out to clear session and return to initial screen

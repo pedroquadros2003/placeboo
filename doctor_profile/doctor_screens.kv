@@ -74,6 +74,12 @@
 <DoctorMenuScreen>:
     BoxLayoutWithActionBar:
         title: 'Menu' # 'Menu' is acceptable in Portuguese
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1 # Cor branca
+            Rectangle:
+                pos: self.pos
+                size: self.size
         ScrollView:
             GridLayout:
                 cols: 1

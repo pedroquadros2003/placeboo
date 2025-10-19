@@ -1,6 +1,7 @@
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.lang import Builder
 from kivy.properties import ListProperty, StringProperty
+from kivy.graphics import Color, Rectangle
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 import json
@@ -25,7 +26,7 @@ class EventsView(RelativeLayout):
     minute_list = ListProperty([f"{m:02d}" for m in range(60)])
     year_list = ListProperty([])
     # This is dynamically set by DoctorHomeScreen
-    current_patient_email = StringProperty("")
+    current_patient_user = StringProperty("")
     editing_event_id = StringProperty(None, allownone=True)
 
     def on_kv_post(self, base_widget):
@@ -35,19 +36,32 @@ class EventsView(RelativeLayout):
         self.load_events()
 
     def load_events(self):
+        events_path = self._get_main_dir_path('patient_events.json')
         """Loads event list for the selected patient from the JSON file."""
         self.events = []
-        if not self.current_patient_email or not os.path.exists('patient_events.json'):
+        if not self.current_patient_user or not os.path.exists(events_path):
             self.populate_events_list()
             return
 
         try:
-            with open('patient_events.json', 'r', encoding='utf-8') as f:
+            with open(events_path, 'r', encoding='utf-8') as f:
                 all_events = json.load(f)
             
-            patient_events = all_events.get(self.current_patient_email, [])
-            self.events = sorted(patient_events, key=lambda x: (x['date'], x['time'])) # Sort chronologically
-            print(f"Loaded {len(self.events)} events for {self.current_patient_email}")
+            patient_events = all_events.get(self.current_patient_user, [])
+            
+            # Separate past and future events
+            now = datetime.now()
+            future_events = []
+            past_events = []
+            for event in patient_events:
+                try:
+                    event_datetime = datetime.strptime(f"{event.get('date')} {event.get('time')}", '%Y-%m-%d %H:%M')
+                    (future_events if event_datetime > now else past_events).append(event)
+                except (ValueError, TypeError):
+                    past_events.append(event) # Treat events with bad dates as past
+            
+            self.events = sorted(future_events, key=lambda x: (x['date'], x['time'])) + sorted(past_events, key=lambda x: (x['date'], x['time']), reverse=True)
+            print(f"Loaded {len(self.events)} events for {self.current_patient_user}")
             self.populate_events_list()
         except (json.JSONDecodeError, FileNotFoundError):
             print("Error loading patient_events.json")
@@ -66,23 +80,40 @@ class EventsView(RelativeLayout):
             return
 
         for event in self.events:
-            item_container = EventItem()
+            item_container = EventItem() # Agora herda de BoxLayout
+            item_container.orientation = 'vertical'
 
-            # Event Name and Date (formatted)
+            # --- Determine color based on event time ---
+            is_past_event = False
+            try:
+                event_datetime_for_color = datetime.strptime(f"{event.get('date')} {event.get('time')}", '%Y-%m-%d %H:%M')
+                if event_datetime_for_color < datetime.now():
+                    is_past_event = True
+            except (ValueError, TypeError):
+                is_past_event = True # Treat invalid dates as past
+
+            # Top part with name and buttons
+            top_layout = RelativeLayout(size_hint_y=None, height=dp(65))
+
+            # Event Name and Date
             date_str = event.get('date', '')
+            time_str = event.get('time', '00:00')
             try:
                 formatted_date = datetime.strptime(date_str, '%Y-%m-%d').strftime('%d/%m/%Y')
+                event_datetime = datetime.strptime(f"{date_str} {time_str}", '%Y-%m-%d %H:%M')
             except (ValueError, TypeError):
                 formatted_date = date_str # Fallback to original string if format is wrong
+                event_datetime = None
             
-            name_text = f"[b]{event.get('name', 'N/A')}[/b]\n{formatted_date} às {event.get('time')}"
+            name_text = f"[b]{event.get('name', 'N/A')}[/b]\n{formatted_date} às {time_str}"
             name_label = Label(
-                text=name_text, markup=True, color=(0,0,0,1), halign='left', valign='top', size_hint=(0.60, None),
-                height=dp(45), pos_hint={'x': 0.05, 'top': 0.95}
+                text=name_text, markup=True, color=(0,0,0,1),
+                halign='left', valign='middle',
+                size_hint=(0.60, 1),
+                pos_hint={'x': 0.05, 'center_y': 0.5}
             )
             name_label.bind(width=lambda s, w: s.setter('text_size')(s, (w, None)))
-            name_label.bind(width=lambda s, w: s.setter('font_size')(s, 0.4 * s.height if s.texture_size[0] > w else '16sp'))
-            item_container.add_widget(name_label)
+            top_layout.add_widget(name_label)
 
             # Create a vertical BoxLayout for the buttons
             button_layout = BoxLayout(
@@ -92,18 +123,63 @@ class EventsView(RelativeLayout):
                 spacing=dp(5),
                 pos_hint={'right': 0.95, 'top': 0.95}
             )
-
             remove_button = Button(text='Remover')
             remove_button.bind(on_press=partial(self.remove_event, event.get('id')))
             button_layout.add_widget(remove_button)
-
             edit_button = Button(text='Ver/Editar')
             edit_button.bind(on_press=partial(self.start_editing_event, event))
             button_layout.add_widget(edit_button)
+            top_layout.add_widget(button_layout)
 
-            item_container.add_widget(button_layout)
+            item_container.add_widget(top_layout)
+
+            # --- Time until event ---
+            now = datetime.now()
+            status_text = ""
+            status_color = (0, 0, 0, 1) # Default black
+            if event_datetime:
+                if event_datetime > now:
+                    delta = event_datetime - now
+                    status_color = (0.1, 0.5, 0.1, 1) # Green for upcoming
+                    if delta.days == 0: # Event is today
+                        hours, remainder = divmod(delta.seconds, 3600)
+                        minutes, _ = divmod(remainder, 60)
+                        status_text = f"Faltam: {hours}h {minutes}m"
+                    else: # Event is in the future
+                        status_text = f"Faltam: {delta.days} dia(s)"
+                else: # Event is in the past
+                    status_text = "Evento já ocorreu."
+                    status_color = (0.1, 0.1, 0.5, 1) # Blue for past
+            
+            if status_text:
+                status_label = Label(
+                    text=status_text, color=status_color, font_size='11sp',
+                    halign='left', valign='top', size_hint_y=None, padding=(dp(10), dp(5))
+                )
+                status_label.bind(width=lambda s, w: s.setter('text_size')(s, (w, None)))
+                status_label.bind(texture_size=lambda s, ts: s.setter('height')(s, ts[1]))
+                item_container.add_widget(status_label)
+
+            # Description Label (only if description exists)
+            description = event.get('description', '')
+            if description:
+                desc_label = Label(
+                    text=f"[b]Descrição:[/b] {description}", markup=True,
+                    color=(0.5, 0.5, 0.5, 1), font_size='11sp',
+                    halign='left', valign='top', size_hint_y=None, padding=(dp(10), dp(5))
+                )
+                desc_label.bind(width=lambda s, w: s.setter('text_size')(s, (w, None)))
+                desc_label.bind(texture_size=lambda s, ts: s.setter('height')(s, ts[1]))
+                item_container.add_widget(desc_label)
 
             events_list_widget.add_widget(item_container)
+
+    def fill_today_date(self):
+        """Fills the date selectors with today's date."""
+        date_obj = datetime.now()
+        self.ids.day_input.text = str(date_obj.day)
+        self.ids.event_year_spinner.text = str(date_obj.year)
+        self.ids.event_month_spinner.text = list(MONTH_NAME_TO_NUM.keys())[date_obj.month - 1]
 
     def add_event(self):
         """Adds a new event based on the inputs and updates the list."""
@@ -146,21 +222,22 @@ class EventsView(RelativeLayout):
         }
 
         all_events = {}
-        if os.path.exists('patient_events.json'):
+        events_path = self._get_main_dir_path('patient_events.json')
+        if os.path.exists(events_path):
             try:
-                with open('patient_events.json', 'r', encoding='utf-8') as f:
+                with open(events_path, 'r', encoding='utf-8') as f:
                     all_events = json.load(f)
             except (json.JSONDecodeError, FileNotFoundError):
                 pass
 
-        patient_events = all_events.get(self.current_patient_email, [])
+        patient_events = all_events.get(self.current_patient_user, [])
         patient_events.append(new_event)
-        all_events[self.current_patient_email] = patient_events
+        all_events[self.current_patient_user] = patient_events
 
-        with open('patient_events.json', 'w', encoding='utf-8') as f:
+        with open(events_path, 'w', encoding='utf-8') as f:
             json.dump(all_events, f, indent=4)
 
-        print(f"Added event '{name}' for patient {self.current_patient_email}")
+        print(f"Added event '{name}' for patient {self.current_patient_user}")
         self.load_events()
 
     def remove_event(self, event_id, *args):
@@ -172,10 +249,11 @@ class EventsView(RelativeLayout):
         self.events.remove(event_to_remove)
         self.populate_events_list()
 
+        events_path = self._get_main_dir_path('patient_events.json')
         try:
-            with open('patient_events.json', 'r+', encoding='utf-8') as f:
+            with open(events_path, 'r+', encoding='utf-8') as f:
                 all_events = json.load(f)
-                all_events[self.current_patient_email] = self.events
+                all_events[self.current_patient_user] = self.events
                 f.seek(0)
                 json.dump(all_events, f, indent=4)
                 f.truncate()
@@ -233,9 +311,10 @@ class EventsView(RelativeLayout):
         time = f"{hour}:{minute}"
 
         # --- Update the data in the JSON file ---
-        with open('patient_events.json', 'r+', encoding='utf-8') as f:
+        events_path = self._get_main_dir_path('patient_events.json')
+        with open(events_path, 'r+', encoding='utf-8') as f:
             all_events = json.load(f)
-            patient_events = all_events.get(self.current_patient_email, [])
+            patient_events = all_events.get(self.current_patient_user, [])
             
             for i, event in enumerate(patient_events):
                 if event['id'] == self.editing_event_id:
@@ -247,7 +326,7 @@ class EventsView(RelativeLayout):
                     })
                     break
             
-            all_events[self.current_patient_email] = patient_events
+            all_events[self.current_patient_user] = patient_events
             f.seek(0)
             json.dump(all_events, f, indent=4)
             f.truncate()
@@ -276,7 +355,11 @@ class EventsView(RelativeLayout):
         if len(text_input.text) > max_length:
             text_input.text = text_input.text[:max_length]
 
-class EventItem(RelativeLayout):
+    def _get_main_dir_path(self, filename):
+        """Constructs the full path to a file in the main project directory."""
+        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+
+class EventItem(BoxLayout):
     """
     A custom widget representing a single item in the event list.
     """

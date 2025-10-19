@@ -50,8 +50,8 @@
             spacing: dp(15)
 
             TextInput:
-                id: login_email
-                hint_text: 'Endereço de E-mail'
+                id: login_user
+                hint_text: 'Usuário'
                 size_hint_y: None
                 height: dp(48)
                 multiline: False
@@ -68,7 +68,7 @@
                 text: 'Entrar'
                 size_hint_y: None
                 height: dp(48)
-                on_press: root.do_login(login_email.text, login_password.text)
+                on_press: root.do_login(login_user.text, login_password.text)
 
             Button:
                 text: "Não tem uma conta? Cadastre-se"
@@ -105,16 +105,16 @@
                     hint_text: 'Nome'
                     multiline: False
                 TextInput:
-                    id: email_input
+                    id: user_input
                     size_hint_y: None
                     height: dp(48) 
-                    hint_text: 'Email Address'
+                    hint_text: 'Usuário'
                     multiline: False
                 TextInput:
                     id: password_input
                     size_hint_y: None
                     height: dp(48)
-                    hint_text: 'Password'
+                    hint_text: 'Senha'
                     password: True
                     multiline: False
 
@@ -148,7 +148,7 @@
                         id: height_input
                         size_hint_y: None
                         height: dp(48) 
-                        hint_text: 'Height (cm)'
+                        hint_text: 'Altura (cm)'
                         input_filter: 'int'
                         multiline: False
                     BoxLayout:

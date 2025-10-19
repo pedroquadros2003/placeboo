@@ -1,5 +1,6 @@
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.lang import Builder
+from kivy.graphics import Color, Rectangle
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import ListProperty, StringProperty
 from kivy.uix.label import Label
@@ -24,7 +25,7 @@ class MedicationsView(RelativeLayout):
     hour_list = ListProperty([f"{h:02d}" for h in range(24)])
     minute_list = ListProperty([f"{m:02d}" for m in range(60)])
     # This is dynamically set by DoctorHomeScreen
-    current_patient_email = StringProperty("")
+    current_patient_user = StringProperty("")
     editing_med_id = StringProperty(None, allownone=True)
 
     def on_kv_post(self, base_widget):
@@ -34,10 +35,14 @@ class MedicationsView(RelativeLayout):
         self._updating_checkboxes = False # Flag to prevent recursion
         # The on_text event is now handled directly in the .kv file
         self.load_medications()
+    
+    def _get_main_dir_path(self, filename):
+        """Constructs the full path to a file in the main project directory."""
+        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
 
     def load_generic_medications(self):
         """Loads the list of generic medications from a JSON file."""
-        if os.path.exists('generic_medications.json'):
+        if os.path.exists(self._get_main_dir_path('generic_medications.json')):
             try:
                 with open('generic_medications.json', 'r', encoding='utf-8') as f:
                     self.generic_med_list = json.load(f)
@@ -62,83 +67,143 @@ class MedicationsView(RelativeLayout):
 
         for med in self.medications:
             item_container = MedicationItem()
+            item_container.orientation = 'vertical' # Usaremos um BoxLayout para empilhar os widgets
 
-            # Medication Name Label
-            med_name_text = f"[b]{med.get('generic_name', 'N/A')}[/b] {med.get('dosage', '')}"
+            # --- Determine color based on next dose status ---
+            now = datetime.now()
+            weekday_map = {0: 'Seg', 1: 'Ter', 2: 'Qua', 3: 'Qui', 4: 'Sex', 5: 'Sab', 6: 'Dom'}
+            today_weekday_str = weekday_map[now.weekday()]
+            days = ', '.join(med.get('days_of_week', []))
+            is_for_today = "Todos os dias" in days or today_weekday_str in days
+            
+            color_status = 'neutral' # neutral, upcoming, taken
+            if is_for_today:
+                dose_times_today = sorted([datetime.strptime(t, '%H:%M').time() for t in med.get('times_of_day', [])])
+                has_upcoming_dose = any(now.replace(hour=t.hour, minute=t.minute) > now for t in dose_times_today)
+                if has_upcoming_dose:
+                    color_status = 'upcoming'
+                else:
+                    color_status = 'taken'
+
+            # Top part with name and buttons
+            top_layout = RelativeLayout(size_hint_y=None, height=dp(65))
+
             name_label = Label(
-                text=med_name_text,
+                text=f"[b]{med.get('generic_name', 'N/A')}[/b] {med.get('dosage', '')}",
                 markup=True,
                 color=(0,0,0,1),
                 halign='left',
                 valign='middle',
-                size_hint=(0.60, None),
-                height='30dp',
-                pos_hint={'x': 0.05, 'top': 0.95}
+                size_hint=(0.60, 1), # Ocupa a altura do pai
+                pos_hint={'x': 0.05, 'center_y': 0.5} # Centraliza verticalmente
             )
-            # Dynamically adjust font_size to prevent wrapping
-            name_label.bind(width=lambda s, w: s.setter('font_size')(s, 0.4 * s.height if s.texture_size[0] > w else '16sp'))
-            item_container.add_widget(name_label)
+            # Garante que o texto quebre a linha se for muito longo
+            name_label.bind(width=lambda s, w: s.setter('text_size')(s, (w, None)))
+            top_layout.add_widget(name_label)
 
-            # Remove Button
-            remove_button = Button(
-                text='Remover',
+            # Button Layout
+            button_layout = BoxLayout(
+                orientation='vertical',
                 size_hint=(0.25, None),
-                height='30dp',
+                height=dp(65),
+                spacing=dp(5),
                 pos_hint={'right': 0.95, 'top': 0.95}
             )
+            remove_button = Button(text='Remover')
             remove_button.bind(on_press=partial(self.remove_medication, med.get('id')))
-            item_container.add_widget(remove_button)
+            button_layout.add_widget(remove_button)
 
-            # Edit Button
-            edit_button = Button(
-                text='Ver/Editar', size_hint=(0.25, None), height='30dp',
-                pos_hint={'right': 0.95, 'top': 0.60}
-            )
+            edit_button = Button(text='Ver/Editar')
             edit_button.bind(on_press=partial(self.start_editing_medication, med))
-            item_container.add_widget(edit_button)
+            button_layout.add_widget(edit_button)
+            top_layout.add_widget(button_layout)
+
+            item_container.add_widget(top_layout)
 
             # Schedule details
             quantity = med.get('quantity', '')
             presentation = med.get('presentation', '')
             times = ', '.join(med.get('times_of_day', []))
             days = ', '.join(med.get('days_of_week', []))
+            observation = med.get('observation', '')
             
-            # Create a vertical BoxLayout to hold schedule and observation labels
-            details_layout = BoxLayout(
-                orientation='vertical',
-                size_hint=(0.60, None),
-                height='50dp',
-                pos_hint={'x': 0.05, 'top': 0.60} # Adjusted top position
-            )
-
             # Schedule Label
             schedule_text = f"Tomar {quantity} {presentation.lower()}(s) às {times} ({days})"
             schedule_label = Label(
                 text=schedule_text,
                 color=(0.3, 0.3, 0.3, 1),
-                halign='left', valign='top', font_size='12sp'
+                halign='left', valign='top', font_size='12sp',
+                size_hint_y=None, padding=(dp(10), dp(5))
             )
             schedule_label.bind(width=lambda s, w: s.setter('text_size')(s, (w, None)))
-            details_layout.add_widget(schedule_label)
+            schedule_label.bind(texture_size=lambda s, ts: s.setter('height')(s, ts[1]))
+            item_container.add_widget(schedule_label)
 
-            item_container.add_widget(details_layout)
+            # --- Time until next dose ---
+            now = datetime.now()
+            weekday_map = {0: 'Seg', 1: 'Ter', 2: 'Qua', 3: 'Qui', 4: 'Sex', 5: 'Sab', 6: 'Dom'}
+            today_weekday_str = weekday_map[now.weekday()]
+            
+            is_for_today = "Todos os dias" in days or today_weekday_str in days
+            
+            next_dose_status = ""
+            if is_for_today:
+                dose_times_today = sorted([datetime.strptime(t, '%H:%M').time() for t in med.get('times_of_day', [])])
+                
+                next_dose_time = None
+                for dose_time in dose_times_today:
+                    dose_datetime = now.replace(hour=dose_time.hour, minute=dose_time.minute, second=0, microsecond=0)
+                    if dose_datetime > now:
+                        next_dose_time = dose_datetime
+                        break
+                
+                if next_dose_time:
+                    delta = next_dose_time - now
+                    hours, remainder = divmod(delta.seconds, 3600)
+                    minutes, _ = divmod(remainder, 60)
+                    next_dose_status = f"Próxima dose em: {hours}h {minutes}m"
+                    status_color = (0.1, 0.5, 0.1, 1) # Green for upcoming
+                else:
+                    next_dose_status = "Doses de hoje já foram tomadas."
+                    status_color = (0.1, 0.1, 0.5, 1) # Blue for taken
+
+            if next_dose_status:
+                status_label = Label(
+                    text=next_dose_status, color=status_color, font_size='11sp',
+                    halign='left', valign='top', size_hint_y=None, padding=(dp(10), dp(5))
+                )
+                status_label.bind(width=lambda s, w: s.setter('text_size')(s, (w, None)))
+                status_label.bind(texture_size=lambda s, ts: s.setter('height')(s, ts[1]))
+                item_container.add_widget(status_label)
+
+            # Observation Label (only if observation exists)
+            if observation:
+                obs_label = Label(
+                    text=f"[b]Obs:[/b] {observation}", markup=True,
+                    color=(0.5, 0.5, 0.5, 1), font_size='11sp',
+                    halign='left', valign='top', size_hint_y=None, padding=(dp(10), dp(5))
+                )
+                obs_label.bind(width=lambda s, w: s.setter('text_size')(s, (w, None)))
+                obs_label.bind(texture_size=lambda s, ts: s.setter('height')(s, ts[1]))
+                item_container.add_widget(obs_label)
 
             med_list_widget.add_widget(item_container)
 
     def load_medications(self):
         """Loads medication list for the selected patient from the JSON file."""
         self.medications = []
-        if not self.current_patient_email or not os.path.exists('patient_medications.json'):
+        medications_path = self._get_main_dir_path('patient_medications.json')
+        if not self.current_patient_user or not os.path.exists(medications_path):
             self.populate_medications_list()
             return
 
         try:
-            with open('patient_medications.json', 'r', encoding='utf-8') as f:
+            with open(medications_path, 'r', encoding='utf-8') as f:
                 all_meds = json.load(f)
             
-            patient_meds = all_meds.get(self.current_patient_email, [])
+            patient_meds = all_meds.get(self.current_patient_user, [])
             self.medications = patient_meds
-            print(f"Loaded {len(self.medications)} medications for {self.current_patient_email}")
+            print(f"Loaded {len(self.medications)} medications for {self.current_patient_user}")
             self.populate_medications_list() # Populate the list after loading
         except (json.JSONDecodeError, FileNotFoundError):
             print("Error loading patient_medications.json")
@@ -154,10 +219,11 @@ class MedicationsView(RelativeLayout):
         self.medications.remove(med_to_remove)
         self.populate_medications_list()
 
+        medications_path = self._get_main_dir_path('patient_medications.json')
         try:
-            with open('patient_medications.json', 'r+', encoding='utf-8') as f:
+            with open(medications_path, 'r+', encoding='utf-8') as f:
                 all_meds = json.load(f)
-                all_meds[self.current_patient_email] = self.medications
+                all_meds[self.current_patient_user] = self.medications
                 f.seek(0)
                 json.dump(all_meds, f, indent=4)
                 f.truncate()
@@ -220,21 +286,22 @@ class MedicationsView(RelativeLayout):
         }
 
         all_meds = {}
-        if os.path.exists('patient_medications.json'):
+        medications_path = self._get_main_dir_path('patient_medications.json')
+        if os.path.exists(medications_path):
             try:
-                with open('patient_medications.json', 'r', encoding='utf-8') as f:
+                with open(medications_path, 'r', encoding='utf-8') as f:
                     all_meds = json.load(f)
             except (json.JSONDecodeError, FileNotFoundError):
                 pass
 
-        patient_meds = all_meds.get(self.current_patient_email, [])
+        patient_meds = all_meds.get(self.current_patient_user, [])
         patient_meds.append(new_med)
-        all_meds[self.current_patient_email] = patient_meds
+        all_meds[self.current_patient_user] = patient_meds
 
-        with open('patient_medications.json', 'w', encoding='utf-8') as f:
+        with open(medications_path, 'w', encoding='utf-8') as f:
             json.dump(all_meds, f, indent=4)
 
-        print(f"Added '{generic_name}' for patient {self.current_patient_email}")
+        print(f"Added '{generic_name}' for patient {self.current_patient_user}")
         self.load_medications()
 
     def start_editing_medication(self, med_data, *args):
@@ -295,9 +362,11 @@ class MedicationsView(RelativeLayout):
         time_selected = f"{hour}:{minute}"
 
         # --- Update the data in the JSON file ---
-        with open('patient_medications.json', 'r+', encoding='utf-8') as f:
+        medications_path = self._get_main_dir_path('patient_medications.json')
+        all_meds = {}
+        with open(medications_path, 'r+', encoding='utf-8') as f:
             all_meds = json.load(f)
-            patient_meds = all_meds.get(self.current_patient_email, [])
+            patient_meds = all_meds.get(self.current_patient_user, [])
             
             for i, med in enumerate(patient_meds):
                 if med['id'] == self.editing_med_id:
@@ -312,7 +381,7 @@ class MedicationsView(RelativeLayout):
                     })
                     break
             
-            all_meds[self.current_patient_email] = patient_meds
+            all_meds[self.current_patient_user] = patient_meds
             f.seek(0)
             json.dump(all_meds, f, indent=4)
             f.truncate()
@@ -396,9 +465,13 @@ class MedicationsView(RelativeLayout):
                 text=med_name,
                 size_hint=(0.5, None), # Button takes 50% of the container width
                 height=dp(40),
-                background_color=(0.9, 0.9, 0.9, 1),
-                color=(0,0,0,1)
+                background_color=(0.85, 0.85, 0.85, 1), # Fundo cinza padrão
+                color=(0, 0, 0, 1), # Texto preto
+                halign='left', # Alinha o texto à esquerda
+                padding=[dp(12), 0] # Adiciona padding horizontal
             )
+            # Garante que o texto quebre a linha se for muito longo
+            btn.bind(width=lambda s, w: s.setter('text_size')(s, (w, None)))
             btn.bind(on_press=partial(self.select_generic_medication, med_name))
 
             # Create a container to center the button
@@ -447,7 +520,7 @@ class MedicationsView(RelativeLayout):
         if '\n' in text_input.text:
             text_input.text = text_input.text.replace('\n', '')
 
-class MedicationItem(RelativeLayout):
+class MedicationItem(BoxLayout):
     """
     A custom widget representing a single item in the medication list.
     Its visual representation is defined in the .kv file.

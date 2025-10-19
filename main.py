@@ -1,24 +1,14 @@
-import os
-import json
 from kivy.config import Config
-from kivy.utils import platform
+
+# Desabilita a simulação de multitoque (bolinhas vermelhas) com o mouse
+Config.set('input', 'mouse', 'mouse,disable_multitouch')
 
 def load_window_settings():
-    """Loads window size from config.json and applies it BEFORE Kivy is fully imported."""
-    if os.path.exists('config.json'):
-        try:
-            with open('config.json', 'r') as f:
-                settings = json.load(f)
-                width = settings.get("window_width", 1080)
-                height = settings.get("window_height", 2340)
-                if platform in ('win', 'linux', 'macosx'):
-                    scale = settings.get("dev_scale_factor", 1.0)
-                    width = int(width * scale)
-                    height = int(height * scale)
-                Config.set('graphics', 'width', str(width))
-                Config.set('graphics', 'height', str(height))
-        except (json.JSONDecodeError, ValueError, FileNotFoundError):
-            print("Error loading config.json, using default window size.")
+    """Define um tamanho de janela fixo para simular um dispositivo móvel."""
+    width = 360
+    height = 640
+    Config.set('graphics', 'width', str(width))
+    Config.set('graphics', 'height', str(height))
 
 # Must be called before other Kivy modules are imported
 load_window_settings()

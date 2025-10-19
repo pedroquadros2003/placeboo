@@ -2,7 +2,7 @@
     {
         "profile_type": "doctor",
         "name": "peu",
-        "email": "peu",
+        "user": "peu",
         "password": "123",
         "linked_patients": [
             "20000001",
@@ -14,7 +14,7 @@
     {
         "profile_type": "patient",
         "name": "Paciente A",
-        "email": "paciente.a@email.com",
+        "user": "paciente.a@email.com",
         "password": "aaa",
         "patient_info": {
             "height_cm": "175",
@@ -34,7 +34,7 @@
     {
         "profile_type": "patient",
         "name": "Paciente B",
-        "email": "paciente.b@email.com",
+        "user": "paciente.b@email.com",
         "password": "123",
         "patient_info": {
             "height_cm": "160",
@@ -50,7 +50,7 @@
     {
         "profile_type": "patient",
         "name": "Paciente C",
-        "email": "paciente.c@email.com",
+        "user": "paciente.c@email.com",
         "password": "123",
         "patient_info": {
             "height_cm": "180",
@@ -62,5 +62,36 @@
             ]
         },
         "id": "20000003"
+    },
+    {
+        "profile_type": "patient",
+        "name": "e",
+        "user": "e_patient_profile",
+        "password": "internal_use_only",
+        "id": "14121641",
+        "patient_info": {
+            "height_cm": "123",
+            "date_of_birth": {
+                "day": "21",
+                "month": "8",
+                "year": "2019"
+            },
+            "sex": "Outro",
+            "patient_code": "14121641",
+            "responsible_doctors": [
+                "81049947"
+            ]
+        }
+    },
+    {
+        "profile_type": "doctor",
+        "name": "e",
+        "user": "e",
+        "password": "e",
+        "id": "81049947",
+        "linked_patients": [
+            "14121641"
+        ],
+        "self_patient_id": "14121641"
     }
 ]

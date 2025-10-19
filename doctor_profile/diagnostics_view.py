@@ -21,7 +21,7 @@ class DiagnosticsView(RelativeLayout):
     """
     diagnostics = ListProperty([])
     cid10_list = ListProperty([])
-    current_patient_email = StringProperty("")
+    current_patient_user = StringProperty("")
     editing_diagnostic_id = StringProperty(None, allownone=True)
 
     def on_kv_post(self, base_widget):
@@ -29,7 +29,7 @@ class DiagnosticsView(RelativeLayout):
         self.load_cid10_data()
         self._is_selecting_cid = False # Flag to control search feedback loop
 
-    def on_current_patient_email(self, instance, value):
+    def on_current_patient_user(self, instance, value):
         """Updates the view when the patient changes."""
         if value:
             self.load_diagnostics()
@@ -39,9 +39,11 @@ class DiagnosticsView(RelativeLayout):
 
     def load_cid10_data(self):
         """Loads the CID-10 codes and names from a JSON file."""
-        if os.path.exists('cid10.json'):
+        cid10_path = self._get_main_dir_path('cid10.json')
+        """Loads the CID-10 codes and names from a JSON file."""
+        if os.path.exists(cid10_path):
             try:
-                with open('cid10.json', 'r', encoding='utf-8') as f:
+                with open(cid10_path, 'r', encoding='utf-8') as f:
                     self.cid10_list = json.load(f)
                 print("Loaded CID-10 list.")
             except (json.JSONDecodeError, FileNotFoundError):
@@ -49,19 +51,20 @@ class DiagnosticsView(RelativeLayout):
 
     def load_diagnostics(self):
         """Loads diagnostics for the current patient."""
+        diagnostics_path = self._get_main_dir_path('patient_diagnostics.json')
         self.diagnostics = []
-        if not self.current_patient_email or not os.path.exists('patient_diagnostics.json'):
+        if not self.current_patient_user or not os.path.exists(diagnostics_path):
             self.populate_diagnostics_list()
             return
 
         try:
-            with open('patient_diagnostics.json', 'r', encoding='utf-8') as f:
+            with open(diagnostics_path, 'r', encoding='utf-8') as f:
                 all_diagnostics = json.load(f)
             
-            patient_diagnostics = all_diagnostics.get(self.current_patient_email, [])
+            patient_diagnostics = all_diagnostics.get(self.current_patient_user, [])
             # Sort by 'date_added' if it exists, otherwise no specific order
             self.diagnostics = sorted(patient_diagnostics, key=lambda x: x.get('date_added', ''), reverse=True)
-            print(f"Loaded {len(self.diagnostics)} diagnostics for {self.current_patient_email}")
+            print(f"Loaded {len(self.diagnostics)} diagnostics for {self.current_patient_user}")
             self.populate_diagnostics_list()
         except (json.JSONDecodeError, FileNotFoundError):
             print("Error loading patient_diagnostics.json")
@@ -80,29 +83,31 @@ class DiagnosticsView(RelativeLayout):
             return
 
         for diagnostic in self.diagnostics:
-            item_container = DiagnosticItem()
+            item_container = DiagnosticItem() # Agora herda de BoxLayout
+            item_container.orientation = 'vertical' # Para empilhar os widgets
 
-            name = diagnostic.get('name', 'N/A')
-            cid_code = diagnostic.get('cid_code')
-            name_text = f"[b]{name}[/b]"
-            if cid_code:
-                name_text += f"\n(CID-10: {cid_code})"
+            # Top part with name and buttons
+            top_layout = RelativeLayout(size_hint_y=None, height=dp(65))
 
+            # Name and CID-10 Label
+            name_text = f"[b]{diagnostic.get('name', 'N/A')}[/b]"
+            if diagnostic.get('cid_code'):
+                name_text += f"\n(CID-10: {diagnostic.get('cid_code')})"
             name_label = Label(
                 text=name_text, markup=True, color=(0,0,0,1),
-                halign='left', valign='top', size_hint=(0.60, None),
-                height=dp(45), pos_hint={'x': 0.05, 'top': 0.95}
+                halign='left', valign='middle',
+                size_hint=(0.60, 1), # Ocupa a altura do pai
+                pos_hint={'x': 0.05, 'center_y': 0.5} # Centraliza verticalmente
             )
-            item_container.add_widget(name_label)
             name_label.bind(width=lambda s, w: s.setter('text_size')(s, (w, None)))
-            name_label.bind(width=lambda s, w: s.setter('font_size')(s, 0.35 * s.height if s.texture_size[0] > w else '15sp'))
+            top_layout.add_widget(name_label)
 
             # Create a vertical BoxLayout for the buttons
             button_layout = BoxLayout(
                 orientation='vertical',
                 size_hint=(0.25, None),
                 height=dp(65), # Height for two buttons + spacing
-                spacing=dp(5), # Corrected spacing to match medications view
+                spacing=dp(5),
                 pos_hint={'right': 0.95, 'top': 0.95}
             )
 
@@ -114,7 +119,20 @@ class DiagnosticsView(RelativeLayout):
             edit_button.bind(on_press=partial(self.start_editing_diagnostic, diagnostic))
             button_layout.add_widget(edit_button)
 
-            item_container.add_widget(button_layout)
+            top_layout.add_widget(button_layout)
+            item_container.add_widget(top_layout)
+
+            # Description Label (only if description exists)
+            description = diagnostic.get('description', '')
+            if description:
+                desc_label = Label(
+                    text=f"[b]Descrição:[/b] {description}", markup=True,
+                    color=(0.5, 0.5, 0.5, 1), font_size='11sp',
+                    halign='left', valign='top', size_hint_y=None, padding=(dp(10), dp(5))
+                )
+                desc_label.bind(width=lambda s, w: s.setter('text_size')(s, (w, None)))
+                desc_label.bind(texture_size=lambda s, ts: s.setter('height')(s, ts[1]))
+                item_container.add_widget(desc_label)
 
             diagnostics_list_widget.add_widget(item_container)
 
@@ -175,24 +193,29 @@ class DiagnosticsView(RelativeLayout):
 
     def _save_to_file(self, new_data, is_new=False):
         """Helper function to read, update, and write to the JSON file."""
+        diagnostics_path = self._get_main_dir_path('patient_diagnostics.json')
         all_diagnostics = {}
-        if os.path.exists('patient_diagnostics.json'):
+        if os.path.exists(diagnostics_path):
             try:
-                with open('patient_diagnostics.json', 'r', encoding='utf-8') as f:
+                with open(diagnostics_path, 'r', encoding='utf-8') as f:
                     all_diagnostics = json.load(f)
             except (json.JSONDecodeError, FileNotFoundError):
                 pass
 
-        patient_diagnostics = all_diagnostics.get(self.current_patient_email, [])
+        patient_diagnostics = all_diagnostics.get(self.current_patient_user, [])
         if is_new:
             patient_diagnostics.append(new_data)
         else: # This means we are saving an edit or removal
             patient_diagnostics = self.diagnostics
 
-        all_diagnostics[self.current_patient_email] = patient_diagnostics
+        all_diagnostics[self.current_patient_user] = patient_diagnostics
 
-        with open('patient_diagnostics.json', 'w', encoding='utf-8') as f:
+        with open(diagnostics_path, 'w', encoding='utf-8') as f:
             json.dump(all_diagnostics, f, indent=4)
+
+    def _get_main_dir_path(self, filename):
+        """Constructs the full path to a file in the main project directory."""
+        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
 
     def cancel_edit(self):
         """Cancels editing and clears fields."""
@@ -234,8 +257,8 @@ class DiagnosticsView(RelativeLayout):
                 text=display_text,
                 size_hint=(0.75, None),
                 height=dp(40),
-                background_color=(0.9, 0.9, 0.9, 1),
-                color=(0,0,0,1),
+                background_color=(0.85, 0.85, 0.85, 1), # Fundo escuro
+                color=(1, 1, 1, 1), # Texto branco
                 halign='left',
                 padding=[dp(12), 0],
                 font_size='12sp'
@@ -273,7 +296,7 @@ class DiagnosticsView(RelativeLayout):
             text_input.text = text_input.text[:max_length]
 
 
-class DiagnosticItem(RelativeLayout):
+class DiagnosticItem(BoxLayout):
     """
     A custom widget representing a single item in the diagnostic list.
     """

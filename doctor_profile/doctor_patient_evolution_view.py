@@ -19,14 +19,14 @@ class DoctorPatientEvolutionView(RelativeLayout):
     """
     A view for the doctor to input and track a patient's health metrics over time.
     """
-    current_patient_email = StringProperty("")
+    current_patient_user = StringProperty("")
     year_list = ListProperty([])
     graph_metric_list = ListProperty([])
     
     # To hold references to the dynamically created input fields
     metric_inputs = DictProperty({})
 
-    def on_current_patient_email(self, instance, value):
+    def on_current_patient_user(self, instance, value):
         """When the patient changes, reload the data for the currently selected date."""
         # If a date is already selected, this will refresh the metric fields for the new patient.
         self.on_date_selected()
@@ -45,16 +45,8 @@ class DoctorPatientEvolutionView(RelativeLayout):
         Sets the date selectors to the current date (from app_data.json or system).
         This will also trigger on_date_selected to load the metrics.
         """
-        date_obj = datetime.now()  # Default to system's current date
-        if os.path.exists('app_data.json'):
-            try:
-                with open('app_data.json', 'r') as f:
-                    data = json.load(f)
-                date_from_json = data.get("current_date")
-                if date_from_json:
-                    date_obj = datetime.strptime(date_from_json, '%Y-%m-%d')
-            except (json.JSONDecodeError, ValueError, FileNotFoundError):
-                pass  # If file is bad, just use the default system date
+        # Use the system's current date directly
+        date_obj = datetime.now()
 
         self.ids.day_input.text = str(date_obj.day)
         self.ids.year_spinner.text = str(date_obj.year)
@@ -167,7 +159,7 @@ class DoctorPatientEvolutionView(RelativeLayout):
         month = self.ids.month_spinner.text
         year = self.ids.year_spinner.text
 
-        if not all([self.current_patient_email, day, month != 'Mês', year != 'Ano']):
+        if not all([self.current_patient_user, day, month != 'Mês', year != 'Ano']):
             print("Erro: Paciente ou data não selecionados.")
             return
 
@@ -200,9 +192,10 @@ class DoctorPatientEvolutionView(RelativeLayout):
             new_data['blood_pressure'] = f"{systolic_input.text}/{diastolic_input.text}"
 
         # Load, update, and save the evolution data file
+        evolution_path = self._get_main_dir_path('patient_evolution.json')
         all_evolutions = {}
-        if os.path.exists('patient_evolution.json'):
-            with open('patient_evolution.json', 'r', encoding='utf-8') as f:
+        if os.path.exists(evolution_path):
+            with open(evolution_path, 'r', encoding='utf-8') as f:
                 try: all_evolutions = json.load(f)
                 except json.JSONDecodeError: pass
         
@@ -210,7 +203,7 @@ class DoctorPatientEvolutionView(RelativeLayout):
         patient_evolution[date_str] = new_data
         all_evolutions[patient_id] = patient_evolution
 
-        with open('patient_evolution.json', 'w', encoding='utf-8') as f:
+        with open(evolution_path, 'w', encoding='utf-8') as f:
             json.dump(all_evolutions, f, indent=4)
 
         print(f"Dados de evolução salvos para o paciente {patient_id} na data {date_str}.")
@@ -243,18 +236,8 @@ class DoctorPatientEvolutionView(RelativeLayout):
         if not patient_id: return
 
         data_points = []
-        
-        # Use the app's current date, not the system's
+        # Use the system's current date directly
         today = datetime.now()
-        if os.path.exists('app_data.json'):
-            try:
-                with open('app_data.json', 'r') as f:
-                    app_data = json.load(f)
-                date_from_json = app_data.get("current_date")
-                if date_from_json:
-                    today = datetime.strptime(date_from_json, '%Y-%m-%d')
-            except (json.JSONDecodeError, ValueError, FileNotFoundError):
-                pass # Fallback to system date if file is bad
 
         for i in range(days):
             date_to_check = today - timedelta(days=i)
@@ -283,19 +266,25 @@ class DoctorPatientEvolutionView(RelativeLayout):
         graph_screen.data_points = list(reversed(data_points)) # Show oldest to newest
         App.get_running_app().manager.push('graph_view')
 
+    def _get_main_dir_path(self, filename):
+        """Constructs the full path to a file in the main project directory."""
+        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+
     def _get_patient_info(self):
         """Helper to get the full info dict for the current patient."""
-        if not self.current_patient_email or not os.path.exists('account.json'):
+        accounts_path = self._get_main_dir_path('account.json')
+        if not self.current_patient_user or not os.path.exists(accounts_path):
             return {}
-        with open('account.json', 'r', encoding='utf-8') as f:
+        with open(accounts_path, 'r', encoding='utf-8') as f:
             accounts = json.load(f)
-        return next((acc for acc in accounts if acc.get('email') == self.current_patient_email), {})
+        return next((acc for acc in accounts if acc.get('user') == self.current_patient_user), {})
 
     def _get_evolution_data_for_date(self, patient_id, date_str):
         """Helper to get saved evolution data for a specific patient and date."""
-        if not patient_id or not os.path.exists('patient_evolution.json'):
+        evolution_path = self._get_main_dir_path('patient_evolution.json')
+        if not patient_id or not os.path.exists(evolution_path):
             return {}
-        with open('patient_evolution.json', 'r', encoding='utf-8') as f:
+        with open(evolution_path, 'r', encoding='utf-8') as f:
             try:
                 all_evolutions = json.load(f)
                 return all_evolutions.get(patient_id, {}).get(date_str, {})

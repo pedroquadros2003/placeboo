@@ -33,21 +33,8 @@ class PatientHomeScreen(Screen):
         Carrega a data de app_data.json e atualiza o título.
         Se o arquivo não existir ou for inválido, usa a data atual do sistema.
         """
-        date_str = ""
-        if os.path.exists('app_data.json'):
-            try:
-                with open('app_data.json', 'r') as f:
-                    data = json.load(f)
-                date_from_json = data.get("current_date")  # Formato esperado: "YYYY-MM-DD"
-                if date_from_json:
-                    date_obj = datetime.strptime(date_from_json, '%Y-%m-%d')
-                    date_str = date_obj.strftime('%d/%m/%Y')
-            except (json.JSONDecodeError, ValueError, FileNotFoundError):
-                pass  # Usa a data atual se o arquivo estiver corrompido
-
-        if not date_str:
-            date_str = datetime.now().strftime('%d/%m/%Y')
-
+        # Use the system's current date directly
+        date_str = datetime.now().strftime('%d/%m/%Y')
         self.title = f"Hoje: {date_str}"
 
     def change_content(self, screen_name):

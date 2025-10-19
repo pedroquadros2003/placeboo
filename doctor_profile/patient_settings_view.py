@@ -15,7 +15,7 @@ class PatientSettingsView(RelativeLayout):
     A view for the doctor to configure which health metrics a patient should track.
     Corresponds to requirement [R013].
     """
-    current_patient_email = StringProperty("")
+    current_patient_user = StringProperty("")
     
     # List of available health metrics for tracking
     AVAILABLE_METRICS = {
@@ -27,7 +27,10 @@ class PatientSettingsView(RelativeLayout):
         'oxygen_saturation': 'Saturação de Oxigênio (%)'
     }
 
-    def on_current_patient_email(self, instance, value):
+    def _get_main_dir_path(self, filename):
+        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+
+    def on_current_patient_user(self, instance, value):
         """When the patient changes, load their specific settings."""
         if value:
             self.load_settings()
@@ -57,7 +60,7 @@ class PatientSettingsView(RelativeLayout):
 
     def save_settings(self):
         """Saves the selected metrics for the current patient."""
-        if not self.current_patient_email:
+        if not self.current_patient_user:
             print("Error: No patient selected to save settings for.")
             return
 
@@ -72,10 +75,11 @@ class PatientSettingsView(RelativeLayout):
                 new_selected_metrics.append(checkbox.metric_key)
 
         # --- Save new settings to account.json ---
-        if not os.path.exists('account.json'):
+        accounts_path = self._get_main_dir_path('account.json')
+        if not os.path.exists(accounts_path):
             return
 
-        with open('account.json', 'r+', encoding='utf-8') as f:
+        with open(accounts_path, 'r+', encoding='utf-8') as f:
             try:
                 accounts = json.load(f)
             except json.JSONDecodeError:
@@ -83,7 +87,7 @@ class PatientSettingsView(RelativeLayout):
 
             # Find the patient and update their settings
             for i, acc in enumerate(accounts):
-                if acc.get('email') == self.current_patient_email:
+                if acc.get('user') == self.current_patient_user:
                     if 'patient_info' not in acc:
                         accounts[i]['patient_info'] = {}
                     accounts[i]['patient_info']['tracked_metrics'] = new_selected_metrics
@@ -98,8 +102,9 @@ class PatientSettingsView(RelativeLayout):
         metrics_to_remove = set(old_tracked_metrics) - set(new_selected_metrics)
         if metrics_to_remove and old_settings.get('id'):
             patient_id = old_settings.get('id')
-            if os.path.exists('patient_evolution.json'):
-                with open('patient_evolution.json', 'r+', encoding='utf-8') as f:
+            evolution_path = self._get_main_dir_path('patient_evolution.json')
+            if os.path.exists(evolution_path):
+                with open(evolution_path, 'r+', encoding='utf-8') as f:
                     try:
                         all_evolutions = json.load(f)
                         patient_evolution = all_evolutions.get(patient_id, {})
@@ -120,19 +125,20 @@ class PatientSettingsView(RelativeLayout):
                     except json.JSONDecodeError:
                         pass # File is empty or corrupt
 
-        print(f"Settings saved for {self.current_patient_email}: {new_selected_metrics}")
+        print(f"Settings saved for {self.current_patient_user}: {new_selected_metrics}")
         # TODO: Show a confirmation popup to the user.
 
     def _get_patient_settings(self):
         """Helper to safely load settings for the current patient."""
-        if not self.current_patient_email or not os.path.exists('account.json'):
+        accounts_path = self._get_main_dir_path('account.json')
+        if not self.current_patient_user or not os.path.exists(accounts_path):
             return {}
         
         try:
-            with open('account.json', 'r', encoding='utf-8') as f:
+            with open(accounts_path, 'r', encoding='utf-8') as f:
                 accounts = json.load(f)
             
-            patient_account = next((acc for acc in accounts if acc.get('email') == self.current_patient_email), None)
+            patient_account = next((acc for acc in accounts if acc.get('user') == self.current_patient_user), None)
             if patient_account:
                 # Return a combined dict with patient_info and the top-level ID
                 settings = patient_account.get('patient_info', {})

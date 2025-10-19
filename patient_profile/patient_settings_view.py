@@ -36,13 +36,13 @@ class PatientAppSettingsView(RelativeLayout):
         if os.path.exists(session_path):
             with open(session_path, 'r', encoding='utf-8') as f:
                 session_data = json.load(f)
-            user_email = session_data.get('email')
-            if user_email:
+            user_name = session_data.get('user')
+            if user_name:
                 change_password_screen = App.get_running_app().manager.get_screen('change_password')
-                change_password_screen.ids.change_password_view_content.current_user_email = user_email
+                change_password_screen.ids.change_password_view_content.current_user_name = user_name
                 App.get_running_app().manager.push('change_password')
             else:
-                print("Erro: Email do usuário não encontrado na sessão.")
+                print("Erro: Usuário não encontrado na sessão.")
                 # TODO: Show popup
 
     def delete_account(self):
@@ -50,13 +50,13 @@ class PatientAppSettingsView(RelativeLayout):
         Deleta todos os dados associados à conta do paciente atual.
         Esta é uma ação destrutiva e irreversível.
         """
-        # Obter email e ID do paciente da sessão
+        # Obter usuário e ID do paciente da sessão
         session_path = self._get_main_dir_path('session.json')
         if not os.path.exists(session_path): return
         with open(session_path, 'r') as f:
             session_data = json.load(f)
-        patient_email = session_data.get('email')
-        if not patient_email: return
+        patient_user = session_data.get('user')
+        if not patient_user: return
 
         # --- Atualizar account.json ---
         accounts_path = self._get_main_dir_path('account.json')
@@ -65,11 +65,11 @@ class PatientAppSettingsView(RelativeLayout):
                 try:
                     accounts = json.load(f)
                     
-                    patient_account = next((acc for acc in accounts if acc.get('email') == patient_email), None)
+                    patient_account = next((acc for acc in accounts if acc.get('user') == patient_user), None)
                     patient_id = patient_account.get('id') if patient_account else None
 
                     # Remover a conta do paciente
-                    accounts = [acc for acc in accounts if acc.get('email') != patient_email]
+                    accounts = [acc for acc in accounts if acc.get('user') != patient_user]
 
                     # Desvincular este paciente de qualquer lista de 'linked_patients' de médicos
                     if patient_id:
@@ -97,8 +97,8 @@ class PatientAppSettingsView(RelativeLayout):
 
         # --- Remover dados de outros arquivos JSON ---
         files_to_clean = {
-            'patient_medications.json': patient_email,
-            'patient_events.json': patient_email,
+            'patient_medications.json': patient_user,
+            'patient_events.json': patient_user,
             'patient_evolution.json': patient_id
         }
 
@@ -114,5 +114,5 @@ class PatientAppSettingsView(RelativeLayout):
                     json.dump(data, f, indent=4)
                     f.truncate()
 
-        print(f"Conta e todos os dados associados para {patient_email} foram deletados.")
+        print(f"Conta e todos os dados associados para {patient_user} foram deletados.")
         self.logout() # Faz o logout para limpar a sessão e retornar à tela inicial

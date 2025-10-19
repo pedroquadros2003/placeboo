@@ -39,33 +39,49 @@ class DoctorHomeScreen(Screen):
 
     def load_linked_patients(self):
         """Loads the doctor's linked patients to populate the spinner."""
-        doctor_email = ""
-        # Get logged-in doctor's email from session
+        doctor_user = ""
+        # Get logged-in doctor's user from session
         if os.path.exists(self._get_main_dir_path('session.json')):
             with open(self._get_main_dir_path('session.json'), 'r') as f:
                 session_data = json.load(f)
                 if session_data.get('profile_type') == 'doctor':
-                    doctor_email = session_data.get('email')
+                    doctor_user = session_data.get('user')
 
-        if not doctor_email or not os.path.exists(self._get_main_dir_path('account.json')):
+        if not doctor_user or not os.path.exists(self._get_main_dir_path('account.json')):
             self.patient_list = ["Nenhum paciente vinculado"]
             return
 
         with open(self._get_main_dir_path('account.json'), 'r', encoding='utf-8') as f:
             accounts = json.load(f)
 
-        doctor_account = next((acc for acc in accounts if acc['email'] == doctor_email), None)
+        doctor_account = next((acc for acc in accounts if acc['user'] == doctor_user), None)
+        if not doctor_account:
+            self.patient_list = ["Nenhum paciente vinculado"]
+            return
+            
         linked_patient_ids = doctor_account.get('linked_patients', []) if doctor_account else []
+        self_patient_id = doctor_account.get('self_patient_id')
 
         patient_names = []
         self.patient_map = {}
+
+        # Add the "self" patient profile first if it exists
+        if self_patient_id and self_patient_id in linked_patient_ids:
+            self_patient_account = next((acc for acc in accounts if acc.get('id') == self_patient_id), None)
+            if self_patient_account:
+                patient_names.append("__Eu__")
+                self.patient_map["__Eu__"] = self_patient_account.get('user')
+
         for patient_id in linked_patient_ids:
+            # Skip the self patient, as it's already added
+            if patient_id == self_patient_id:
+                continue
             patient_account = next((acc for acc in accounts if acc.get('id') == patient_id), None)
             if patient_account:
-                email = patient_account.get('email')
-                name = patient_account.get('name', email)
+                user = patient_account.get('user')
+                name = patient_account.get('name', user)
                 patient_names.append(name)
-                self.patient_map[name] = email
+                self.patient_map[name] = user
         
         self.patient_list = patient_names if patient_names else ["Nenhum paciente vinculado"]
 
@@ -74,53 +90,40 @@ class DoctorHomeScreen(Screen):
         Loads the date from app_data.json and updates the title.
         If the file doesn't exist or is invalid, it uses the current system date.
         """
-        date_str = ""
-        if os.path.exists(self._get_main_dir_path('app_data.json')):
-            try:
-                with open(self._get_main_dir_path('app_data.json'), 'r') as f:
-                    data = json.load(f)
-                date_from_json = data.get("current_date")  # Expected format: "YYYY-MM-DD"
-                if date_from_json:
-                    date_obj = datetime.strptime(date_from_json, '%Y-%m-%d')
-                    date_str = date_obj.strftime('%d/%m/%Y')
-            except (json.JSONDecodeError, ValueError, FileNotFoundError):
-                pass  # Fallback to current date if file is bad
-
-        if not date_str:
-            date_str = datetime.now().strftime('%d/%m/%Y')
-
+        # Use the system's current date directly
+        date_str = datetime.now().strftime('%d/%m/%Y')
         self.title = f"Hoje: {date_str}"
 
     def on_patient_selected(self, patient_name):
         """Updates the medication view when a new patient is selected."""
-        patient_email = self.patient_map.get(patient_name)
-        if not patient_email:
+        patient_user = self.patient_map.get(patient_name)
+        if not patient_user:
             return
 
         # Update Medications View
         med_screen = self.ids.content_manager.get_screen('doctor_medications')
-        med_screen.children[0].current_patient_email = patient_email
+        med_screen.children[0].current_patient_user = patient_user
         med_screen.children[0].load_medications()
 
         # Update Events View
         events_screen = self.ids.content_manager.get_screen('doctor_events')
-        events_screen.children[0].current_patient_email = patient_email
+        events_screen.children[0].current_patient_user = patient_user
         events_screen.children[0].load_events()
 
         # Update Diagnostics View
         diagnostics_screen = self.ids.content_manager.get_screen('doctor_diagnostics')
-        diagnostics_screen.children[0].current_patient_email = patient_email
-        # The load_diagnostics method is called automatically by the on_current_patient_email property
+        diagnostics_screen.children[0].current_patient_user = patient_user
+        # The load_diagnostics method is called automatically by the on_current_patient_user property
 
         # Update Patient Settings View
         patient_settings_screen = self.ids.content_manager.get_screen('patient_settings')
-        patient_settings_screen.children[0].current_patient_email = patient_email
-        # The load_settings method is called automatically by the on_current_patient_email property
+        patient_settings_screen.children[0].current_patient_user = patient_user
+        # The load_settings method is called automatically by the on_current_patient_user property
 
         # Update Patient Evolution View
         patient_evolution_screen = self.ids.content_manager.get_screen('doctor_evolution')
-        patient_evolution_screen.children[0].current_patient_email = patient_email
-        # The view will clear itself via on_current_patient_email
+        patient_evolution_screen.children[0].current_patient_user = patient_user
+        # The view will clear itself via on_current_patient_user
 
 
 class DoctorMenuScreen(Screen):
