@@ -3,6 +3,7 @@ from kivy.lang import Builder
 from kivy.properties import ListProperty, DictProperty, StringProperty
 from kivy.uix.label import Label
 from kivy.uix.button import Button
+from kivy.app import App
 from functools import partial
 import json
 import os
@@ -101,8 +102,7 @@ class PatientManagementView(RelativeLayout):
         """Links a new patient to the doctor using a 6-digit code."""
         code = self.ids.patient_code_input.text
         if not code or len(code) != 8:
-            print("Validation Error: Por favor, insira um código de 8 dígitos.")
-            # TODO: Show popup
+            App.get_running_app().show_error_popup("Por favor, insira um código de 8 dígitos.")
             return
 
         doctor_user = self._get_doctor_user()
@@ -116,7 +116,7 @@ class PatientManagementView(RelativeLayout):
             # Find patient by code
             patient_account = next((acc for acc in accounts if acc.get('id') == code and acc.get('profile_type') == 'patient'), None)
             if not patient_account:
-                print(f"Erro: Paciente com código {code} não encontrado.")
+                App.get_running_app().show_error_popup(f"Paciente com código {code} não encontrado.")
                 return
 
             patient_id = patient_account['id']
@@ -130,7 +130,7 @@ class PatientManagementView(RelativeLayout):
                         accounts[i]['linked_patients'] = []
                     
                     if patient_id in accounts[i]['linked_patients']:
-                        print(f"Info: Paciente {patient_id} já está vinculado.")
+                        App.get_running_app().show_error_popup("Este paciente já está vinculado.")
                         self.ids.patient_code_input.text = ''
                         return
 

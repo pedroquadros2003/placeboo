@@ -3,6 +3,7 @@ from kivy.lang import Builder
 from kivy.properties import StringProperty, ListProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
+from kivy.app import App
 from kivy.uix.button import Button
 from kivy.clock import Clock
 from kivy.metrics import dp
@@ -47,7 +48,7 @@ class DiagnosticsView(RelativeLayout):
                     self.cid10_list = json.load(f)
                 print("Loaded CID-10 list.")
             except (json.JSONDecodeError, FileNotFoundError):
-                print("Error loading cid10.json")
+                App.get_running_app().show_error_popup("Erro ao carregar dados de diagnóstico.")
 
     def load_diagnostics(self):
         """Loads diagnostics for the current patient."""
@@ -67,7 +68,7 @@ class DiagnosticsView(RelativeLayout):
             print(f"Loaded {len(self.diagnostics)} diagnostics for {self.current_patient_user}")
             self.populate_diagnostics_list()
         except (json.JSONDecodeError, FileNotFoundError):
-            print("Error loading patient_diagnostics.json")
+            App.get_running_app().show_error_popup("Erro ao carregar diagnósticos do paciente.")
             self.diagnostics = []
             self.populate_diagnostics_list()
 
@@ -143,7 +144,7 @@ class DiagnosticsView(RelativeLayout):
         description = self.ids.diagnostic_description_input.text
 
         if not name:
-            print("Validation Error: O nome da condição é obrigatório.")
+            App.get_running_app().show_error_popup("O nome da condição é obrigatório.")
             return
 
         new_diagnostic = {

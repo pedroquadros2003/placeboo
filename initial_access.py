@@ -1,5 +1,6 @@
 from kivy.uix.screenmanager import Screen
 from kivy.properties import StringProperty, BooleanProperty
+from kivy.app import App
 from kivy.lang import Builder
 import json
 import os
@@ -47,8 +48,7 @@ class LoginScreen(Screen):
 
         # Check if the account file exists.
         if not os.path.exists(accounts_path):
-            print("Login Error: No accounts found. Please sign up first.")
-            # TODO: Show a popup to the user
+            App.get_running_app().show_error_popup("Nenhuma conta encontrada. Cadastre-se primeiro.")
             return
 
         with open(accounts_path, 'r', encoding='utf-8') as f:
@@ -79,8 +79,7 @@ class LoginScreen(Screen):
                 return  # Exit the function on success
 
         # If the loop completes, no user was found
-        print("Login Failed: Invalid user or password.")
-        # TODO: Show a popup to the user
+        App.get_running_app().show_error_popup("Usuário ou senha inválidos.")
 
     def go_to_signup(self):
         self.manager.get_screen('sign_up').profile_type = self.profile_type
@@ -150,8 +149,7 @@ class SignUpScreen(Screen):
         # --- Basic Validation (check if fields are empty) ---
         # A more robust validation would be needed for a real application.
         if not self.ids.name_input.text or not self.ids.user_input.text or not self.ids.password_input.text:
-            print("Erro: Nome, Usuário e Senha são obrigatórios.")
-            # In a real app, you would show a popup here.
+            App.get_running_app().show_error_popup("Nome, Usuário e Senha são obrigatórios.")
             return
 
         accounts = self._load_accounts()
@@ -177,8 +175,7 @@ class SignUpScreen(Screen):
 
             # --- Add validation for patient-specific fields ---
             if not self.ids.height_input.text or day == 'Dia' or month_name == 'Mês' or year == 'Ano' or self.ids.sex_input.text == 'Sexo':
-                print("Validation Error: Para pacientes, todos os campos (altura, data de nascimento, sexo) são obrigatórios.")
-                # TODO: Show a popup to the user
+                App.get_running_app().show_error_popup("Para pacientes, todos os campos são obrigatórios.")
                 return
 
             # Create a dictionary for the date of birth
@@ -197,8 +194,8 @@ class SignUpScreen(Screen):
                         "year": year
                     }
                 except (ValueError, KeyError):
-                    print(f"Validation Error: Data de nascimento inválida. Valores recebidos: Dia='{day}', Mês='{month_name}', Ano='{year}'")
-                    return # Stop account creation if date is bad
+                    App.get_running_app().show_error_popup("Data de nascimento inválida.")
+                    return
 
             patient_specific_info = {
                 "height_cm": self.ids.height_input.text,
@@ -214,8 +211,7 @@ class SignUpScreen(Screen):
         
         # Check for duplicate user
         if any(acc['user'] == base_user_data['user'] for acc in accounts):
-            print(f"Error: Account with user {base_user_data['user']} already exists.")
-            # TODO: Show a popup to the user
+            App.get_running_app().show_error_popup(f"Usuário '{base_user_data['user']}' já existe.")
             return
 
         accounts_path = self._get_main_dir_path('account.json')

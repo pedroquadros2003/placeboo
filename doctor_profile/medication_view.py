@@ -5,6 +5,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import ListProperty, StringProperty
 from kivy.uix.label import Label
 from kivy.uix.button import Button
+from kivy.app import App
 from kivy.clock import Clock
 import json
 import os
@@ -48,10 +49,10 @@ class MedicationsView(RelativeLayout):
                     self.generic_med_list = json.load(f)
                 print("Loaded generic medications list.")
             except (json.JSONDecodeError, FileNotFoundError):
-                print("Error loading generic_medications.json")
+                App.get_running_app().show_error_popup("Erro ao carregar lista de medicações.")
                 self.generic_med_list = []
         else:
-            print("generic_medications.json not found.")
+            App.get_running_app().show_error_popup("Arquivo de medicações não encontrado.")
             self.generic_med_list = []
 
     def populate_medications_list(self):
@@ -206,7 +207,7 @@ class MedicationsView(RelativeLayout):
             print(f"Loaded {len(self.medications)} medications for {self.current_patient_user}")
             self.populate_medications_list() # Populate the list after loading
         except (json.JSONDecodeError, FileNotFoundError):
-            print("Error loading patient_medications.json")
+            App.get_running_app().show_error_popup("Erro ao carregar medicações do paciente.")
             self.medications = []
             self.populate_medications_list() # Show empty message on error
 
@@ -229,7 +230,7 @@ class MedicationsView(RelativeLayout):
                 f.truncate()
             print(f"Removed medication {med_id} and updated file.")
         except (json.JSONDecodeError, FileNotFoundError, KeyError):
-            print("Error updating patient_medications.json")
+            App.get_running_app().show_error_popup("Erro ao salvar alterações.")
 
     def add_medication(self):
         """
@@ -237,13 +238,12 @@ class MedicationsView(RelativeLayout):
         """
         generic_name = self.ids.generic_name_input.text
         if not generic_name or generic_name == 'Busque a Medicação (ex: Paracetamol)':
-            print("Validation Error: Please select a medication.")
+            App.get_running_app().show_error_popup("Por favor, selecione uma medicação.")
             return
         
         # Validate if the medication exists in the generic list
         if generic_name not in self.generic_med_list:
-            print(f"Validation Error: A medicação '{generic_name}' não é válida. Selecione uma da lista.")
-            # Future improvement: show a popup to the user.
+            App.get_running_app().show_error_popup(f"'{generic_name}' não é uma medicação válida.")
             return
 
         presentation = self.ids.presentation_input.text
@@ -340,8 +340,7 @@ class MedicationsView(RelativeLayout):
         generic_name = self.ids.generic_name_input.text
         # Validate if the medication exists in the generic list
         if generic_name not in self.generic_med_list:
-            print(f"Validation Error: A medicação '{generic_name}' não é válida. Selecione uma da lista.")
-            # Future improvement: show a popup to the user.
+            App.get_running_app().show_error_popup(f"'{generic_name}' não é uma medicação válida.")
             return
 
         presentation = self.ids.presentation_input.text

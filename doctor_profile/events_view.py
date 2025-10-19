@@ -4,6 +4,7 @@ from kivy.properties import ListProperty, StringProperty
 from kivy.graphics import Color, Rectangle
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
+from kivy.app import App
 import json
 from kivy.clock import Clock
 import os
@@ -192,7 +193,7 @@ class EventsView(RelativeLayout):
         description = self.ids.event_description_input.text
 
         if not name or day == 'Dia' or month_name == 'Mês' or year == 'Ano' or hour == 'Hora' or minute == 'Min':
-            print("Validation Error: Nome, Data completa e Hora são obrigatórios.")
+            App.get_running_app().show_error_popup("Nome, data e hora são obrigatórios.")
             return
 
         # --- Date Validation ---
@@ -206,7 +207,7 @@ class EventsView(RelativeLayout):
             date_obj = datetime(int(year), month_num, day_int)
             date = date_obj.strftime('%Y-%m-%d')
         except (ValueError, KeyError):
-            print(f"Validation Error: Data inválida. Valores recebidos: Dia='{day}', Mês='{month_name}', Ano='{year}'")
+            App.get_running_app().show_error_popup("A data selecionada é inválida.")
             return
 
         self.clear_input_fields()
@@ -306,7 +307,7 @@ class EventsView(RelativeLayout):
             date_obj = datetime(int(year), month_num, day_int)
             date = date_obj.strftime('%Y-%m-%d')
         except (ValueError, KeyError):
-            print(f"Validation Error: Data inválida ao salvar. Valores recebidos: Dia='{day}', Mês='{month_name}', Ano='{year}'")
+            App.get_running_app().show_error_popup("A data selecionada é inválida.")
             return
         time = f"{hour}:{minute}"
 

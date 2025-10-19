@@ -27,6 +27,7 @@ from doctor_profile.graph_view_screen import GraphViewScreen
 # Importa as classes de view que não são telas, mas são usadas nos arquivos .kv
 from patient_profile.add_doctor_view import AddDoctorView
 from patient_profile.patient_settings_view import PatientAppSettingsView
+from auxiliary_classes.popup_label import PopupLabel
 from auxiliary_classes.change_password_view import ChangePasswordScreen # Import the screen
 
 
@@ -39,5 +40,10 @@ class PlaceboApp (App):  ## Aplicações em Kivy terminam em App
     def build(self):
         self.manager = MyScreenManager()
         return self.manager
+
+    def show_error_popup(self, message):
+        """Exibe um popup de erro na parte inferior da tela."""
+        popup = PopupLabel()
+        popup.show(text=message)
 
 PlaceboApp().run()

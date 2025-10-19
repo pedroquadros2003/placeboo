@@ -4,6 +4,7 @@ from kivy.properties import StringProperty, DictProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.checkbox import CheckBox
 from kivy.uix.label import Label
+from kivy.app import App
 import json
 import os
 
@@ -61,7 +62,7 @@ class PatientSettingsView(RelativeLayout):
     def save_settings(self):
         """Saves the selected metrics for the current patient."""
         if not self.current_patient_user:
-            print("Error: No patient selected to save settings for.")
+            App.get_running_app().show_error_popup("Nenhum paciente selecionado.")
             return
 
         # Get old settings to find out which metrics were removed

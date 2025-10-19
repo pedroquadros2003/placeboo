@@ -29,29 +29,24 @@ class ChangePasswordView(RelativeLayout):
         confirm_new_password = self.ids.confirm_new_password_input.text
 
         if not self.current_user_name:
-            print("Erro: Nome de usuário não definido. Não é possível mudar a senha.")
-            # TODO: Show popup
+            App.get_running_app().show_error_popup("Erro interno: Usuário não definido.")
             return
 
         if not current_password or not new_password or not confirm_new_password:
-            print("Erro: Todos os campos são obrigatórios.")
-            # TODO: Show popup
+            App.get_running_app().show_error_popup("Todos os campos são obrigatórios.")
             return
 
         if new_password != confirm_new_password:
-            print("Erro: Nova senha e confirmação não coincidem.")
-            # TODO: Show popup
+            App.get_running_app().show_error_popup("A nova senha e a confirmação não coincidem.")
             return
         
         if len(new_password) < 3: # Basic password strength check
-            print("Erro: A nova senha deve ter pelo menos 3 caracteres.")
-            # TODO: Show popup
+            App.get_running_app().show_error_popup("A nova senha deve ter pelo menos 3 caracteres.")
             return
 
         accounts_path = self._get_main_dir_path('account.json')
         if not os.path.exists(accounts_path):
-            print("Erro: Arquivo de contas não encontrado.")
-            # TODO: Show popup
+            App.get_running_app().show_error_popup("Erro: Arquivo de contas não encontrado.")
             return
 
         with open(accounts_path, 'r+', encoding='utf-8') as f:
@@ -69,19 +64,16 @@ class ChangePasswordView(RelativeLayout):
                         f.seek(0)
                         json.dump(accounts, f, indent=4)
                         f.truncate()
-                        print("Senha alterada com sucesso!")
-                        # TODO: Show success popup
+                        App.get_running_app().show_error_popup("Senha alterada com sucesso!") # Can be styled differently
                         self.clear_fields()
                         App.get_running_app().manager.pop() # Go back to previous screen
                         return
                     else:
-                        print("Erro: Senha atual incorreta.")
-                        # TODO: Show popup
+                        App.get_running_app().show_error_popup("Senha atual incorreta.")
                         return
             
             if not user_found:
-                print("Erro: Usuário não encontrado no arquivo de contas.")
-                # TODO: Show popup
+                App.get_running_app().show_error_popup("Erro: Usuário não encontrado.")
 
     def cancel(self):
         """Cancela a operação e retorna à tela anterior."""

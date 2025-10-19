@@ -80,7 +80,7 @@ class DoctorPatientEvolutionView(RelativeLayout):
             self.populate_metric_fields(date_str)
         except (ValueError, KeyError):
             self.ids.metrics_grid.clear_widgets()
-            print("Data inválida selecionada.")
+            App.get_running_app().show_error_popup("Data inválida selecionada.")
 
     def populate_metric_fields(self, date_str):
         """
@@ -160,20 +160,20 @@ class DoctorPatientEvolutionView(RelativeLayout):
         year = self.ids.year_spinner.text
 
         if not all([self.current_patient_user, day, month != 'Mês', year != 'Ano']):
-            print("Erro: Paciente ou data não selecionados.")
+            App.get_running_app().show_error_popup("Selecione um paciente e uma data válida.")
             return
 
         try:
             date_obj = datetime(int(year), MONTH_NAME_TO_NUM[month], int(day))
             date_str = date_obj.strftime('%Y-%m-%d')
         except (ValueError, KeyError):
-            print("Erro: Data inválida para salvar.")
+            App.get_running_app().show_error_popup("Data inválida para salvar.")
             return
 
         patient_info = self._get_patient_info()
         patient_id = patient_info.get('id')
         if not patient_id:
-            print("Erro: ID do paciente não encontrado.")
+            App.get_running_app().show_error_popup("Erro interno: ID do paciente não encontrado.")
             return
 
         # Collect data from input fields
@@ -258,7 +258,7 @@ class DoctorPatientEvolutionView(RelativeLayout):
                         continue # Skip non-floatable values for other metrics
 
         if not data_points:
-            print(f"Não há dados suficientes nos últimos {days} dias para gerar o relatório.")
+            App.get_running_app().show_error_popup(f"Não há dados nos últimos {days} dias.")
             return
 
         graph_screen = App.get_running_app().manager.get_screen('graph_view')
