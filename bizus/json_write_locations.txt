@@ -1,0 +1,240 @@
+backendzinho local na backend_local
+jsons do usuário na dados/usuario
+classes de inbox para os requests e classe de outbox para enviar as mensagens acumuladas
+
+
+
+
+Mensagens a implementar. A ideia é que elas sejam pedidos quer iremos fazer ao backend e também a uma
+espécie de unidade de controle local, de modo que localmente as ações sejam prontamente cumpridas. 
+Para evitar redundâncias, cada mensagem tem um timestamp com o horário de brasília.
+
+A ideia é que cada mensagem seja um dicionário com estrutura pré-determinada em um json. 
+Daí teríamos duas caixas de mensagens: para inbox e outbox. Inbox são aquelas mensagens com
+ações que serão executadas localmente, ações estas provenientes do próprio dispositivo (alterações nele)
+como também de fora do dispositivo (do servidor). O outbox são mensagens que o nosso dispositivo deseja
+enviar para o servidor.
+
+0
+objeto 
+ação1/ ação2 / ...
+
+
+pasta de dados do user / diretório do backend é o principal
+
+
+no banco de dados, teremos uma grande tabela de transações, que poderá ser filtrada por usuário para obter 
+as transações de um só usuário. Para a limpeza do bd, podemos fazer ajustes de contas e coisas deletadas no bd 
+temporariamente. cada transação corresponde a uma mensagem
+
+
+na hora de enviar, manda um json com as mensagens todas
+na hora de dar request, pede um json a todas as mensagens posteriores ao último request com este usuário
+
+    
+backend vai ter o trabalho de checar a validade das mensagens enviadas pelos usuários
+supõe-se que as mensagens enviadas pelo backend pelos requests com timestamp não estarão erradas,
+devido à garantia de validade e consistência dos registros no backend
+
+comandos in são para para o inbox local, para o registro no json locais.
+comandos out são para o registro no servidor externo
+
+1
+diagnostic 
+add_diagnostic / delete_diagnostic / edit_diagnostic 
+in/out
+
+
+2
+evolution 
+update_tracked_metrics / fill_metric 
+in/out
+
+
+3
+event
+add_event / delete_event / edit_event 
+in/out
+
+
+4
+account
+
+success_login / fail_login
+in
+
+delete_account / create_account / change_password / try_login
+out
+
+
+5
+linking_accounts
+
+establish_link
+in
+
+invite_patient / unlink_accounts / respond_to_invitation
+out
+
+
+6
+medication 
+add_med / delete_med / edit_med 
+in/out
+
+
+
+-----------------------------------------------------------------------------------
+
+
+Pontos de Escrita em Arquivos JSON para Armazenamento
+
+Este arquivo lista todas as ocorrências de `json.dump` nos arquivos Python fornecidos, indicando onde os dados são persistidos em arquivos JSON.
+
+
+1.  Arquivo: c:\Users\peuqu\OneDrive\Desktop\CSI-28\Placebo\PlaceboSRC\doctor_profile\diagnostics_view.py
+    -   Método: `_save_to_file`
+        -   Linha(s) de escrita: `json.dump(all_diagnostics, f, indent=4)`
+        -   Arquivo JSON afetado: `patient_diagnostics.json`
+        -   Contexto: Salva novos diagnósticos ou atualiza diagnósticos existentes para um paciente.
+
+2.  Arquivo: c:\Users\peuqu\OneDrive\Desktop\CSI-28\Placebo\PlaceboSRC\doctor_profile\doctor_patient_evolution_view.py
+    -   Método: `save_evolution_data`
+        -   Linha(s) de escrita: `json.dump(all_evolutions, f, indent=4)`
+        -   Arquivo JSON afetado: `patient_evolution.json`
+        -   Contexto: Salva os dados de evolução de métricas de saúde para um paciente em uma data específica.
+
+3.  Arquivo: c:\Users\peuqu\OneDrive\Desktop\CSI-28\Placebo\PlaceboSRC\doctor_profile\doctor_settings_view.py
+    -   Método: `delete_account`
+        -   Linha(s) de escrita: `json.dump(accounts, f, indent=4)`
+        -   Arquivo JSON afetado: `account.json`
+        -   Contexto: Remove a conta do médico e desvincula de pacientes.
+        -   Linha(s) de escrita: `json.dump(doctor_ids, id_f, indent=4)`
+        -   Arquivo JSON afetado: `doctor_ids.json`
+        -   Contexto: Remove o ID do médico da lista de IDs.
+
+4.  Arquivo: c:\Users\peuqu\OneDrive\Desktop\CSI-28\Placebo\PlaceboSRC\doctor_profile\events_view.py
+    -   Método: `add_event`
+        -   Linha(s) de escrita: `json.dump(all_events, f, indent=4)`
+        -   Arquivo JSON afetado: `patient_events.json`
+        -   Contexto: Adiciona um novo evento para um paciente.
+    -   Método: `remove_event`
+        -   Linha(s) de escrita: `json.dump(all_events, f, indent=4)`
+        -   Arquivo JSON afetado: `patient_events.json`
+        -   Contexto: Remove um evento de um paciente.
+    -   Método: `save_event_edit`
+        -   Linha(s) de escrita: `json.dump(all_events, f, indent=4)`
+        -   Arquivo JSON afetado: `patient_events.json`
+        -   Contexto: Salva as alterações de um evento existente para um paciente.
+
+5.  Arquivo: c:\Users\peuqu\OneDrive\Desktop\CSI-28\Placebo\PlaceboSRC\doctor_profile\medication_view.py
+    -   Método: `remove_medication`
+        -   Linha(s) de escrita: `json.dump(all_meds, f, indent=4)`
+        -   Arquivo JSON afetado: `patient_medications.json`
+        -   Contexto: Remove uma medicação de um paciente.
+    -   Método: `add_medication`
+        -   Linha(s) de escrita: `json.dump(all_meds, f, indent=4)`
+        -   Arquivo JSON afetado: `patient_medications.json`
+        -   Contexto: Adiciona uma nova medicação para um paciente.
+    -   Método: `save_medication_edit`
+        -   Linha(s) de escrita: `json.dump(all_meds, f, indent=4)`
+        -   Arquivo JSON afetado: `patient_medications.json`
+        -   Contexto: Salva as alterações de uma medicação existente para um paciente.
+
+6.  Arquivo: c:\Users\peuqu\OneDrive\Desktop\CSI-28\Placebo\PlaceboSRC\doctor_profile\patient_management_view.py
+    -   Método: `invite_patient`
+        -   Linha(s) de escrita: `json.dump(accounts, f, indent=4)`
+        -   Arquivo JSON afetado: `account.json`
+        -   Contexto: Adiciona um convite de médico para um paciente.
+    -   Método: `remove_patient`
+        -   Linha(s) de escrita: `json.dump(accounts, f, indent=4)`
+        -   Arquivo JSON afetado: `account.json`
+        -   Contexto: Desvincula um paciente de um médico.
+
+7.  Arquivo: c:\Users\peuqu\OneDrive\Desktop\CSI-28\Placebo\PlaceboSRC\doctor_profile\patient_settings_view.py
+    -   Método: `save_settings`
+        -   Linha(s) de escrita: `json.dump(accounts, f, indent=4)`
+        -   Arquivo JSON afetado: `account.json`
+        -   Contexto: Salva as métricas de saúde rastreadas para um paciente.
+        -   Linha(s) de escrita: `json.dump(all_evolutions, f, indent=4)`
+        -   Arquivo JSON afetado: `patient_evolution.json`
+        -   Contexto: Remove dados de métricas não selecionadas do histórico de evolução do paciente.
+
+8.  Arquivo: c:\Users\peuqu\OneDrive\Desktop\CSI-28\Placebo\PlaceboSRC\auxiliary_classes\change_password_view.py
+    -   Método: `change_password`
+        -   Linha(s) de escrita: `json.dump(accounts, f, indent=4)`
+        -   Arquivo JSON afetado: `account.json`
+        -   Contexto: Atualiza a senha de um usuário.
+
+9.  Arquivo: c:\Users\peuqu\OneDrive\Desktop\CSI-28\Placebo\PlaceboSRC\patient_profile\patient_evolution_view.py
+    -   Método: `save_evolution_data`
+        -   Linha(s) de escrita: `json.dump(all_evolutions, f, indent=4)`
+        -   Arquivo JSON afetado: `patient_evolution.json`
+        -   Contexto: Salva os dados de evolução de métricas de saúde para um paciente em uma data específica.
+
+10. Arquivo: c:\Users\peuqu\OneDrive\Desktop\CSI-28\Placebo\PlaceboSRC\patient_profile\patient_settings_view.py
+    -   Método: `delete_account`
+        -   Linha(s) de escrita: `json.dump(accounts, f, indent=4)`
+        -   Arquivo JSON afetado: `account.json`
+        -   Contexto: Remove a conta do paciente e desvincula de médicos.
+        -   Linha(s) de escrita: `json.dump(patient_ids, id_f, indent=4)`
+        -   Arquivo JSON afetado: `patient_ids.json`
+        -   Contexto: Remove o ID do paciente da lista de IDs.
+        -   Linha(s) de escrita: `json.dump(data, f, indent=4)` (ocorre 3 vezes)
+        -   Arquivos JSON afetados: `patient_medications.json`, `patient_events.json`, `patient_evolution.json`
+        -   Contexto: Remove todos os dados associados ao paciente desses arquivos.
+
+11. Arquivo: c:\Users\peuqu\OneDrive\Desktop\CSI-28\Placebo\PlaceboSRC\patient_profile\manage_doctors_view.py
+    -   Método: `handle_invitation`
+        -   Linha(s) de escrita: `json.dump(accounts, f, indent=4)`
+        -   Arquivo JSON afetado: `account.json`
+        -   Contexto: Aceita ou recusa um convite de médico, atualizando as listas de vinculação.
+    -   Método: `remove_doctor`
+        -   Linha(s) de escrita: `json.dump(accounts, f, indent=4)`
+        -   Arquivo JSON afetado: `account.json`
+        -   Contexto: Desvincula um médico do paciente.
+
+12. Arquivo: c:\Users\peuqu\OneDrive\Desktop\CSI-28\Placebo\PlaceboSRC\initial_access.py
+    -   Método: `_generate_unique_id`
+        -   Linha(s) de escrita: `json.dump(existing_ids, f, indent=4)`
+        -   Arquivos JSON afetados: `doctor_ids.json` ou `patient_ids.json`
+        -   Contexto: Salva um novo ID gerado para garantir a unicidade.
+    -   Método: `create_account`
+        -   Linha(s) de escrita: `json.dump(accounts, json_file, indent=4)`
+        -   Arquivo JSON afetado: `account.json`
+        -   Contexto: Adiciona uma nova conta de usuário (médico ou paciente).
+        -   Linha(s) de escrita: `json.dump(session_data, f)`
+        -   Arquivo JSON afetado: `session.json`
+        -   Contexto: Cria uma sessão para o novo usuário após o cadastro.
+    -   Método: `do_login`
+        -   Linha(s) de escrita: `json.dump(session_data, f)`
+        -   Arquivo JSON afetado: `session.json`
+        -   Contexto: Cria uma sessão para o usuário após o login bem-sucedido.
+
+10. Arquivo: c:\Users\peuqu\OneDrive\Desktop\CSI-28\Placebo\PlaceboSRC\patient_profile\manage_doctors_view.py
+    -   Método: `handle_invitation`
+        -   Linha(s) de escrita: `json.dump(accounts, f, indent=4)`
+        -   Arquivo JSON afetado: `account.json`
+        -   Contexto: Aceita ou recusa um convite de médico, atualizando as listas de vinculação.
+    -   Método: `remove_doctor`
+        -   Linha(s) de escrita: `json.dump(accounts, f, indent=4)`
+        -   Arquivo JSON afetado: `account.json`
+        -   Contexto: Desvincula um médico do paciente.
+
+11. Arquivo: c:\Users\peuqu\OneDrive\Desktop\CSI-28\Placebo\PlaceboSRC\patient_profile\patient_evolution_view.py
+    -   Método: `save_evolution_data`
+        -   Linha(s) de escrita: `json.dump(all_evolutions, f, indent=4)`
+        -   Arquivo JSON afetado: `patient_evolution.json`
+        -   Contexto: Salva os dados de evolução de métricas de saúde para um paciente em uma data específica.
+
+12. Arquivo: c:\Users\peuqu\OneDrive\Desktop\CSI-28\Placebo\PlaceboSRC\patient_profile\patient_settings_view.py
+    -   Método: `delete_account`
+        -   Linha(s) de escrita: `json.dump(accounts, f, indent=4)`
+        -   Arquivo JSON afetado: `account.json`
+        -   Contexto: Remove a conta do paciente e desvincula de médicos.
+        -   Linha(s) de escrita: `json.dump(patient_ids, id_f, indent=4)`
+        -   Arquivo JSON afetado: `patient_ids.json`
+        -   Contexto: Remove o ID do paciente da lista de IDs.
+        -   Linha(s) de escrita: `json.dump(data, f, indent=4)` (ocorre 3 vezes)
+        -   Arquivos JSON afetados: `patient_medications.json`, `patient_events.json`, `patient_evolution.json`
+        -   Contexto: Remove todos os dados associados ao paciente desses arquivos.

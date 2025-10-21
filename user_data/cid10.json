@@ -1,0 +1,54 @@
+[
+    {
+        "code": "A09",
+        "name": "Diarreia e gastroenterite de origem infecciosa presumível"
+    },
+    {
+        "code": "E11",
+        "name": "Diabetes mellitus não-insulino-dependente"
+    },
+    {
+        "code": "F41.1",
+        "name": "Ansiedade generalizada"
+    },
+    {
+        "code": "G43.9",
+        "name": "Enxaqueca não especificada"
+    },
+    {
+        "code": "I10",
+        "name": "Hipertensão essencial (primária)"
+    },
+    {
+        "code": "J06.9",
+        "name": "Infecção aguda das vias aéreas superiores não especificada"
+    },
+    {
+        "code": "J11.1",
+        "name": "Influenza [gripe] com outras manifestações respiratórias"
+    },
+    {
+        "code": "K29.7",
+        "name": "Gastrite não especificada"
+    },
+    {
+        "code": "L23.9",
+        "name": "Dermatite alérgica de contato de causa não especificada"
+    },
+    {
+        "code": "M54.5",
+        "name": "Dor lombar baixa"
+    },
+    {
+        "code": "N39.0",
+        "name": "Infecção do trato urinário de localização não especificada"
+    },
+    {
+        "code": "R11",
+        "name": "Náusea e vômitos"
+    },
+    {
+        "code": "R51",
+        "name": "Cefaleia"
+    }
+]
