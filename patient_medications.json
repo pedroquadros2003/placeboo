@@ -87,5 +87,60 @@
             "end_date": "",
             "observation": "ofdnoejjjjjjjjjjjjjjjjjaosijofdnoejjjjjjjjjjjjjjjjjaosijofdnoejjjjjjjjjjjjjjjjjaosijofdnoejjjjjjjjjj"
         }
+    ],
+    "jane.doe_patient_profile": [
+        {
+            "id": "med1761143563",
+            "generic_name": "Paracetamol",
+            "presentation": "Injet\u00e1vel",
+            "dosage": "520 mg",
+            "quantity": "2 cp",
+            "days_of_week": [
+                "Seg",
+                "Ter",
+                "Qui",
+                "Sex",
+                "Sab",
+                "Dom"
+            ],
+            "times_of_day": [
+                "03:04"
+            ],
+            "start_date": "2025-10-22",
+            "end_date": "",
+            "observation": "1212"
+        },
+        {
+            "id": "med1761143635",
+            "generic_name": "Paracetamol",
+            "presentation": "Injet\u00e1vel",
+            "dosage": "50 g",
+            "quantity": "1 cp",
+            "days_of_week": [
+                "Seg"
+            ],
+            "times_of_day": [
+                "04:06"
+            ],
+            "start_date": "2025-10-22",
+            "end_date": "",
+            "observation": "e3e3"
+        },
+        {
+            "id": "med1761145444",
+            "generic_name": "Paclitaxel",
+            "presentation": "Injet\u00e1vel",
+            "dosage": "45 mg",
+            "quantity": "4 gotas",
+            "days_of_week": [
+                "Ter"
+            ],
+            "times_of_day": [
+                "05:10"
+            ],
+            "start_date": "2025-10-22",
+            "end_date": "",
+            "observation": ""
+        }
     ]
 }

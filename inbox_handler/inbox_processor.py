@@ -1,6 +1,8 @@
 import json
 import os
 from typing import Dict, Any
+from datetime import datetime
+import uuid
 
 class InboxProcessor:
     """
@@ -22,13 +24,13 @@ class InboxProcessor:
     def _read_json_file(self, filename: str) -> Dict | list:
         """Lê um arquivo JSON de forma segura."""
         filepath = os.path.join(self.user_data_path, filename)
-        if not os.path.exists(filepath):
-            return {} if filename != 'account.json' else []
+        if not os.path.exists(filepath): # Se o arquivo não existe, retorna um valor padrão
+            return {} if filename != 'my_account.json' else [] # Retorna lista vazia para 'my_account.json', dicionário para outros
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except (json.JSONDecodeError, FileNotFoundError):
-            return {} if filename != 'account.json' else []
+            return {} if filename != 'my_account.json' else []
 
     def _write_json_file(self, filename: str, data: Dict | list):
         """Escreve dados em um arquivo JSON de forma segura."""
@@ -77,7 +79,7 @@ class InboxProcessor:
             print("Erro: 'patient_user' não encontrado no payload do diagnóstico.")
             return
 
-        all_diagnostics = self._read_json_file('patient_diagnostics.json')
+        all_diagnostics = self._read_json_file('my_patient_diagnostics.json')
         patient_diagnostics = all_diagnostics.get(patient_user, [])
         
         # Remove chaves que não pertencem ao modelo de dados do diagnóstico
@@ -89,10 +91,119 @@ class InboxProcessor:
         self._write_json_file('patient_diagnostics.json', all_diagnostics)
         print(f"Diagnóstico adicionado para {patient_user}.")
 
-    # Adicione outros métodos de manipulação aqui, como:
-    # def _handle_diagnostic_edit(self, payload): ...
-    # def _handle_event_add(self, payload): ...
-    # def _handle_account_success_login(self, payload): ...
+    def _get_origin_user_id(self) -> str | None:
+        """Reads the current logged-in user from my_session.json."""
+        session_filepath = os.path.join(self.user_data_path, 'session.json')
+        if os.path.exists(session_filepath):
+            try:
+                with open(session_filepath, 'r', encoding='utf-8') as f:
+                    session_data = json.load(f)
+                    return session_data.get('user')
+            except json.JSONDecodeError:
+                pass
+        return None
+
+    def add_to_inbox_messages(self, obj: str, action: str, payload: Dict[str, Any]):
+        """
+        Generates a message and appends it to the inbox_messages.json file.
+        This runs in parallel to existing file writes.
+        """
+        origin_user_id = self._get_origin_user_id()
+        if not origin_user_id:
+            print(f"Aviso: Não foi possível determinar o origin_user_id para a mensagem {obj}/{action}. Mensagem não registrada no inbox_messages.")
+            return
+
+        timestamp = datetime.now().isoformat(timespec='seconds') + 'Z'
+        message_id = f"msg_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}"
+
+        message = {
+            "message_id": message_id,
+            "timestamp": timestamp,
+            "origin_user_id": origin_user_id,
+            "object": obj,
+            "action": action,
+            "payload": payload
+        }
+        
+        # O arquivo inbox_messages.json deve estar sempre na mesma pasta que este script.
+        inbox_messages_filepath = os.path.join(os.path.dirname(__file__), 'inbox_messages.json')
+        all_messages = []
+        if os.path.exists(inbox_messages_filepath):
+            try:
+                with open(inbox_messages_filepath, 'r', encoding='utf-8') as f:
+                    all_messages = json.load(f)
+            except json.JSONDecodeError:
+                pass
+        
+        all_messages.append(message)
+
+        with open(inbox_messages_filepath, 'w', encoding='utf-8') as f:
+            json.dump(all_messages, f, indent=4)
+        print(f"Mensagem {message.get('object')}/{message.get('action')} adicionada ao inbox_messages.json.")
+
+    def _handle_diagnostic_edit(self, payload: Dict[str, Any]):
+        """Edita um diagnóstico existente no arquivo do paciente."""
+        patient_user = payload.get('patient_user')
+        diagnostic_id = payload.get('diagnostic_id')
+
+        if not all([patient_user, diagnostic_id]):
+            print("Erro: 'patient_user' e 'diagnostic_id' são necessários para editar.")
+            return
+
+        all_diagnostics = self._read_json_file('patient_diagnostics.json')
+        patient_diagnostics = all_diagnostics.get(patient_user, [])
+        
+        diagnostic_found = False
+        for i, diag in enumerate(patient_diagnostics):
+            if diag.get('id') == diagnostic_id:
+                # Atualiza apenas as chaves presentes no payload
+                for key, value in payload.items():
+                    if key in diag:
+                        patient_diagnostics[i][key] = value
+                diagnostic_found = True
+                break
+        
+        if diagnostic_found:
+            all_diagnostics[patient_user] = patient_diagnostics
+            self._write_json_file('patient_diagnostics.json', all_diagnostics)
+            print(f"Diagnóstico {diagnostic_id} atualizado para {patient_user}.")
+        else:
+            print(f"Diagnóstico {diagnostic_id} não encontrado para {patient_user}.")
+
+    def _handle_event_add(self, payload: Dict[str, Any]):
+        """Adiciona um novo evento (consulta/exame) ao arquivo do paciente."""
+        patient_user = payload.get('patient_user')
+        if not patient_user:
+            print("Erro: 'patient_user' não encontrado no payload do evento.")
+            return
+
+        all_events = self._read_json_file('patient_events.json')
+        patient_events = all_events.get(patient_user, [])
+        
+        new_event_data = {k: v for k, v in payload.items() if k != 'patient_user'}
+        
+        patient_events.append(new_event_data)
+        all_events[patient_user] = patient_events
+        
+        self._write_json_file('patient_events.json', all_events)
+        print(f"Evento adicionado para {patient_user}.")
+
+    def _handle_account_success_login(self, payload: Dict[str, Any]):
+        """
+        Processa uma mensagem de login bem-sucedido, salvando os dados da sessão.
+        """
+        user_data = payload.get('user_data')
+        if not user_data or not all(k in user_data for k in ['user', 'profile_type']):
+            print("Erro: Payload de 'success_login' inválido.")
+            return
+
+        session_data = {
+            'logged_in': True,
+            'user': user_data['user'],
+            'profile_type': user_data['profile_type']
+        }
+        self._write_json_file('my_session.json', session_data)
+        print(f"Sessão criada para o usuário: {user_data['user']}.")
 
 
 # Exemplo de uso (pode ser removido ou comentado depois)

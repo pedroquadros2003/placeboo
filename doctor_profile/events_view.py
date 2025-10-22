@@ -7,10 +7,12 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.app import App
 import json
 from kivy.clock import Clock
+from inbox_handler.inbox_processor import InboxProcessor
 import os
 from datetime import datetime
 from functools import partial
 from kivy.uix.button import Button
+import uuid
 from kivy.metrics import dp
 from auxiliary_classes.date_checker import get_days_for_month, MONTH_NAME_TO_NUM
 
@@ -239,6 +241,11 @@ class EventsView(RelativeLayout):
             json.dump(all_events, f, indent=4)
 
         App.get_running_app().show_success_popup(f"Evento '{name}' adicionado.")
+        # Adiciona mensagem ao inbox_messages.json
+        payload = new_event.copy()
+        payload['patient_user'] = self.current_patient_user
+        message = self._create_message("event", "add_event", payload)
+        App.get_running_app().inbox_processor.add_to_inbox_messages(message)
         self.load_events()
 
     def remove_event(self, event_id, *args):
@@ -261,6 +268,12 @@ class EventsView(RelativeLayout):
             print(f"Removed event {event_id} and updated file.")
         except (json.JSONDecodeError, FileNotFoundError, KeyError) as e:
             print("Error updating patient_events.json")
+
+        # Adiciona mensagem ao inbox_messages.json
+        payload = {"event_id": event_id, "patient_user": self.current_patient_user}
+        message = self._create_message("event", "delete_event", payload)
+        App.get_running_app().inbox_processor.add_to_inbox_messages(message)
+        
 
     def start_editing_event(self, event_data, *args):
         """Populates the input fields with the data of the event to be edited."""
@@ -321,12 +334,22 @@ class EventsView(RelativeLayout):
                 if event['id'] == self.editing_event_id:
                     patient_events[i].update({
                         "name": name,
+                        "id": self.editing_event_id,
                         "date": date,
                         "time": time,
                         "description": description
                     })
+                    # Prepara o payload para a inbox ANTES de sair do loop
+                    payload_for_message = patient_events[i].copy()
+                    payload_for_message['patient_user'] = self.current_patient_user
                     break
             
+            # Adiciona mensagem ao inbox_messages.json
+            if 'payload_for_message' in locals():
+                payload = payload_for_message
+                message = self._create_message("event", "edit_event", payload)
+                App.get_running_app().inbox_processor.add_to_inbox_messages(message)
+
             all_events[self.current_patient_user] = patient_events
             f.seek(0)
             json.dump(all_events, f, indent=4)
@@ -359,6 +382,37 @@ class EventsView(RelativeLayout):
     def _get_main_dir_path(self, filename):
         """Constructs the full path to a file in the main project directory."""
         return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+
+    def _get_origin_user_id(self) -> str | None:
+        """Reads the current logged-in user from my_session.json."""
+        session_filepath = self._get_main_dir_path('session.json')
+        if os.path.exists(session_filepath):
+            try:
+                with open(session_filepath, 'r', encoding='utf-8') as f:
+                    session_data = json.load(f)
+                    return session_data.get('user')
+            except json.JSONDecodeError:
+                pass
+        return None
+
+    def _create_message(self, obj: str, action: str, payload: dict) -> dict | None:
+        """Creates a message dictionary in the standard format."""
+        origin_user_id = self._get_origin_user_id()
+        if not origin_user_id:
+            print(f"Aviso: Não foi possível determinar o origin_user_id para a mensagem {obj}/{action}. Mensagem não será criada.")
+            return None
+
+        timestamp = datetime.now().isoformat(timespec='seconds') + 'Z'
+        message_id = f"msg_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}"
+
+        return {
+            "message_id": message_id,
+            "timestamp": timestamp,
+            "origin_user_id": origin_user_id,
+            "object": obj,
+            "action": action,
+            "payload": payload
+        }
 
 class EventItem(BoxLayout):
     """

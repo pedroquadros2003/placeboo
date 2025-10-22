@@ -2,6 +2,9 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.lang import Builder
 from kivy.app import App
 import os
+from inbox_handler.inbox_processor import InboxProcessor
+from datetime import datetime
+import uuid
 import json
 
 # Loads the associated kv file
@@ -23,7 +26,7 @@ class DoctorSettingsView(RelativeLayout):
         session_path = self._get_main_dir_path('session.json')
         if os.path.exists(session_path):
             try:
-                os.remove(self._get_main_dir_path('session.json'))
+                os.remove(session_path)
                 print("Session file deleted.")
             except OSError as e:
                 print(f"Error deleting session file: {e}")
@@ -58,6 +61,11 @@ class DoctorSettingsView(RelativeLayout):
         doctor_user = session_data.get('user')
         if not doctor_user: return
 
+        # Adiciona mensagem ao inbox_messages.json ANTES de deletar os dados
+        payload = {"user": doctor_user}
+        message = self._create_message("account", "delete_account", payload)
+        App.get_running_app().inbox_processor.add_to_inbox_messages(message)
+
         # --- Update account.json ---
         accounts_path = self._get_main_dir_path('account.json')
         if os.path.exists(accounts_path):
@@ -82,7 +90,7 @@ class DoctorSettingsView(RelativeLayout):
                     json.dump(accounts, f, indent=4)
                     f.truncate()
 
-                    # --- Update doctor_ids.json ---
+                    # --- Update doctor_ids.json --- # Corrected path
                     doctor_ids_path = self._get_main_dir_path('doctor_ids.json')
                     if doctor_id and os.path.exists(doctor_ids_path):
                         with open(doctor_ids_path, 'r+', encoding='utf-8') as id_f:
@@ -98,3 +106,34 @@ class DoctorSettingsView(RelativeLayout):
 
         App.get_running_app().show_success_popup(f"Conta e todos os dados associados para {doctor_user} foram deletados.")
         self.logout() # Log out to clear session and return to initial screen
+
+    def _get_origin_user_id(self) -> str | None:
+        """Reads the current logged-in user from my_session.json."""
+        session_filepath = self._get_main_dir_path('session.json')
+        if os.path.exists(session_filepath):
+            try:
+                with open(session_filepath, 'r', encoding='utf-8') as f:
+                    session_data = json.load(f)
+                    return session_data.get('user')
+            except json.JSONDecodeError:
+                pass
+        return None
+
+    def _create_message(self, obj: str, action: str, payload: dict) -> dict | None:
+        """Creates a message dictionary in the standard format."""
+        origin_user_id = self._get_origin_user_id()
+        if not origin_user_id:
+            print(f"Aviso: Não foi possível determinar o origin_user_id para a mensagem {obj}/{action}. Mensagem não será criada.")
+            return None
+
+        timestamp = datetime.now().isoformat(timespec='seconds') + 'Z'
+        message_id = f"msg_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}"
+
+        return {
+            "message_id": message_id,
+            "timestamp": timestamp,
+            "origin_user_id": origin_user_id,
+            "object": obj,
+            "action": action,
+            "payload": payload
+        }

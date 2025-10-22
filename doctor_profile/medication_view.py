@@ -6,10 +6,12 @@ from kivy.properties import ListProperty, StringProperty
 from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.app import App
+from inbox_handler.inbox_processor import InboxProcessor
 from kivy.clock import Clock
 import json
 import os
 from datetime import datetime
+import uuid
 from functools import partial
 from kivy.metrics import dp
 
@@ -43,7 +45,7 @@ class MedicationsView(RelativeLayout):
 
     def load_generic_medications(self):
         """Loads the list of generic medications from a JSON file."""
-        if os.path.exists(self._get_main_dir_path('generic_medications.json')):
+        if os.path.exists(self._get_main_dir_path('generic_medications.json')): # Caminho corrigido
             try:
                 with open('generic_medications.json', 'r', encoding='utf-8') as f:
                     self.generic_med_list = json.load(f)
@@ -231,6 +233,12 @@ class MedicationsView(RelativeLayout):
             print(f"Removed medication {med_id} and updated file.")
         except (json.JSONDecodeError, FileNotFoundError, KeyError):
             App.get_running_app().show_error_popup("Erro ao salvar alterações.")
+        
+        # Adiciona mensagem ao inbox_messages.json
+        payload = {"med_id": med_id, "patient_user": self.current_patient_user}
+        message = self._create_message("medication", "delete_med", payload)
+        App.get_running_app().inbox_processor.add_to_inbox_messages(message)
+
 
     def add_medication(self):
         """
@@ -302,6 +310,11 @@ class MedicationsView(RelativeLayout):
             json.dump(all_meds, f, indent=4)
 
         App.get_running_app().show_success_popup(f"Medicação '{generic_name}' adicionada.")
+        # Adiciona mensagem ao inbox_messages.json
+        payload = new_med.copy()
+        payload['patient_user'] = self.current_patient_user
+        message = self._create_message("medication", "add_med", payload)
+        App.get_running_app().inbox_processor.add_to_inbox_messages(message)
         self.load_medications()
 
     def start_editing_medication(self, med_data, *args):
@@ -378,6 +391,12 @@ class MedicationsView(RelativeLayout):
                         "times_of_day": [time_selected],
                         "observation": observation
                     })
+                    # Adiciona mensagem ao inbox_messages.json DENTRO do loop
+                    payload = patient_meds[i].copy() # Usa a medicação atualizada
+                    payload['patient_user'] = self.current_patient_user
+                    message = self._create_message("medication", "edit_med", payload)
+                    print(f"DEBUG: Mensagem de edição de medicação criada: {message}") # Adicionando para depuração
+                    App.get_running_app().inbox_processor.add_to_inbox_messages(message)
                     break
             
             all_meds[self.current_patient_user] = patient_meds
@@ -513,6 +532,37 @@ class MedicationsView(RelativeLayout):
         """Enforces a maximum character limit on a TextInput."""
         if len(text_input.text) > max_length:
             text_input.text = text_input.text[:max_length]
+
+    def _get_origin_user_id(self) -> str | None:
+        """Reads the current logged-in user from my_session.json."""
+        session_filepath = self._get_main_dir_path('session.json')
+        if os.path.exists(session_filepath):
+            try:
+                with open(session_filepath, 'r', encoding='utf-8') as f:
+                    session_data = json.load(f)
+                    return session_data.get('user')
+            except json.JSONDecodeError:
+                pass
+        return None
+
+    def _create_message(self, obj: str, action: str, payload: dict) -> dict | None:
+        """Creates a message dictionary in the standard format."""
+        origin_user_id = self._get_origin_user_id()
+        if not origin_user_id:
+            print(f"Aviso: Não foi possível determinar o origin_user_id para a mensagem {obj}/{action}. Mensagem não será criada.")
+            return None
+
+        timestamp = datetime.now().isoformat(timespec='seconds') + 'Z'
+        message_id = f"msg_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}"
+
+        return {
+            "message_id": message_id,
+            "timestamp": timestamp,
+            "origin_user_id": origin_user_id,
+            "object": obj,
+            "action": action,
+            "payload": payload
+        }
 
     def prevent_newlines(self, text_input):
         """Removes newline characters from a TextInput's text."""

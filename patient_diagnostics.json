@@ -30,5 +30,14 @@
             "description": "",
             "date_added": "2025-10-19 16:43:45"
         }
+    ],
+    "jane.doe_patient_profile": [
+        {
+            "id": "diag1761145470",
+            "cid_code": "N39.0",
+            "name": "Infec\u00e7\u00e3o do trato urin\u00e1rio de localiza\u00e7\u00e3o n\u00e3o especificada",
+            "description": "oi",
+            "date_added": "2025-10-22 12:04:30"
+        }
     ]
 }

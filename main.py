@@ -18,6 +18,8 @@ from kivy.properties import ObjectProperty
 from kivy.lang import Builder
 from navigation_screen_manager import NavigationScreenManager
 # Importa as telas para que o Kivy as reconheça ao carregar os arquivos .kv
+from inbox_handler.inbox_processor import InboxProcessor
+import os
 from initial_access import InitialAccessScreen, LoginScreen, SignUpScreen
 from patient_profile.patient_screens import PatientHomeScreen, PatientMenuScreen
 from patient_profile.patient_screens import PatientAppSettingsScreen, ManageDoctorsScreen
@@ -35,10 +37,18 @@ class MyScreenManager(NavigationScreenManager):
 
 class PlaceboApp (App):  ## Aplicações em Kivy terminam em App
     manager = ObjectProperty(None)
+    inbox_processor = ObjectProperty(None)
     
     def build(self):
         self.manager = MyScreenManager()
+        # Initialize InboxProcessor with the main project path
+        main_path = os.path.dirname(__file__)
+        self.inbox_processor = InboxProcessor(main_path)
         return self.manager
+
+    def get_user_data_path(self):
+        """Returns the main path of the project."""
+        return os.path.dirname(__file__)
 
     def show_popup(self, message, is_success=False):
         """Exibe um popup (erro ou sucesso) na parte inferior da tela."""
