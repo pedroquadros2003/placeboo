@@ -199,9 +199,9 @@ class PatientEvolutionView(RelativeLayout):
         with open(evolution_path, 'w', encoding='utf-8') as f:
             json.dump(all_evolutions, f, indent=4)
 
-        # Adiciona mensagem ao inbox_messages.json para sincronização
+        # Adiciona mensagem ao outbox_messages.json para sincronização
         payload = {"patient_id": patient_id, "date": date_str, "metrics": new_data}
-        App.get_running_app().inbox_processor.add_to_inbox_messages("evolution", "fill_metric", payload)
+        App.get_running_app().outbox_processor.add_to_outbox("evolution", "fill_metric", payload)
 
         print(f"Dados de evolução salvos para o paciente {patient_id} na data {date_str}.")
 

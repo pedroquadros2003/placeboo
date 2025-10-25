@@ -50,12 +50,12 @@ class ChangePasswordView(RelativeLayout):
             return
 
         # --- Lógica de Mensagens (executada primeiro) ---
-        # Cria a mensagem para o InboxProcessor para que a ação seja registrada.
+        # Cria a mensagem para o OutboxProcessor para que a ação seja registrada.
         payload = {
             "current_password": current_password,
             "new_password": new_password
         }
-        App.get_running_app().inbox_processor.add_to_inbox_messages("account", "change_password", payload)
+        App.get_running_app().outbox_processor.add_to_outbox("account", "change_password", payload)
 
         # --- Lógica Antiga (executada em paralelo) ---
         # Tenta alterar a senha diretamente no arquivo local.

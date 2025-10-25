@@ -2,7 +2,7 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.lang import Builder
 from kivy.app import App
 import os
-from inbox_handler.inbox_processor import InboxProcessor
+from outbox_handler.outbox_processor import OutboxProcessor
 from datetime import datetime
 import uuid
 import json
@@ -61,9 +61,9 @@ class DoctorSettingsView(RelativeLayout):
         doctor_user = session_data.get('user')
         if not doctor_user: return
 
-        # Adiciona mensagem ao inbox_messages.json ANTES de deletar os dados
+        # Adiciona mensagem ao outbox_messages.json ANTES de deletar os dados
         payload = {"user": doctor_user}
-        App.get_running_app().inbox_processor.add_to_inbox_messages("account", "delete_account", payload)
+        App.get_running_app().outbox_processor.add_to_outbox("account", "delete_account", payload)
 
         # --- Update account.json ---
         accounts_path = self._get_main_dir_path('account.json')

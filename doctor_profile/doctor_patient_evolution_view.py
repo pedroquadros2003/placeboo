@@ -5,9 +5,9 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.app import App
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from kivy.metrics import dp
-from inbox_handler.inbox_processor import InboxProcessor
+from outbox_handler.outbox_processor import OutboxProcessor
 import uuid
 import json
 import os
@@ -210,9 +210,9 @@ class DoctorPatientEvolutionView(RelativeLayout):
 
         App.get_running_app().show_success_popup(f"Dados de evolução salvos para {patient_id} em {date_str}.")
         
-        # Adiciona mensagem ao inbox_messages.json para sincronização
+        # Adiciona mensagem ao outbox_messages.json para sincronização
         payload = {"patient_id": patient_id, "date": date_str, "metrics": new_data}
-        App.get_running_app().inbox_processor.add_to_inbox_messages("evolution", "fill_metric", payload)
+        App.get_running_app().outbox_processor.add_to_outbox("evolution", "fill_metric", payload)
 
     def generate_report(self, days):
         """

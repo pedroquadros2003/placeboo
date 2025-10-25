@@ -14,10 +14,12 @@ def load_window_settings():
 load_window_settings()
 
 from kivy.app import App
-from kivy.properties import ObjectProperty
+from kivy.properties import ObjectProperty, StringProperty
 from kivy.lang import Builder
+from kivy.clock import Clock
 from navigation_screen_manager import NavigationScreenManager
 # Importa as telas para que o Kivy as reconheça ao carregar os arquivos .kv
+from outbox_handler.outbox_processor import OutboxProcessor
 from inbox_handler.inbox_processor import InboxProcessor
 import os
 from initial_access import InitialAccessScreen, LoginScreen, SignUpScreen
@@ -25,6 +27,7 @@ from patient_profile.patient_screens import PatientHomeScreen, PatientMenuScreen
 from patient_profile.patient_screens import PatientAppSettingsScreen, ManageDoctorsScreen
 from doctor_profile.doctor_screens import DoctorHomeScreen, DoctorMenuScreen, DoctorSettingsScreen
 from doctor_profile.graph_view_screen import GraphViewScreen
+from backend.local_backend import LocalBackend
  
 # Importa as classes de view que não são telas, mas são usadas nos arquivos .kv
 from patient_profile.patient_settings_view import PatientAppSettingsView
@@ -37,13 +40,24 @@ class MyScreenManager(NavigationScreenManager):
 
 class PlaceboApp (App):  ## Aplicações em Kivy terminam em App
     manager = ObjectProperty(None)
+    outbox_processor = ObjectProperty(None)
     inbox_processor = ObjectProperty(None)
+    local_backend = ObjectProperty(None)
+    pending_request_id = StringProperty(None, allownone=True)
     
     def build(self):
         self.manager = MyScreenManager()
-        # Initialize InboxProcessor with the main project path
         main_path = os.path.dirname(__file__)
+        
+        # Client-side processors
+        self.outbox_processor = OutboxProcessor(main_path)
         self.inbox_processor = InboxProcessor(main_path)
+
+        # Initialize LocalBackend (Server simulation)
+        self.local_backend = LocalBackend(main_path)
+
+        # Simulate client-server sync cycle every 5 seconds
+        Clock.schedule_interval(self.run_sync_cycle, 5)
         return self.manager
 
     def get_user_data_path(self):
@@ -61,5 +75,12 @@ class PlaceboApp (App):  ## Aplicações em Kivy terminam em App
 
     def show_error_popup(self, message): self.show_popup(message, is_success=False)
     def show_success_popup(self, message): self.show_popup(message, is_success=True)
+
+    def run_sync_cycle(self, dt):
+        """Simulates a client-server sync cycle."""
+        # 1. Backend processes outgoing messages from client
+        self.local_backend.process_outbox()
+        # 2. Client processes incoming messages from backend
+        self.inbox_processor.process_inbox()
 
 PlaceboApp().run()

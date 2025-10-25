@@ -4,9 +4,9 @@ from kivy.graphics import Color, Rectangle
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import ListProperty, StringProperty
 from kivy.uix.label import Label
-from kivy.uix.button import Button
 from kivy.app import App
-from inbox_handler.inbox_processor import InboxProcessor
+from kivy.uix.button import Button
+from outbox_handler.outbox_processor import OutboxProcessor
 from kivy.clock import Clock
 import json
 import os
@@ -234,9 +234,9 @@ class MedicationsView(RelativeLayout):
         except (json.JSONDecodeError, FileNotFoundError, KeyError):
             App.get_running_app().show_error_popup("Erro ao salvar alterações.")
         
-        # Adiciona mensagem ao inbox_messages.json
+        # Adiciona mensagem ao outbox_messages.json
         payload = {"med_id": med_id, "patient_user": self.current_patient_user} # Adiciona patient_user ao payload para a mensagem
-        App.get_running_app().inbox_processor.add_to_inbox_messages("medication", "delete_med", payload)
+        App.get_running_app().outbox_processor.add_to_outbox("medication", "delete_med", payload)
 
 
     def add_medication(self):
@@ -309,10 +309,10 @@ class MedicationsView(RelativeLayout):
             json.dump(all_meds, f, indent=4)
 
         App.get_running_app().show_success_popup(f"Medicação '{generic_name}' adicionada.")
-        # Adiciona mensagem ao inbox_messages.json
+        # Adiciona mensagem ao outbox_messages.json
         payload = new_med.copy()
         payload['patient_user'] = self.current_patient_user # Adiciona patient_user ao payload para a mensagem
-        App.get_running_app().inbox_processor.add_to_inbox_messages("medication", "add_med", payload)
+        App.get_running_app().outbox_processor.add_to_outbox("medication", "add_med", payload)
         self.load_medications()
 
     def start_editing_medication(self, med_data, *args):
@@ -388,11 +388,11 @@ class MedicationsView(RelativeLayout):
                         "times_of_day": [time_selected],
                         "observation": observation
                     })
-                    # Adiciona mensagem ao inbox_messages.json DENTRO do loop
+                    # Adiciona mensagem ao outbox_messages.json DENTRO do loop
                     payload = patient_meds[i].copy() # Usa a medicação atualizada
                     payload['patient_user'] = self.current_patient_user
                     print(f"DEBUG: Mensagem de edição de medicação criada para {payload['patient_user']}.") # Adicionando para depuração
-                    App.get_running_app().inbox_processor.add_to_inbox_messages("medication", "edit_med", payload)
+                    App.get_running_app().outbox_processor.add_to_outbox("medication", "edit_med", payload)
                     break
             
             all_meds[self.current_patient_user] = patient_meds

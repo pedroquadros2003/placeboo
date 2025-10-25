@@ -139,12 +139,18 @@ class ManageDoctorsView(RelativeLayout):
                     break
             f.seek(0); json.dump(accounts, f, indent=4); f.truncate()
 
-        # Adiciona mensagem ao inbox_messages.json para o InboxProcessor
+        # Adiciona mensagem ao outbox_messages.json para o OutboxProcessor
         payload = {"doctor_id": doctor_id, "response": action}
-        App.get_running_app().inbox_processor.add_to_inbox_messages("linking_accounts", "respond_to_invitation", payload)
+        App.get_running_app().outbox_processor.add_to_outbox("linking_accounts", "respond_to_invitation", payload)
 
         App.get_running_app().show_success_popup(f"Convite {'aceito' if action == 'accept' else 'recusado'}.")
         self.load_data()
+
+    def remove_doctor(self, doctor_id, *args):
+        """Unlinks a doctor from the patient."""
+        # Adiciona mensagem ao outbox_messages.json para o OutboxProcessor
+        payload = {"target_user_id": self._get_patient_id(), "doctor_id": doctor_id}
+        App.get_running_app().outbox_processor.add_to_outbox("linking_accounts", "unlink_accounts", payload)
 
     def remove_doctor(self, doctor_id, *args):
         """Unlinks a doctor from the patient."""
@@ -170,6 +176,19 @@ class ManageDoctorsView(RelativeLayout):
 
         App.get_running_app().show_success_popup("Médico desvinculado.")
         self.load_data()
+
+    def _get_patient_id(self):
+        """Helper to get the current patient's ID from the session file."""
+        session_path = self._get_main_dir_path('session.json')
+        accounts_path = self._get_main_dir_path('account.json')
+        if not os.path.exists(session_path) or not os.path.exists(accounts_path):
+            return None
+        with open(session_path, 'r') as f:
+            patient_user = json.load(f).get('user')
+        with open(accounts_path, 'r') as f:
+            accounts = json.load(f)
+        patient_account = next((acc for acc in accounts if acc.get('user') == patient_user), None)
+        return patient_account.get('id') if patient_account else None
 
 class ManageDoctorsScreen(Screen):
     """Screen to host the ManageDoctorsView."""

@@ -70,11 +70,14 @@ out
 5
 linking_accounts
 
-establish_link
+establish_link 
 in
 
-invite_patient / unlink_accounts / respond_to_invitation
+invite_patient  / respond_to_invitation
 out
+
+unlink_accounts
+in / out
 
 
 6

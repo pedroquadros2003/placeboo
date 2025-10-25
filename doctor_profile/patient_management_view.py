@@ -3,7 +3,7 @@ from kivy.lang import Builder
 from kivy.properties import ListProperty, DictProperty, StringProperty
 from kivy.uix.label import Label
 from kivy.uix.button import Button
-from inbox_handler.inbox_processor import InboxProcessor
+from outbox_handler.outbox_processor import OutboxProcessor
 from kivy.app import App
 from functools import partial
 import json
@@ -150,9 +150,9 @@ class PatientManagementView(RelativeLayout):
                     if doctor_id not in acc['invitations']:
                         accounts[i]['invitations'].append(doctor_id)
                         App.get_running_app().show_success_popup(f"Convite enviado para {patient_user_to_invite}.")
-                        # Adiciona mensagem ao inbox_messages.json para o InboxProcessor
+                        # Adiciona mensagem ao outbox_messages.json para o OutboxProcessor
                         payload = {"patient_user_to_invite": patient_user_to_invite, "doctor_id": doctor_id}
-                        App.get_running_app().inbox_processor.add_to_inbox_messages("linking_accounts", "invite_patient", payload)
+                        App.get_running_app().outbox_processor.add_to_outbox("linking_accounts", "invite_patient", payload)
                         
                         # Save changes back to file
                         f.seek(0)
@@ -197,9 +197,9 @@ class PatientManagementView(RelativeLayout):
                     json.dump(accounts, f, indent=4)
                     f.truncate()
 
-                    # Adiciona mensagem ao inbox_messages.json para o InboxProcessor
+                    # Adiciona mensagem ao outbox_messages.json para o OutboxProcessor
                     payload = {"target_user_id": patient_id, "doctor_id": doctor_id}
-                    App.get_running_app().inbox_processor.add_to_inbox_messages("linking_accounts", "unlink_accounts", payload)
+                    App.get_running_app().outbox_processor.add_to_outbox("linking_accounts", "unlink_accounts", payload)
 
                     print(f"Paciente {patient_id} desvinculado.")
                     self.load_linked_patients()

@@ -2,8 +2,8 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.lang import Builder
 from kivy.properties import StringProperty, DictProperty
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.checkbox import CheckBox
-from inbox_handler.inbox_processor import InboxProcessor
+from kivy.uix.checkbox import CheckBox, CheckBox
+from outbox_handler.outbox_processor import OutboxProcessor
 from kivy.uix.label import Label
 from kivy.app import App
 import json
@@ -103,9 +103,9 @@ class PatientSettingsView(RelativeLayout):
             json.dump(accounts, f, indent=4)
             f.truncate()
 
-        # Adiciona mensagem ao inbox_messages.json para o InboxProcessor
+        # Adiciona mensagem ao outbox_messages.json para o InboxProcessor
         payload = {"patient_id": patient_id, "tracked_metrics": new_selected_metrics} # patient_id is already defined
-        App.get_running_app().inbox_processor.add_to_inbox_messages("evolution", "update_tracked_metrics", payload)
+        App.get_running_app().outbox_processor.add_to_outbox("evolution", "update_tracked_metrics", payload)
 
         # --- Remove data for unselected metrics from patient_evolution.json ---
         metrics_to_remove = set(old_tracked_metrics) - set(new_selected_metrics)

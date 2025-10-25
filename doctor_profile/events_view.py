@@ -6,8 +6,8 @@ from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.app import App
 import json
-from kivy.clock import Clock
-from inbox_handler.inbox_processor import InboxProcessor
+from kivy.clock import Clock, mainthread
+from outbox_handler.outbox_processor import OutboxProcessor
 import os
 from datetime import datetime
 from functools import partial
@@ -241,10 +241,10 @@ class EventsView(RelativeLayout):
             json.dump(all_events, f, indent=4)
 
         App.get_running_app().show_success_popup(f"Evento '{name}' adicionado.")
-        # Adiciona mensagem ao inbox_messages.json
+        # Adiciona mensagem ao outbox_messages.json
         payload = new_event.copy()
         payload['patient_user'] = self.current_patient_user # Adiciona patient_user ao payload para a mensagem
-        App.get_running_app().inbox_processor.add_to_inbox_messages("event", "add_event", payload)
+        App.get_running_app().outbox_processor.add_to_outbox("event", "add_event", payload)
         self.load_events()
 
     def remove_event(self, event_id, *args):
@@ -268,9 +268,9 @@ class EventsView(RelativeLayout):
         except (json.JSONDecodeError, FileNotFoundError, KeyError) as e:
             print("Error updating patient_events.json")
 
-        # Adiciona mensagem ao inbox_messages.json
+        # Adiciona mensagem ao outbox_messages.json
         payload = {"event_id": event_id, "patient_user": self.current_patient_user}
-        App.get_running_app().inbox_processor.add_to_inbox_messages("event", "delete_event", payload)
+        App.get_running_app().outbox_processor.add_to_outbox("event", "delete_event", payload)
         
 
     def start_editing_event(self, event_data, *args):
@@ -337,15 +337,15 @@ class EventsView(RelativeLayout):
                         "time": time,
                         "description": description
                     })
-                    # Prepara o payload para a inbox ANTES de sair do loop
+                    # Prepara o payload para a outbox ANTES de sair do loop
                     payload_for_message = patient_events[i].copy()
                     payload_for_message['patient_user'] = self.current_patient_user
                     break
             
-            # Adiciona mensagem ao inbox_messages.json
+            # Adiciona mensagem ao outbox_messages.json
             if 'payload_for_message' in locals():
                 payload = payload_for_message
-                App.get_running_app().inbox_processor.add_to_inbox_messages("event", "edit_event", payload)
+                App.get_running_app().outbox_processor.add_to_outbox("event", "edit_event", payload)
 
             all_events[self.current_patient_user] = patient_events
             f.seek(0)

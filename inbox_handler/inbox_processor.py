@@ -1,237 +1,107 @@
 import json
 import os
 from typing import Dict, Any
-from datetime import datetime
-import uuid
+from kivy.app import App
+from kivy.clock import mainthread
+from inbox_handler.message_decoder import MessageDecoder
 
 class InboxProcessor:
     """
-    Processa mensagens da 'inbox' e aplica as alterações necessárias
-    nos arquivos JSON dentro de um diretório de dados do usuário.
+    Processa mensagens da 'inbox' (vindas do backend) e atualiza o estado do cliente.
     """
 
-    def __init__(self, user_data_path: str):
+    def __init__(self, base_path: str):
         """
-        Inicializa o processador.
+        Inicializa o processador de inbox.
 
         Args:
-            user_data_path: O caminho absoluto para a pasta 'user_data'.
+            base_path: O caminho raiz do projeto.
         """
-        if not os.path.isdir(user_data_path):
-            raise FileNotFoundError(f"O diretório de dados do usuário não foi encontrado: {user_data_path}")
-        self.user_data_path = user_data_path
+        self.base_path = base_path
+        self.inbox_path = os.path.join(self.base_path, 'inbox_handler', 'inbox_messages.json')
+        self.decoder = MessageDecoder()
 
-    def _read_json_file(self, filename: str) -> Dict | list:
-        """Lê um arquivo JSON de forma segura."""
-        filepath = os.path.join(self.user_data_path, filename)
-        if not os.path.exists(filepath): # Se o arquivo não existe, retorna um valor padrão
-            return {} if filename != 'my_account.json' else [] # Retorna lista vazia para 'my_account.json', dicionário para outros
+    def _read_json(self, file_path, default_value=None):
+        if default_value is None: default_value = []
+        if not os.path.exists(file_path): return default_value
         try:
-            with open(filepath, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, FileNotFoundError):
-            return {} if filename != 'my_account.json' else []
+            with open(file_path, 'r', encoding='utf-8') as f: return json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError): return default_value
 
-    def _write_json_file(self, filename: str, data: Dict | list):
-        """Escreve dados em um arquivo JSON de forma segura."""
-        filepath = os.path.join(self.user_data_path, filename)
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=4)
+    def _write_json(self, file_path, data):
+        with open(file_path, 'w', encoding='utf-8') as f: json.dump(data, f, indent=4)
 
-    def process_message(self, message_data: str | Dict[str, Any]):
-        """
-        Processa uma única mensagem, decodifica e executa a ação correspondente.
-        """
-        try:
-            if isinstance(message_data, str):
-                message = json.loads(message_data)
-            else:
-                message = message_data
+    def process_inbox(self):
+        """Lê o inbox, processa novas mensagens e as remove do arquivo."""
+        # Identifica se há uma tentativa de login em andamento para filtrar mensagens
+        app = App.get_running_app()
+        session_user = app.outbox_processor._get_origin_user_id()
+        
+        inbox_messages = self._read_json(self.inbox_path) # Lê apenas o inbox
+        remaining_messages = []
 
-            if not all(k in message for k in ['object', 'action', 'payload']):
-                print("Erro de processamento: Mensagem com formato inválido.")
-                return
+        for msg in inbox_messages:
+            msg_target_user = msg.get("origin_user_id")
+            payload = msg.get("payload", {})
 
-            obj = message.get('object')
-            action = message.get('action')
-            payload = message.get('payload', {})
-
-            # Constrói o nome do método manipulador (ex: _handle_diagnostic_add)
-            handler_method_name = f"_handle_{obj}_{action}"
-            handler_method = getattr(self, handler_method_name, self._handle_unknown)
+            # Condição para processar:
+            # 1. A mensagem é para o usuário logado.
+            # 2. OU é uma resposta a uma requisição de login/criação de conta pendente.
+            is_for_session_user = (session_user and msg_target_user == session_user) # Usuário já logado
+            is_login_response = (not session_user and app.pending_request_id and 
+                                 payload.get("request_message_id") == app.pending_request_id) # Resposta a uma requisição pendente
+            should_process = is_for_session_user or is_login_response
             
-            print(f"Processando: {obj}/{action}")
-            handler_method(payload)
+            if should_process:
+                print(f"[Inbox] Processando nova mensagem: {msg.get('object')}/{msg.get('action')}")
+                
+                # 1. Decodificar a mensagem
+                decoded_message = self.decoder.decode(msg)
+                
+                # 2. Roteá-la se a decodificação for bem-sucedida
+                if decoded_message:
+                    self._route_message(decoded_message)
+            else:
+                # Se a mensagem não for para o usuário atual, ela permanece na caixa de entrada
+                remaining_messages.append(msg)
+        
+        self._write_json(self.inbox_path, remaining_messages)
 
-        except Exception as e:
-            print(f"Erro ao processar a mensagem: {e}")
+    def _route_message(self, message: Dict[str, Any]):
+        """Direciona a mensagem para o handler apropriado."""
+        obj = message.get('object') # Já validado pelo decoder
+        action = message.get('action') # Já validado pelo decoder
+        payload = message.get('payload', {}) # Já validado pelo decoder
+
+        handler_method_name = f"_handle_{obj}_{action}"
+        handler_method = getattr(self, handler_method_name, self._handle_unknown)
+        
+        print(f"[InboxProcessor] Mensagem entendida. Roteando para o método: {handler_method_name}")
+        
+        # Executa o método handler correspondente à mensagem.
+        handler_method(payload)
 
     def _handle_unknown(self, payload: Dict[str, Any]):
-        """Manipula ações desconhecidas."""
-        print(f"Ação não implementada no processador.")
-
-    # --- Manipuladores de Ações ---
-
-    def _handle_diagnostic_add(self, payload: Dict[str, Any]):
-        """Adiciona um novo diagnóstico ao arquivo do paciente."""
-        patient_user = payload.get('patient_user')
-        if not patient_user:
-            print("Erro: 'patient_user' não encontrado no payload do diagnóstico.")
-            return
-
-        all_diagnostics = self._read_json_file('my_patient_diagnostics.json')
-        patient_diagnostics = all_diagnostics.get(patient_user, [])
-        
-        # Remove chaves que não pertencem ao modelo de dados do diagnóstico
-        new_diagnostic_data = {k: v for k, v in payload.items() if k != 'patient_user'}
-        
-        patient_diagnostics.append(new_diagnostic_data)
-        all_diagnostics[patient_user] = patient_diagnostics
-        
-        self._write_json_file('patient_diagnostics.json', all_diagnostics)
-        print(f"Diagnóstico adicionado para {patient_user}.")
-
-    def _get_origin_user_id(self) -> str | None:
-        """Reads the current logged-in user from my_session.json."""
-        session_filepath = os.path.join(self.user_data_path, 'session.json')
-        if os.path.exists(session_filepath):
-            try:
-                with open(session_filepath, 'r', encoding='utf-8') as f:
-                    session_data = json.load(f)
-                    return session_data.get('user')
-            except json.JSONDecodeError:
-                pass
-        return None
-
-    def add_to_inbox_messages(self, obj: str, action: str, payload: Dict[str, Any], origin_user_override: str = None):
-        """
-        Generates a message and appends it to the inbox_messages.json file.
-        This runs in parallel to existing file writes.
-        """
-        origin_user_id = self._get_origin_user_id() or origin_user_override
-        
-        # Se não houver sessão, verifica casos especiais como criação de conta ou tentativa de login.
-        if not origin_user_id and obj == 'account' and action in ['create_account', 'try_login']:
-            origin_user_id = payload.get('user')
-
-        if not origin_user_id:
-            print(f"Aviso: Não foi possível determinar o origin_user_id para a mensagem {obj}/{action}. Mensagem não registrada no inbox_messages.")
-            return
-
-        timestamp = datetime.now().isoformat(timespec='seconds') + 'Z'
-        message_id = f"msg_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}"
-
-        message = {
-            "message_id": message_id,
-            "timestamp": timestamp,
-            "origin_user_id": origin_user_id,
-            "object": obj,
-            "action": action,
-            "payload": payload
-        }
-        
-        # O arquivo inbox_messages.json deve estar sempre na mesma pasta que este script.
-        inbox_messages_filepath = os.path.join(os.path.dirname(__file__), 'inbox_messages.json')
-        all_messages = []
-        if os.path.exists(inbox_messages_filepath):
-            try:
-                with open(inbox_messages_filepath, 'r', encoding='utf-8') as f:
-                    all_messages = json.load(f)
-            except json.JSONDecodeError:
-                pass
-        
-        all_messages.append(message)
-
-        with open(inbox_messages_filepath, 'w', encoding='utf-8') as f:
-            json.dump(all_messages, f, indent=4)
-        print(f"Mensagem {message.get('object')}/{message.get('action')} adicionada ao inbox_messages.json.")
-
-    def _handle_diagnostic_edit(self, payload: Dict[str, Any]):
-        """Edita um diagnóstico existente no arquivo do paciente."""
-        patient_user = payload.get('patient_user')
-        diagnostic_id = payload.get('diagnostic_id')
-
-        if not all([patient_user, diagnostic_id]):
-            print("Erro: 'patient_user' e 'diagnostic_id' são necessários para editar.")
-            return
-
-        all_diagnostics = self._read_json_file('patient_diagnostics.json')
-        patient_diagnostics = all_diagnostics.get(patient_user, [])
-        
-        diagnostic_found = False
-        for i, diag in enumerate(patient_diagnostics):
-            if diag.get('id') == diagnostic_id:
-                # Atualiza apenas as chaves presentes no payload
-                for key, value in payload.items():
-                    if key in diag:
-                        patient_diagnostics[i][key] = value
-                diagnostic_found = True
-                break
-        
-        if diagnostic_found:
-            all_diagnostics[patient_user] = patient_diagnostics
-            self._write_json_file('patient_diagnostics.json', all_diagnostics)
-            print(f"Diagnóstico {diagnostic_id} atualizado para {patient_user}.")
-        else:
-            print(f"Diagnóstico {diagnostic_id} não encontrado para {patient_user}.")
-
-    def _handle_event_add(self, payload: Dict[str, Any]):
-        """Adiciona um novo evento (consulta/exame) ao arquivo do paciente."""
-        patient_user = payload.get('patient_user')
-        if not patient_user:
-            print("Erro: 'patient_user' não encontrado no payload do evento.")
-            return
-
-        all_events = self._read_json_file('patient_events.json')
-        patient_events = all_events.get(patient_user, [])
-        
-        new_event_data = {k: v for k, v in payload.items() if k != 'patient_user'}
-        
-        patient_events.append(new_event_data)
-        all_events[patient_user] = patient_events
-        
-        self._write_json_file('patient_events.json', all_events)
-        print(f"Evento adicionado para {patient_user}.")
+        print(f"[Inbox] Ação desconhecida ou não implementada no cliente.")
 
     def _handle_account_success_login(self, payload: Dict[str, Any]):
-        """
-        Processa uma mensagem de login bem-sucedido, salvando os dados da sessão.
-        """
+        """Cria a sessão local e redireciona o usuário após o backend confirmar o login."""
         user_data = payload.get('user_data')
-        if not user_data or not all(k in user_data for k in ['user', 'profile_type']):
-            print("Erro: Payload de 'success_login' inválido.")
-            return
+        if not user_data: return
 
-        session_data = {
-            'logged_in': True,
-            'user': user_data['user'],
-            'profile_type': user_data['profile_type']
-        }
-        self._write_json_file('my_session.json', session_data)
-        print(f"Sessão criada para o usuário: {user_data['user']}.")
+        session_path = os.path.join(self.base_path, 'session.json')
+        session_data = {'logged_in': True, 'user': user_data['user'], 'profile_type': user_data['profile_type']}
+        self._write_json(session_path, session_data)
 
+        print(f"[Inbox] Login bem-sucedido para {user_data['user']}. Redirecionando...")
+        manager = App.get_running_app().manager
+        if user_data['profile_type'] == 'doctor': manager.reset_to('doctor_home')
+        else: manager.reset_to('patient_home')
+        App.get_running_app().pending_request_id = None # Limpa o ID da requisição pendente
 
-# Exemplo de uso (pode ser removido ou comentado depois)
-if __name__ == '__main__':
-    # O caminho para a pasta user_data precisa ser absoluto ou relativo ao local de execução
-    # Para este exemplo, vamos subir dois níveis a partir de 'inbox_handler'
-    base_dir = os.path.dirname(os.path.dirname(__file__))
-    USER_DATA_DIR = os.path.join(base_dir, 'user_data')
-
-    processor = InboxProcessor(USER_DATA_DIR)
-
-    # Mensagem de exemplo para adicionar um diagnóstico
-    add_diag_msg = {
-      "object": "diagnostic",
-      "action": "add_diagnostic",
-      "payload": {
-        "patient_user": "jane.doe_patient_profile",
-        "diagnostic_id": "diag_test_123",
-        "cid_code": "J45",
-        "name": "Asma",
-        "description": "Asma induzida por exercício.",
-        "date_added": "2024-05-22T10:00:00Z"
-      }
-    }
-
-    processor.process_message(add_diag_msg)
+    def _handle_account_fail_login(self, payload: Dict[str, Any]):
+        """Exibe um popup de erro quando o backend informa falha no login."""
+        reason = payload.get("reason", "Falha no login.")
+        print(f"[Inbox] Falha no login: {reason}")
+        App.get_running_app().show_error_popup(reason)
+        App.get_running_app().pending_request_id = None # Limpa o ID da requisição pendente

@@ -113,5 +113,12 @@
             "patient_code": "46564315",
             "responsible_doctors": []
         }
+    },
+    {
+        "profile_type": "doctor",
+        "name": "pedri",
+        "user": "pedri",
+        "password": "pedri",
+        "id": "71197692"
     }
 ]

@@ -46,6 +46,22 @@
             ],
             "start_date": "2025-10-15",
             "end_date": "",
+            "observation": "oioi"
+        },
+        {
+            "id": "med1761406242",
+            "generic_name": "Palonosetrona",
+            "presentation": "Adesivo",
+            "dosage": "ad",
+            "quantity": "qe",
+            "days_of_week": [
+                "Sex"
+            ],
+            "times_of_day": [
+                "09:30"
+            ],
+            "start_date": "2025-10-25",
+            "end_date": "",
             "observation": ""
         }
     ],

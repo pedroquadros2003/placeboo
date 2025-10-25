@@ -9,8 +9,8 @@ from kivy.clock import Clock
 from kivy.metrics import dp
 import json
 import os
-from datetime import datetime
-from inbox_handler.inbox_processor import InboxProcessor
+from datetime import datetime, timezone
+from outbox_handler.outbox_processor import OutboxProcessor
 from functools import partial
 import uuid
 
@@ -161,10 +161,10 @@ class DiagnosticsView(RelativeLayout):
         self.clear_input_fields()
         self.load_diagnostics()
         
-        # Adiciona mensagem ao inbox_messages.json
+        # Adiciona mensagem ao outbox_messages.json
         payload = new_diagnostic.copy()
         payload['patient_user'] = self.current_patient_user # Adiciona patient_user ao payload para o payload da mensagem
-        App.get_running_app().inbox_processor.add_to_inbox_messages("diagnostic", "add_diagnostic", payload)
+        App.get_running_app().outbox_processor.add_to_outbox("diagnostic", "add_diagnostic", payload)
 
     def remove_diagnostic(self, diagnostic_id, *args):
         """Removes a diagnostic."""
@@ -172,9 +172,9 @@ class DiagnosticsView(RelativeLayout):
         self._save_to_file(None, is_new=False) # Save the modified list
         self.populate_diagnostics_list()
         
-        # Adiciona mensagem ao inbox_messages.json
+        # Adiciona mensagem ao outbox_messages.json
         payload = {"diagnostic_id": diagnostic_id, "patient_user": self.current_patient_user}
-        App.get_running_app().inbox_processor.add_to_inbox_messages("diagnostic", "delete_diagnostic", payload)
+        App.get_running_app().outbox_processor.add_to_outbox("diagnostic", "delete_diagnostic", payload)
 
     def start_editing_diagnostic(self, diagnostic_data, *args):
         """Populates input fields to start editing."""
@@ -203,10 +203,10 @@ class DiagnosticsView(RelativeLayout):
         self.cancel_edit()
         self.load_diagnostics()
         
-        # Adiciona mensagem ao inbox_messages.json
+        # Adiciona mensagem ao outbox_messages.json
         payload = self.diagnostics[i].copy() # Usa o diagnóstico atualizado
         payload['patient_user'] = self.current_patient_user
-        App.get_running_app().inbox_processor.add_to_inbox_messages("diagnostic", "edit_diagnostic", payload)
+        App.get_running_app().outbox_processor.add_to_outbox("diagnostic", "edit_diagnostic", payload)
         
     def _save_to_file(self, new_data, is_new=False):
         """Helper function to read, update, and write to the JSON file."""
