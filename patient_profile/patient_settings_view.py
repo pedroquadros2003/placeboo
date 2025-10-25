@@ -13,7 +13,7 @@ class PatientAppSettingsView(RelativeLayout):
     """
     def _get_main_dir_path(self, filename):
         """Constrói o caminho completo para um arquivo no diretório principal do projeto."""
-        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+        return os.path.join(App.get_running_app().get_user_data_path(), filename)
 
     def logout(self):
         """
@@ -63,61 +63,7 @@ class PatientAppSettingsView(RelativeLayout):
         payload = {"user": patient_user}
         App.get_running_app().outbox_processor.add_to_outbox("account", "delete_account", payload)
 
-        # --- Atualizar account.json ---
-        accounts_path = self._get_main_dir_path('account.json')
-        if os.path.exists(accounts_path):
-            with open(accounts_path, 'r+', encoding='utf-8') as f:
-                try:
-                    accounts = json.load(f)
-                    
-                    patient_account = next((acc for acc in accounts if acc.get('user') == patient_user), None)
-                    patient_id = patient_account.get('id') if patient_account else None
-
-                    # Remover a conta do paciente
-                    accounts = [acc for acc in accounts if acc.get('user') != patient_user]
-
-                    # Desvincular este paciente de qualquer lista de 'linked_patients' de médicos
-                    if patient_id:
-                        for i, acc in enumerate(accounts):
-                            if acc.get('profile_type') == 'doctor' and patient_id in acc.get('linked_patients', []):
-                                accounts[i]['linked_patients'].remove(patient_id)
-
-                    f.seek(0)
-                    json.dump(accounts, f, indent=4)
-                    f.truncate()
-
-                    # --- Atualizar patient_ids.json ---
-                    patient_ids_path = self._get_main_dir_path('patient_ids.json')
-                    if patient_id and os.path.exists(patient_ids_path):
-                        with open(patient_ids_path, 'r+', encoding='utf-8') as id_f:
-                            patient_ids = json.load(id_f)
-                            if patient_id in patient_ids:
-                                patient_ids.remove(patient_id)
-                            id_f.seek(0)
-                            json.dump(patient_ids, id_f, indent=4)
-                            id_f.truncate()
-
-                except (json.JSONDecodeError, FileNotFoundError):
-                    pass
-
-        # --- Remover dados de outros arquivos JSON ---
-        files_to_clean = {
-            'patient_medications.json': patient_user,
-            'patient_events.json': patient_user,
-            'patient_evolution.json': patient_id
-        }
-
-        for filename, key in files_to_clean.items():
-            if not key: continue
-            file_path = self._get_main_dir_path(filename)
-            if os.path.exists(file_path):
-                with open(file_path, 'r+', encoding='utf-8') as f:
-                    data = json.load(f)
-                    if key in data:
-                        del data[key]
-                    f.seek(0)
-                    json.dump(data, f, indent=4)
-                    f.truncate()
-
-        App.get_running_app().show_success_popup(f"Conta e todos os dados associados para {patient_user} foram deletados.")
+        # A lógica de deleção foi movida para o backend.
+        # O cliente apenas envia a mensagem e faz o logout.
+        App.get_running_app().show_success_popup(f"Solicitação para deletar a conta de {patient_user} enviada.")
         self.logout() # Faz o logout para limpar a sessão e retornar à tela inicial

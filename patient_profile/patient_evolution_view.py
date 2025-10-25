@@ -39,7 +39,7 @@ class PatientEvolutionView(RelativeLayout):
 
     def _get_main_dir_path(self, filename):
         """Constrói o caminho completo para um arquivo no diretório principal."""
-        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+        return os.path.join(App.get_running_app().get_user_data_path(), filename)
 
     def load_logged_in_patient_info(self):
         """Carrega os dados do paciente logado a partir de session.json e account.json."""
@@ -185,19 +185,8 @@ class PatientEvolutionView(RelativeLayout):
         if systolic_input and diastolic_input and systolic_input.text and diastolic_input.text:
             new_data['blood_pressure'] = f"{systolic_input.text}/{diastolic_input.text}"
 
-        all_evolutions = {}
-        evolution_path = self._get_main_dir_path('patient_evolution.json')
-        if os.path.exists(evolution_path):
-            with open(evolution_path, 'r', encoding='utf-8') as f:
-                try: all_evolutions = json.load(f)
-                except json.JSONDecodeError: pass
-        
-        patient_evolution = all_evolutions.get(patient_id, {})
-        patient_evolution[date_str] = new_data
-        all_evolutions[patient_id] = patient_evolution
-
-        with open(evolution_path, 'w', encoding='utf-8') as f:
-            json.dump(all_evolutions, f, indent=4)
+        # A lógica de escrita foi movida para o backend.
+        # A view apenas envia a mensagem para o outbox.
 
         # Adiciona mensagem ao outbox_messages.json para sincronização
         payload = {"patient_id": patient_id, "date": date_str, "metrics": new_data}

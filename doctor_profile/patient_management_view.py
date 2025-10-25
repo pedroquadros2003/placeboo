@@ -114,96 +114,22 @@ class PatientManagementView(RelativeLayout):
             App.get_running_app().show_error_popup("Erro ao identificar o médico logado.")
             return
 
-        with open(accounts_path, 'r+', encoding='utf-8') as f:
-            accounts = json.load(f)
-            
-            # Find patient by username OR name, making it more flexible
-            patient_account = next((
-                acc for acc in accounts 
-                if (acc.get('user') == patient_user_to_invite or acc.get('name') == patient_user_to_invite) 
-                and acc.get('profile_type') == 'patient'
-            ), None)
-            if not patient_account:
-                App.get_running_app().show_error_popup(f"Paciente '{patient_user_to_invite}' não encontrado.")
-                return
-
-            patient_id = patient_account['id']
-
-            # Find doctor to get their ID
-            doctor_account = next((acc for acc in accounts if acc.get('user') == doctor_user), None)
-            if not doctor_account:
-                App.get_running_app().show_error_popup("Erro crítico: Conta do médico não encontrada.")
-                return
-            doctor_id = doctor_account.get('id')
-
-            # Check if patient is already linked to this doctor
-            if 'linked_patients' in doctor_account and patient_id in doctor_account['linked_patients']:
-                App.get_running_app().show_error_popup("Este paciente já está vinculado a você.")
-                return
-
-            # Find patient again to modify their account data
-            for i, acc in enumerate(accounts):
-                if acc.get('id') == patient_id:
-                    if 'invitations' not in acc:
-                        accounts[i]['invitations'] = []
-                    
-                    if doctor_id not in acc['invitations']:
-                        accounts[i]['invitations'].append(doctor_id)
-                        App.get_running_app().show_success_popup(f"Convite enviado para {patient_user_to_invite}.")
-                        # Adiciona mensagem ao outbox_messages.json para o OutboxProcessor
-                        payload = {"patient_user_to_invite": patient_user_to_invite, "doctor_id": doctor_id}
-                        App.get_running_app().outbox_processor.add_to_outbox("linking_accounts", "invite_patient", payload)
-                        
-                        # Save changes back to file
-                        f.seek(0)
-                        json.dump(accounts, f, indent=4)
-                        f.truncate()
-                    else:
-                        App.get_running_app().show_error_popup("Um convite já foi enviado para este paciente.")
-                    break
-
+        # A lógica de validação e escrita foi movida para o backend.
+        # A view apenas envia a solicitação.
+        payload = {"patient_user_to_invite": patient_user_to_invite}
+        App.get_running_app().outbox_processor.add_to_outbox("linking_accounts", "invite_patient", payload)
+        App.get_running_app().show_success_popup(f"Convite enviado para {patient_user_to_invite}.")
         self.ids.patient_code_input.text = ''
 
     def remove_patient(self, patient_name, *args):
         """Unlinks a patient from the doctor."""
         patient_user = self.patient_map.get(patient_name)
-        doctor_user = self._get_doctor_user()
-        accounts_path = self._get_main_dir_path('account.json')
-        if not doctor_user or not os.path.exists(accounts_path):
-            return
-
-        with open(accounts_path, 'r+', encoding='utf-8') as f:
-            accounts = json.load(f)
-            for i, acc in enumerate(accounts):
-                # Find doctor
-                if acc['user'] == doctor_user:
-                    doctor_id = acc.get('id')
-                    patient_account = next((p_acc for p_acc in accounts if p_acc.get('user') == patient_user), None)
-                    if not patient_account: return
-                    patient_id = patient_account.get('id')
-
-                    # Remove patient from doctor's list
-                    if 'linked_patients' in acc and patient_id in acc['linked_patients']:
-                        accounts[i]['linked_patients'].remove(patient_id)
-
-                    # Remove doctor from patient's list
-                    for j, p_acc_inner in enumerate(accounts):
-                        if p_acc_inner.get('id') == patient_id:
-                            if 'responsible_doctors' in p_acc_inner.get('patient_info', {}) and doctor_id in p_acc_inner['patient_info']['responsible_doctors']:
-                                accounts[j]['patient_info']['responsible_doctors'].remove(doctor_id)
-                            break
-                    
-                    f.seek(0)
-                    json.dump(accounts, f, indent=4)
-                    f.truncate()
-
-                    # Adiciona mensagem ao outbox_messages.json para o OutboxProcessor
-                    payload = {"target_user_id": patient_id, "doctor_id": doctor_id}
-                    App.get_running_app().outbox_processor.add_to_outbox("linking_accounts", "unlink_accounts", payload)
-
-                    print(f"Paciente {patient_id} desvinculado.")
-                    self.load_linked_patients()
-                    break
+        
+        # A lógica de escrita foi movida para o backend.
+        payload = {"target_user": patient_user}
+        App.get_running_app().outbox_processor.add_to_outbox("linking_accounts", "unlink_accounts", payload)
+        App.get_running_app().show_success_popup(f"Solicitação para desvincular {patient_name} enviada.")
+        self.load_linked_patients() # Atualização otimista da UI
 
     def _get_main_dir_path(self, filename):
         """Constructs the full path to a file in the main project directory."""

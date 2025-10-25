@@ -7,6 +7,8 @@ import json
 import os
 from datetime import datetime
 from kivy.metrics import dp
+from kivy.app import App
+
 
 # Loads the associated kv file
 Builder.load_file("patient_profile/patient_events_view.kv", encoding='utf-8')
@@ -22,7 +24,7 @@ class PatientEventsView(RelativeLayout):
 
     def _get_main_dir_path(self, filename):
         """Constructs the full path to a file in the main project directory."""
-        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+        return os.path.join(App.get_running_app().get_user_data_path(), filename)
 
     def load_logged_in_patient_info(self):
         """Loads the logged-in patient's data from session.json and account.json."""

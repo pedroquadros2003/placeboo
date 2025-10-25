@@ -222,18 +222,8 @@ class MedicationsView(RelativeLayout):
         self.medications.remove(med_to_remove)
         self.populate_medications_list()
 
-        medications_path = self._get_main_dir_path('patient_medications.json')
-        try:
-            with open(medications_path, 'r+', encoding='utf-8') as f:
-                all_meds = json.load(f)
-                all_meds[self.current_patient_user] = self.medications
-                f.seek(0)
-                json.dump(all_meds, f, indent=4)
-                f.truncate()
-            print(f"Removed medication {med_id} and updated file.")
-        except (json.JSONDecodeError, FileNotFoundError, KeyError):
-            App.get_running_app().show_error_popup("Erro ao salvar alterações.")
-        
+        # A lógica de escrita foi movida para o backend.
+        App.get_running_app().show_success_popup("Solicitação de remoção enviada.")
         # Adiciona mensagem ao outbox_messages.json
         payload = {"med_id": med_id, "patient_user": self.current_patient_user} # Adiciona patient_user ao payload para a mensagem
         App.get_running_app().outbox_processor.add_to_outbox("medication", "delete_med", payload)
@@ -292,24 +282,8 @@ class MedicationsView(RelativeLayout):
             "observation": observation
         }
 
-        all_meds = {}
-        medications_path = self._get_main_dir_path('patient_medications.json')
-        if os.path.exists(medications_path):
-            try:
-                with open(medications_path, 'r', encoding='utf-8') as f:
-                    all_meds = json.load(f)
-            except (json.JSONDecodeError, FileNotFoundError):
-                pass
-
-        patient_meds = all_meds.get(self.current_patient_user, [])
-        patient_meds.append(new_med)
-        all_meds[self.current_patient_user] = patient_meds
-
-        with open(medications_path, 'w', encoding='utf-8') as f:
-            json.dump(all_meds, f, indent=4)
-
         App.get_running_app().show_success_popup(f"Medicação '{generic_name}' adicionada.")
-        # Adiciona mensagem ao outbox_messages.json
+        # Adiciona mensagem ao outbox_messages.json para o backend processar
         payload = new_med.copy()
         payload['patient_user'] = self.current_patient_user # Adiciona patient_user ao payload para a mensagem
         App.get_running_app().outbox_processor.add_to_outbox("medication", "add_med", payload)
@@ -371,34 +345,18 @@ class MedicationsView(RelativeLayout):
 
         time_selected = f"{hour}:{minute}"
 
-        # --- Update the data in the JSON file ---
-        medications_path = self._get_main_dir_path('patient_medications.json')
-        all_meds = {}
-        with open(medications_path, 'r+', encoding='utf-8') as f:
-            all_meds = json.load(f)
-            patient_meds = all_meds.get(self.current_patient_user, [])
-            
-            for i, med in enumerate(patient_meds):
-                if med['id'] == self.editing_med_id:
-                    patient_meds[i].update({
-                        "generic_name": generic_name,
-                        "presentation": presentation if presentation != 'Apresentação' else 'Comprimido',
-                        "dosage": dosage,
-                        "days_of_week": days_of_week,
-                        "times_of_day": [time_selected],
-                        "observation": observation
-                    })
-                    # Adiciona mensagem ao outbox_messages.json DENTRO do loop
-                    payload = patient_meds[i].copy() # Usa a medicação atualizada
-                    payload['patient_user'] = self.current_patient_user
-                    print(f"DEBUG: Mensagem de edição de medicação criada para {payload['patient_user']}.") # Adicionando para depuração
-                    App.get_running_app().outbox_processor.add_to_outbox("medication", "edit_med", payload)
-                    break
-            
-            all_meds[self.current_patient_user] = patient_meds
-            f.seek(0)
-            json.dump(all_meds, f, indent=4)
-            f.truncate()
+        # Adiciona mensagem ao outbox_messages.json
+        payload = {
+            "id": self.editing_med_id,
+            "generic_name": generic_name,
+            "presentation": presentation if presentation != 'Apresentação' else 'Comprimido',
+            "dosage": dosage,
+            "days_of_week": days_of_week,
+            "times_of_day": [time_selected],
+            "observation": observation,
+            "patient_user": self.current_patient_user
+        }
+        App.get_running_app().outbox_processor.add_to_outbox("medication", "edit_med", payload)
 
         App.get_running_app().show_success_popup(f"Medicação atualizada.")
         self.cancel_edit() # Clear fields and exit edit mode

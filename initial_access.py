@@ -77,34 +77,6 @@ class SignUpScreen(Screen):
         self.ids.sex_input.text = 'Sexo'
         self.ids.is_also_patient_switch.active = False
 
-    def _get_main_dir_path(self, filename):
-        """Constructs the full path to a file in the main project directory."""
-        return os.path.join(os.path.dirname(__file__), filename)
-
-    def _generate_unique_id(self, id_type):
-        """
-        Generates a unique 8-digit numeric ID for a given profile type (doctor or patient).
-        It checks for uniqueness against a corresponding JSON file in the main project directory.
-        """
-        filename = f"{id_type}_ids.json"
-        existing_ids = []
-        ids_path = self._get_main_dir_path(filename)
-        if os.path.exists(ids_path):
-            try:
-                with open(ids_path, 'r') as f:
-                    existing_ids = json.load(f)
-            except json.JSONDecodeError:
-                pass # File is empty or corrupt, will be overwritten
-
-        while True:
-            new_id = str(random.randint(10000000, 99999999)) # 8-digit ID
-            if new_id not in existing_ids:
-                # Save the new ID to the list
-                existing_ids.append(new_id)
-                with open(self._get_main_dir_path(filename), 'w', encoding='utf-8') as f:
-                    json.dump(existing_ids, f, indent=4)
-                return new_id
-
     def _load_accounts(self):
         """Safely loads accounts from the JSON file."""
         accounts_path = self._get_main_dir_path('account.json')
@@ -125,20 +97,6 @@ class SignUpScreen(Screen):
             App.get_running_app().show_error_popup("Nome, Usuário e Senha são obrigatórios.")
             return
 
-        accounts = self._load_accounts()
-
-        # --- Gather common data ---
-        base_user_data = {
-            "profile_type": self.profile_type,
-            "name": self.ids.name_input.text,
-            "user": self.ids.user_input.text,
-            "password": self.ids.password_input.text,  # DANGER: In a real app, you MUST hash the password!
-        }
-
-        # Generate and add the unique ID based on profile type
-        user_id = self._generate_unique_id(base_user_data['profile_type'])
-        base_user_data['id'] = user_id
-
         # --- Gather patient-specific data if applicable ---
         is_patient = self.profile_type == 'patient' or self.is_also_patient
         if is_patient:
@@ -146,11 +104,6 @@ class SignUpScreen(Screen):
             if not self.ids.height_input.text or self.ids.day_input.text == '' or self.ids.month_spinner.text == 'Mês' or self.ids.year_spinner.text == 'Ano' or self.ids.sex_input.text == 'Sexo':
                 App.get_running_app().show_error_popup("Para pacientes, todos os campos são obrigatórios.")
                 return
-
-        # --- Check for duplicate user ---
-        if any(acc['user'] == base_user_data['user'] for acc in accounts):
-            App.get_running_app().show_error_popup(f"Usuário '{base_user_data['user']}' já existe.")
-            return
 
         # --- Patient-specific data gathering (moved after validation) ---
         patient_specific_info = None
@@ -182,12 +135,7 @@ class SignUpScreen(Screen):
                 "height_cm": self.ids.height_input.text,
                 "date_of_birth": dob_dict,
                 "sex": self.ids.sex_input.text
-            }
-            # If it's a regular patient, add info to the base data
-            if self.profile_type == 'patient':
-                base_user_data["patient_info"] = patient_specific_info
-                # O patient_code é o próprio ID do paciente
-                base_user_data["patient_info"]["patient_code"] = user_id 
+            } 
 
         # --- Adiciona mensagem ao outbox_messages.json ---
         # A mensagem é criada antes de modificar os arquivos locais.

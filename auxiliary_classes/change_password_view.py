@@ -57,38 +57,11 @@ class ChangePasswordView(RelativeLayout):
         }
         App.get_running_app().outbox_processor.add_to_outbox("account", "change_password", payload)
 
-        # --- Lógica Antiga (executada em paralelo) ---
-        # Tenta alterar a senha diretamente no arquivo local.
-        with open(accounts_path, 'r+', encoding='utf-8') as f:
-            try:
-                accounts = json.load(f)
-            except json.JSONDecodeError:
-                accounts = []
-            
-            user_found = False
-            for i, account in enumerate(accounts):
-                if account.get('user') == self.current_user_name:
-                    user_found = True
-                    if account.get('password') == current_password: # DANGER: In a real app, you MUST hash the password!
-                        accounts[i]['password'] = new_password
-                        f.seek(0)
-                        json.dump(accounts, f, indent=4)
-                        f.truncate()
-                        App.get_running_app().show_success_popup("Senha alterada com sucesso!")
-                        self.clear_fields()
-                        App.get_running_app().manager.pop() # Go back to previous screen
-                        return
-                    else:
-                        App.get_running_app().show_error_popup("Senha atual incorreta.")
-                        return
-            
-            if not user_found:
-                App.get_running_app().show_error_popup("Erro: Usuário não encontrado.")
-                # Mesmo se o usuário não for encontrado localmente, a mensagem foi enviada.
-                # O backend pode ter uma visão diferente do estado.
-                # Limpamos e voltamos para a tela anterior.
-                self.clear_fields()
-                App.get_running_app().manager.pop()
+        # A lógica de alteração foi movida para o backend.
+        # O cliente apenas envia a mensagem e aguarda uma resposta (se aplicável).
+        App.get_running_app().show_success_popup("Solicitação de alteração de senha enviada.")
+        self.clear_fields()
+        App.get_running_app().manager.pop() # Go back to previous screen
 
     def cancel(self):
         """Cancela a operação e retorna à tela anterior."""

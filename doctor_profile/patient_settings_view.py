@@ -79,59 +79,10 @@ class PatientSettingsView(RelativeLayout):
             if checkbox.active:
                 new_selected_metrics.append(checkbox.metric_key)
 
-        # --- Save new settings to account.json ---
-        accounts_path = self._get_main_dir_path('account.json')
-        if not os.path.exists(accounts_path):
-            return
-
-        with open(accounts_path, 'r+', encoding='utf-8') as f:
-            try:
-                accounts = json.load(f)
-            except json.JSONDecodeError:
-                accounts = []
-
-            # Find the patient and update their settings
-            for i, acc in enumerate(accounts):
-                if acc.get('user') == self.current_patient_user:
-                    if 'patient_info' not in acc:
-                        accounts[i]['patient_info'] = {}
-                    accounts[i]['patient_info']['tracked_metrics'] = new_selected_metrics
-                    break
-            
-            # Write the updated accounts list back to the file
-            f.seek(0)
-            json.dump(accounts, f, indent=4)
-            f.truncate()
-
-        # Adiciona mensagem ao outbox_messages.json para o InboxProcessor
+        # A lógica de escrita foi movida para o backend.
+        # A view apenas envia a mensagem para o outbox.
         payload = {"patient_id": patient_id, "tracked_metrics": new_selected_metrics} # patient_id is already defined
         App.get_running_app().outbox_processor.add_to_outbox("evolution", "update_tracked_metrics", payload)
-
-        # --- Remove data for unselected metrics from patient_evolution.json ---
-        metrics_to_remove = set(old_tracked_metrics) - set(new_selected_metrics)
-        if metrics_to_remove and old_settings.get('id'):
-            evolution_path = self._get_main_dir_path('patient_evolution.json') # patient_id is already defined
-            if os.path.exists(evolution_path):
-                with open(evolution_path, 'r+', encoding='utf-8') as f:
-                    try:
-                        all_evolutions = json.load(f)
-                        patient_evolution = all_evolutions.get(patient_id, {})
-                        
-                        if patient_evolution:
-                            # Iterate through each day's record and remove the unselected metric
-                            for date_record in patient_evolution.values():
-                                for metric_key in metrics_to_remove:
-                                    if metric_key in date_record:
-                                        del date_record[metric_key]
-                            
-                            all_evolutions[patient_id] = patient_evolution
-                            f.seek(0)
-                            json.dump(all_evolutions, f, indent=4)
-                            f.truncate()
-                            print(f"Removed data for metrics {list(metrics_to_remove)} for patient {patient_id}")
-
-                    except json.JSONDecodeError:
-                        pass # File is empty or corrupt
 
         App.get_running_app().show_success_popup(f"Configurações salvas para {self.current_patient_user}.")
 

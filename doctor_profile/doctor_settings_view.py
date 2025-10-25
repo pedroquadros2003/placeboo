@@ -65,43 +65,7 @@ class DoctorSettingsView(RelativeLayout):
         payload = {"user": doctor_user}
         App.get_running_app().outbox_processor.add_to_outbox("account", "delete_account", payload)
 
-        # --- Update account.json ---
-        accounts_path = self._get_main_dir_path('account.json')
-        if os.path.exists(accounts_path):
-            with open(accounts_path, 'r+', encoding='utf-8') as f:
-                try:
-                    accounts = json.load(f)
-                    
-                    # Get doctor ID before removing the account
-                    doctor_account = next((acc for acc in accounts if acc.get('user') == doctor_user), None)
-                    doctor_id = doctor_account.get('id') if doctor_account else None
-
-                    # Remove the doctor's account
-                    accounts = [acc for acc in accounts if acc.get('user') != doctor_user]
-
-                    # Unlink this doctor from any patient's responsible_doctors list
-                    for i, acc in enumerate(accounts):
-                        if acc.get('profile_type') == 'patient' and doctor_id:
-                            if 'responsible_doctors' in acc.get('patient_info', {}) and doctor_id in acc['patient_info']['responsible_doctors']:
-                                accounts[i]['patient_info']['responsible_doctors'].remove(doctor_id)
-
-                    f.seek(0)
-                    json.dump(accounts, f, indent=4)
-                    f.truncate()
-
-                    # --- Update doctor_ids.json --- # Corrected path
-                    doctor_ids_path = self._get_main_dir_path('doctor_ids.json')
-                    if doctor_id and os.path.exists(doctor_ids_path):
-                        with open(doctor_ids_path, 'r+', encoding='utf-8') as id_f:
-                            doctor_ids = json.load(id_f)
-                            if doctor_id in doctor_ids:
-                                doctor_ids.remove(doctor_id)
-                            id_f.seek(0)
-                            json.dump(doctor_ids, id_f, indent=4)
-                            id_f.truncate()
-
-                except (json.JSONDecodeError, FileNotFoundError):
-                    pass
-
-        App.get_running_app().show_success_popup(f"Conta e todos os dados associados para {doctor_user} foram deletados.")
+        # A lógica de deleção foi movida para o backend.
+        # O cliente apenas envia a mensagem e faz o logout.
+        App.get_running_app().show_success_popup(f"Solicitação para deletar a conta de {doctor_user} enviada.")
         self.logout() # Log out to clear session and return to initial screen

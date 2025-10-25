@@ -7,6 +7,8 @@ import json
 import os
 from datetime import datetime
 from kivy.metrics import dp
+from kivy.app import App
+
 
 # Loads the associated kv file
 Builder.load_file("patient_profile/patient_medication_view.kv", encoding='utf-8')
@@ -27,7 +29,7 @@ class PatientMedicationsView(RelativeLayout):
     def _get_main_dir_path(self, filename):
         """Constrói o caminho completo para um arquivo no diretório principal do projeto."""
         # Assume que patient_medication_view.py está em 'PlaceboSRC/patient_profile/'
-        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+        return os.path.join(App.get_running_app().get_user_data_path(), filename)
 
     def load_logged_in_patient_user(self):
         """Carrega o usuário do paciente atualmente logado a partir de session.json."""

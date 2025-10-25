@@ -24,7 +24,7 @@ class ManageDoctorsView(RelativeLayout):
         self.load_data()
 
     def _get_main_dir_path(self, filename):
-        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+        return os.path.join(App.get_running_app().get_user_data_path(), filename)
 
     def load_data(self):
         """Loads both pending invitations and linked doctors for the logged-in patient."""
@@ -114,81 +114,20 @@ class ManageDoctorsView(RelativeLayout):
 
     def handle_invitation(self, doctor_id, action, *args):
         """Accepts or rejects an invitation."""
-        accounts_path = self._get_main_dir_path('account.json')
-        session_path = self._get_main_dir_path('session.json')
-        with open(session_path, 'r') as f:
-            patient_user = json.load(f).get('user')
-
-        with open(accounts_path, 'r+', encoding='utf-8') as f:
-            accounts = json.load(f)
-            patient_account = next((acc for acc in accounts if acc.get('user') == patient_user), None)
-            patient_id = patient_account.get('id')
-
-            for i, acc in enumerate(accounts):
-                if acc.get('id') == patient_id:
-                    if 'invitations' in acc and doctor_id in acc['invitations']:
-                        accounts[i]['invitations'].remove(doctor_id)
-                        if action == 'accept':
-                            if 'responsible_doctors' not in accounts[i]['patient_info']: accounts[i]['patient_info']['responsible_doctors'] = []
-                            accounts[i]['patient_info']['responsible_doctors'].append(doctor_id)
-                            for j, doc_acc in enumerate(accounts):
-                                if doc_acc.get('id') == doctor_id:
-                                    if 'linked_patients' not in doc_acc: accounts[j]['linked_patients'] = []
-                                    accounts[j]['linked_patients'].append(patient_id)
-                                    break
-                    break
-            f.seek(0); json.dump(accounts, f, indent=4); f.truncate()
-
-        # Adiciona mensagem ao outbox_messages.json para o OutboxProcessor
+        # A lógica de escrita foi movida para o backend.
+        # A view apenas envia a mensagem e atualiza a UI otimisticamente.
         payload = {"doctor_id": doctor_id, "response": action}
         App.get_running_app().outbox_processor.add_to_outbox("linking_accounts", "respond_to_invitation", payload)
-
         App.get_running_app().show_success_popup(f"Convite {'aceito' if action == 'accept' else 'recusado'}.")
-        self.load_data()
+        self.load_data() # Atualização otimista da UI
 
     def remove_doctor(self, doctor_id, *args):
         """Unlinks a doctor from the patient."""
-        # Adiciona mensagem ao outbox_messages.json para o OutboxProcessor
-        payload = {"target_user_id": self._get_patient_id(), "doctor_id": doctor_id}
+        # A lógica de escrita foi movida para o backend.
+        payload = {"target_user_id": doctor_id} # O alvo da desvinculação é o médico
         App.get_running_app().outbox_processor.add_to_outbox("linking_accounts", "unlink_accounts", payload)
-
-    def remove_doctor(self, doctor_id, *args):
-        """Unlinks a doctor from the patient."""
-        accounts_path = self._get_main_dir_path('account.json')
-        session_path = self._get_main_dir_path('session.json')
-        with open(session_path, 'r') as f:
-            patient_user = json.load(f).get('user')
-
-        with open(accounts_path, 'r+', encoding='utf-8') as f:
-            accounts = json.load(f)
-            patient_account = next((acc for acc in accounts if acc.get('user') == patient_user), None)
-            patient_id = patient_account.get('id')
-
-            for i, acc in enumerate(accounts):
-                if acc.get('id') == patient_id:
-                    if 'responsible_doctors' in acc.get('patient_info', {}) and doctor_id in acc['patient_info']['responsible_doctors']:
-                        accounts[i]['patient_info']['responsible_doctors'].remove(doctor_id)
-                if acc.get('id') == doctor_id:
-                    if 'linked_patients' in acc and patient_id in acc['linked_patients']:
-                        accounts[i]['linked_patients'].remove(patient_id)
-            
-            f.seek(0); json.dump(accounts, f, indent=4); f.truncate()
-
-        App.get_running_app().show_success_popup("Médico desvinculado.")
-        self.load_data()
-
-    def _get_patient_id(self):
-        """Helper to get the current patient's ID from the session file."""
-        session_path = self._get_main_dir_path('session.json')
-        accounts_path = self._get_main_dir_path('account.json')
-        if not os.path.exists(session_path) or not os.path.exists(accounts_path):
-            return None
-        with open(session_path, 'r') as f:
-            patient_user = json.load(f).get('user')
-        with open(accounts_path, 'r') as f:
-            accounts = json.load(f)
-        patient_account = next((acc for acc in accounts if acc.get('user') == patient_user), None)
-        return patient_account.get('id') if patient_account else None
+        App.get_running_app().show_success_popup("Solicitação para desvincular médico enviada.")
+        self.load_data() # Atualização otimista da UI
 
 class ManageDoctorsScreen(Screen):
     """Screen to host the ManageDoctorsView."""

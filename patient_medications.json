@@ -46,7 +46,8 @@
             ],
             "start_date": "2025-10-15",
             "end_date": "",
-            "observation": "oioi"
+            "observation": "oioioioioi",
+            "patient_user": "paciente.a@email.com"
         },
         {
             "id": "med1761406242",

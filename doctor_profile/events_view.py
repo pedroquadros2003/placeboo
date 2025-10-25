@@ -224,24 +224,8 @@ class EventsView(RelativeLayout):
             "time": time
         }
 
-        all_events = {}
-        events_path = self._get_main_dir_path('patient_events.json')
-        if os.path.exists(events_path):
-            try:
-                with open(events_path, 'r', encoding='utf-8') as f:
-                    all_events = json.load(f)
-            except (json.JSONDecodeError, FileNotFoundError):
-                pass
-
-        patient_events = all_events.get(self.current_patient_user, [])
-        patient_events.append(new_event)
-        all_events[self.current_patient_user] = patient_events
-
-        with open(events_path, 'w', encoding='utf-8') as f:
-            json.dump(all_events, f, indent=4)
-
         App.get_running_app().show_success_popup(f"Evento '{name}' adicionado.")
-        # Adiciona mensagem ao outbox_messages.json
+        # Adiciona mensagem ao outbox_messages.json para o backend processar
         payload = new_event.copy()
         payload['patient_user'] = self.current_patient_user # Adiciona patient_user ao payload para a mensagem
         App.get_running_app().outbox_processor.add_to_outbox("event", "add_event", payload)
@@ -256,18 +240,8 @@ class EventsView(RelativeLayout):
         self.events.remove(event_to_remove)
         self.populate_events_list()
 
-        events_path = self._get_main_dir_path('patient_events.json')
-        try:
-            with open(events_path, 'r+', encoding='utf-8') as f:
-                all_events = json.load(f)
-                all_events[self.current_patient_user] = self.events
-                f.seek(0)
-                json.dump(all_events, f, indent=4)
-                f.truncate()
-            print(f"Removed event {event_id} and updated file.")
-        except (json.JSONDecodeError, FileNotFoundError, KeyError) as e:
-            print("Error updating patient_events.json")
-
+        # A lógica de escrita foi movida para o backend.
+        App.get_running_app().show_success_popup("Solicitação de remoção enviada.")
         # Adiciona mensagem ao outbox_messages.json
         payload = {"event_id": event_id, "patient_user": self.current_patient_user}
         App.get_running_app().outbox_processor.add_to_outbox("event", "delete_event", payload)
@@ -322,35 +296,16 @@ class EventsView(RelativeLayout):
             return
         time = f"{hour}:{minute}"
 
-        # --- Update the data in the JSON file ---
-        events_path = self._get_main_dir_path('patient_events.json')
-        with open(events_path, 'r+', encoding='utf-8') as f:
-            all_events = json.load(f)
-            patient_events = all_events.get(self.current_patient_user, [])
-            
-            for i, event in enumerate(patient_events):
-                if event['id'] == self.editing_event_id:
-                    patient_events[i].update({
-                        "name": name,
-                        "id": self.editing_event_id,
-                        "date": date,
-                        "time": time,
-                        "description": description
-                    })
-                    # Prepara o payload para a outbox ANTES de sair do loop
-                    payload_for_message = patient_events[i].copy()
-                    payload_for_message['patient_user'] = self.current_patient_user
-                    break
-            
-            # Adiciona mensagem ao outbox_messages.json
-            if 'payload_for_message' in locals():
-                payload = payload_for_message
-                App.get_running_app().outbox_processor.add_to_outbox("event", "edit_event", payload)
-
-            all_events[self.current_patient_user] = patient_events
-            f.seek(0)
-            json.dump(all_events, f, indent=4)
-            f.truncate()
+        # Prepara o payload para a outbox
+        payload = {
+            "id": self.editing_event_id,
+            "name": name,
+            "date": date,
+            "time": time,
+            "description": description,
+            "patient_user": self.current_patient_user
+        }
+        App.get_running_app().outbox_processor.add_to_outbox("event", "edit_event", payload)
 
         App.get_running_app().show_success_popup(f"Evento atualizado.")
         self.cancel_edit()

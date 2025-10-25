@@ -193,20 +193,8 @@ class DoctorPatientEvolutionView(RelativeLayout):
         if systolic_input and diastolic_input and systolic_input.text and diastolic_input.text:
             new_data['blood_pressure'] = f"{systolic_input.text}/{diastolic_input.text}"
 
-        # Load, update, and save the evolution data file
-        evolution_path = self._get_main_dir_path('patient_evolution.json')
-        all_evolutions = {}
-        if os.path.exists(evolution_path):
-            with open(evolution_path, 'r', encoding='utf-8') as f:
-                try: all_evolutions = json.load(f)
-                except json.JSONDecodeError: pass
-        
-        patient_evolution = all_evolutions.get(patient_id, {})
-        patient_evolution[date_str] = new_data
-        all_evolutions[patient_id] = patient_evolution
-
-        with open(evolution_path, 'w', encoding='utf-8') as f:
-            json.dump(all_evolutions, f, indent=4)
+        # A lógica de escrita foi movida para o backend.
+        # A view apenas envia a mensagem para o outbox.
 
         App.get_running_app().show_success_popup(f"Dados de evolução salvos para {patient_id} em {date_str}.")
         
