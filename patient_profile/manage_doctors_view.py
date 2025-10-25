@@ -139,6 +139,10 @@ class ManageDoctorsView(RelativeLayout):
                     break
             f.seek(0); json.dump(accounts, f, indent=4); f.truncate()
 
+        # Adiciona mensagem ao inbox_messages.json para o InboxProcessor
+        payload = {"doctor_id": doctor_id, "response": action}
+        App.get_running_app().inbox_processor.add_to_inbox_messages("linking_accounts", "respond_to_invitation", payload)
+
         App.get_running_app().show_success_popup(f"Convite {'aceito' if action == 'accept' else 'recusado'}.")
         self.load_data()
 

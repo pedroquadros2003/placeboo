@@ -58,6 +58,11 @@ class PatientAppSettingsView(RelativeLayout):
         patient_user = session_data.get('user')
         if not patient_user: return
 
+        # Adiciona mensagem ao inbox_messages.json ANTES de deletar os dados locais.
+        # O payload pode ser expandido para incluir confirmação de senha se a UI for atualizada.
+        payload = {"user": patient_user}
+        App.get_running_app().inbox_processor.add_to_inbox_messages("account", "delete_account", payload)
+
         # --- Atualizar account.json ---
         accounts_path = self._get_main_dir_path('account.json')
         if os.path.exists(accounts_path):

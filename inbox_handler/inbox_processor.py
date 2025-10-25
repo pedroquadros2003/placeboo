@@ -103,12 +103,17 @@ class InboxProcessor:
                 pass
         return None
 
-    def add_to_inbox_messages(self, obj: str, action: str, payload: Dict[str, Any]):
+    def add_to_inbox_messages(self, obj: str, action: str, payload: Dict[str, Any], origin_user_override: str = None):
         """
         Generates a message and appends it to the inbox_messages.json file.
         This runs in parallel to existing file writes.
         """
-        origin_user_id = self._get_origin_user_id()
+        origin_user_id = self._get_origin_user_id() or origin_user_override
+        
+        # Se não houver sessão, verifica casos especiais como criação de conta ou tentativa de login.
+        if not origin_user_id and obj == 'account' and action in ['create_account', 'try_login']:
+            origin_user_id = payload.get('user')
+
         if not origin_user_id:
             print(f"Aviso: Não foi possível determinar o origin_user_id para a mensagem {obj}/{action}. Mensagem não registrada no inbox_messages.")
             return

@@ -3,7 +3,7 @@
         "profile_type": "doctor",
         "name": "peu",
         "user": "peu",
-        "password": "123",
+        "password": "peu",
         "linked_patients": [
             "20000001",
             "20000002",
@@ -23,6 +23,7 @@
             "patient_code": "20000001",
             "tracked_metrics": [
                 "temperature",
+                "heart_rate",
                 "weight"
             ],
             "responsible_doctors": [
@@ -94,5 +95,23 @@
             "14121641"
         ],
         "self_patient_id": "14121641"
+    },
+    {
+        "profile_type": "patient",
+        "name": "pedro",
+        "user": "pedro_patient_profile",
+        "password": "internal_use_only",
+        "id": "46564315",
+        "patient_info": {
+            "height_cm": "1242",
+            "date_of_birth": {
+                "day": "12",
+                "month": "8",
+                "year": "2011"
+            },
+            "sex": "Feminino",
+            "patient_code": "46564315",
+            "responsible_doctors": []
+        }
     }
 ]

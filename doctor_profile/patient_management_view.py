@@ -150,20 +150,18 @@ class PatientManagementView(RelativeLayout):
                     if doctor_id not in acc['invitations']:
                         accounts[i]['invitations'].append(doctor_id)
                         App.get_running_app().show_success_popup(f"Convite enviado para {patient_user_to_invite}.")
-                        # Adiciona mensagem ao inbox_messages.json
-                        payload = {"patient_user_to_invite": patient_user_to_invite}
-                        message = self._create_message("linking_accounts", "invite_patient", payload)
-                        App.get_running_app().inbox_processor.add_to_inbox_messages(message)
+                        # Adiciona mensagem ao inbox_messages.json para o InboxProcessor
+                        payload = {"patient_user_to_invite": patient_user_to_invite, "doctor_id": doctor_id}
+                        App.get_running_app().inbox_processor.add_to_inbox_messages("linking_accounts", "invite_patient", payload)
+                        
+                        # Save changes back to file
+                        f.seek(0)
+                        json.dump(accounts, f, indent=4)
+                        f.truncate()
                     else:
                         App.get_running_app().show_error_popup("Um convite já foi enviado para este paciente.")
                     break
 
-            # Save changes back to file
-            if 'payload_for_message' not in locals(): # Não reescreve se não houve mudança
-                return
-            f.seek(0)
-            json.dump(accounts, f, indent=4)
-            f.truncate()
         self.ids.patient_code_input.text = ''
 
     def remove_patient(self, patient_name, *args):
@@ -199,10 +197,9 @@ class PatientManagementView(RelativeLayout):
                     json.dump(accounts, f, indent=4)
                     f.truncate()
 
-                    # Adiciona mensagem ao inbox_messages.json
-                    payload = {"target_user_id": patient_id}
-                    message = self._create_message("linking_accounts", "unlink_accounts", payload)
-                    App.get_running_app().inbox_processor.add_to_inbox_messages(message)
+                    # Adiciona mensagem ao inbox_messages.json para o InboxProcessor
+                    payload = {"target_user_id": patient_id, "doctor_id": doctor_id}
+                    App.get_running_app().inbox_processor.add_to_inbox_messages("linking_accounts", "unlink_accounts", payload)
 
                     print(f"Paciente {patient_id} desvinculado.")
                     self.load_linked_patients()
@@ -222,34 +219,3 @@ class PatientManagementView(RelativeLayout):
                 except json.JSONDecodeError:
                     return None
         return None
-
-    def _get_origin_user_id(self) -> str | None:
-        """Reads the current logged-in user from my_session.json."""
-        session_filepath = self._get_main_dir_path('session.json')
-        if os.path.exists(session_filepath):
-            try:
-                with open(session_filepath, 'r', encoding='utf-8') as f:
-                    session_data = json.load(f)
-                    return session_data.get('user')
-            except json.JSONDecodeError:
-                pass
-        return None
-
-    def _create_message(self, obj: str, action: str, payload: dict) -> dict | None:
-        """Creates a message dictionary in the standard format."""
-        origin_user_id = self._get_origin_user_id()
-        if not origin_user_id:
-            print(f"Aviso: Não foi possível determinar o origin_user_id para a mensagem {obj}/{action}. Mensagem não será criada.")
-            return None
-
-        timestamp = datetime.now().isoformat(timespec='seconds') + 'Z'
-        message_id = f"msg_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}"
-
-        return {
-            "message_id": message_id,
-            "timestamp": timestamp,
-            "origin_user_id": origin_user_id,
-            "object": obj,
-            "action": action,
-            "payload": payload
-        }

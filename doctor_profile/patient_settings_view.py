@@ -69,7 +69,7 @@ class PatientSettingsView(RelativeLayout):
             return
 
         # Get old settings to find out which metrics were removed
-        old_settings = self._get_patient_settings()
+        old_settings = self._get_patient_settings() # This already returns a dict with 'id' at the top level
         patient_id = old_settings.get('id') # Get patient_id before any file modification
         old_tracked_metrics = old_settings.get('tracked_metrics', [])
 
@@ -103,10 +103,9 @@ class PatientSettingsView(RelativeLayout):
             json.dump(accounts, f, indent=4)
             f.truncate()
 
-        # Adiciona mensagem ao inbox_messages.json
-        payload = {"patient_id": patient_id, "tracked_metrics": new_selected_metrics}
-        message = self._create_message("evolution", "update_tracked_metrics", payload)
-        App.get_running_app().inbox_processor.add_to_inbox_messages(message)
+        # Adiciona mensagem ao inbox_messages.json para o InboxProcessor
+        payload = {"patient_id": patient_id, "tracked_metrics": new_selected_metrics} # patient_id is already defined
+        App.get_running_app().inbox_processor.add_to_inbox_messages("evolution", "update_tracked_metrics", payload)
 
         # --- Remove data for unselected metrics from patient_evolution.json ---
         metrics_to_remove = set(old_tracked_metrics) - set(new_selected_metrics)
@@ -155,34 +154,3 @@ class PatientSettingsView(RelativeLayout):
             return {}
         except (json.JSONDecodeError, FileNotFoundError):
             return {}
-
-    def _get_origin_user_id(self) -> str | None:
-        """Reads the current logged-in user from my_session.json."""
-        session_filepath = self._get_main_dir_path('session.json')
-        if os.path.exists(session_filepath):
-            try:
-                with open(session_filepath, 'r', encoding='utf-8') as f:
-                    session_data = json.load(f)
-                    return session_data.get('user')
-            except json.JSONDecodeError:
-                pass
-        return None
-
-    def _create_message(self, obj: str, action: str, payload: dict) -> dict | None:
-        """Creates a message dictionary in the standard format."""
-        origin_user_id = self._get_origin_user_id()
-        if not origin_user_id:
-            print(f"Aviso: Não foi possível determinar o origin_user_id para a mensagem {obj}/{action}. Mensagem não será criada.")
-            return None
-
-        timestamp = datetime.now().isoformat(timespec='seconds') + 'Z'
-        message_id = f"msg_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}"
-
-        return {
-            "message_id": message_id,
-            "timestamp": timestamp,
-            "origin_user_id": origin_user_id,
-            "object": obj,
-            "action": action,
-            "payload": payload
-        }

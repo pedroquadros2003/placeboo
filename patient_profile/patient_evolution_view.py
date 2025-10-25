@@ -6,8 +6,9 @@ from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from datetime import datetime
 from kivy.metrics import dp
-import json
+from kivy.app import App
 import os
+import json
 
 from auxiliary_classes.date_checker import MONTH_NAME_TO_NUM
 
@@ -197,6 +198,10 @@ class PatientEvolutionView(RelativeLayout):
 
         with open(evolution_path, 'w', encoding='utf-8') as f:
             json.dump(all_evolutions, f, indent=4)
+
+        # Adiciona mensagem ao inbox_messages.json para sincronização
+        payload = {"patient_id": patient_id, "date": date_str, "metrics": new_data}
+        App.get_running_app().inbox_processor.add_to_inbox_messages("evolution", "fill_metric", payload)
 
         print(f"Dados de evolução salvos para o paciente {patient_id} na data {date_str}.")
 

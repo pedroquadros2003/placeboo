@@ -1,6 +1,13 @@
 {
     "paciente.a@email.com": [
         {
+            "id": "diag1761051035",
+            "cid_code": "",
+            "name": "nanismo",
+            "description": "",
+            "date_added": "2025-10-21 09:50:35"
+        },
+        {
             "id": "diag1760579955",
             "cid_code": "L23.9",
             "name": "Dermatite al\u00e9rgica de contato de causa n\u00e3o especificada",
@@ -13,13 +20,6 @@
             "name": "Diabetes mellitus n\u00e3o-insulino-dependente",
             "description": "edeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeede",
             "date_added": "2025-10-15 22:57:33"
-        },
-        {
-            "id": "diag1761051035",
-            "cid_code": "",
-            "name": "nanismo",
-            "description": "",
-            "date_added": "2025-10-21 09:50:35"
         }
     ],
     "e_patient_profile": [

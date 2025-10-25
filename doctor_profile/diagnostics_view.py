@@ -163,9 +163,8 @@ class DiagnosticsView(RelativeLayout):
         
         # Adiciona mensagem ao inbox_messages.json
         payload = new_diagnostic.copy()
-        payload['patient_user'] = self.current_patient_user # Adiciona patient_user ao payload
-        message = self._create_message("diagnostic", "add_diagnostic", payload)
-        App.get_running_app().inbox_processor.add_to_inbox_messages(message)
+        payload['patient_user'] = self.current_patient_user # Adiciona patient_user ao payload para o payload da mensagem
+        App.get_running_app().inbox_processor.add_to_inbox_messages("diagnostic", "add_diagnostic", payload)
 
     def remove_diagnostic(self, diagnostic_id, *args):
         """Removes a diagnostic."""
@@ -175,8 +174,7 @@ class DiagnosticsView(RelativeLayout):
         
         # Adiciona mensagem ao inbox_messages.json
         payload = {"diagnostic_id": diagnostic_id, "patient_user": self.current_patient_user}
-        message = self._create_message("diagnostic", "delete_diagnostic", payload)
-        App.get_running_app().inbox_processor.add_to_inbox_messages(message)
+        App.get_running_app().inbox_processor.add_to_inbox_messages("diagnostic", "delete_diagnostic", payload)
 
     def start_editing_diagnostic(self, diagnostic_data, *args):
         """Populates input fields to start editing."""
@@ -208,8 +206,7 @@ class DiagnosticsView(RelativeLayout):
         # Adiciona mensagem ao inbox_messages.json
         payload = self.diagnostics[i].copy() # Usa o diagnóstico atualizado
         payload['patient_user'] = self.current_patient_user
-        message = self._create_message("diagnostic", "edit_diagnostic", payload)
-        App.get_running_app().inbox_processor.add_to_inbox_messages(message)
+        App.get_running_app().inbox_processor.add_to_inbox_messages("diagnostic", "edit_diagnostic", payload)
         
     def _save_to_file(self, new_data, is_new=False):
         """Helper function to read, update, and write to the JSON file."""
@@ -232,37 +229,6 @@ class DiagnosticsView(RelativeLayout):
 
         with open(diagnostics_path, 'w', encoding='utf-8') as f:
             json.dump(all_diagnostics, f, indent=4)
-
-    def _get_origin_user_id(self) -> str | None:
-        """Reads the current logged-in user from my_session.json."""
-        session_filepath = self._get_main_dir_path('session.json')
-        if os.path.exists(session_filepath):
-            try:
-                with open(session_filepath, 'r', encoding='utf-8') as f:
-                    session_data = json.load(f)
-                    return session_data.get('user')
-            except json.JSONDecodeError:
-                pass
-        return None
-
-    def _create_message(self, obj: str, action: str, payload: dict) -> dict | None:
-        """Creates a message dictionary in the standard format."""
-        origin_user_id = self._get_origin_user_id()
-        if not origin_user_id:
-            print(f"Aviso: Não foi possível determinar o origin_user_id para a mensagem {obj}/{action}. Mensagem não será criada.")
-            return None
-
-        timestamp = datetime.now().isoformat(timespec='seconds') + 'Z'
-        message_id = f"msg_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}"
-
-        return {
-            "message_id": message_id,
-            "timestamp": timestamp,
-            "origin_user_id": origin_user_id,
-            "object": obj,
-            "action": action,
-            "payload": payload
-        }
 
     def _get_main_dir_path(self, filename):
         """Constructs the full path to a file in the main project directory."""

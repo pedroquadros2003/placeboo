@@ -169,14 +169,22 @@ class SignUpScreen(Screen):
         # --- Gather patient-specific data if applicable ---
         is_patient = self.profile_type == 'patient' or self.is_also_patient
         if is_patient:
+            # --- Add validation for patient-specific fields ---
+            if not self.ids.height_input.text or self.ids.day_input.text == '' or self.ids.month_spinner.text == 'Mês' or self.ids.year_spinner.text == 'Ano' or self.ids.sex_input.text == 'Sexo':
+                App.get_running_app().show_error_popup("Para pacientes, todos os campos são obrigatórios.")
+                return
+
+        # --- Check for duplicate user ---
+        if any(acc['user'] == base_user_data['user'] for acc in accounts):
+            App.get_running_app().show_error_popup(f"Usuário '{base_user_data['user']}' já existe.")
+            return
+
+        # --- Patient-specific data gathering (moved after validation) ---
+        patient_specific_info = None
+        if is_patient:
             day = self.ids.day_input.text
             month_name = self.ids.month_spinner.text
             year = self.ids.year_spinner.text
-
-            # --- Add validation for patient-specific fields ---
-            if not self.ids.height_input.text or day == 'Dia' or month_name == 'Mês' or year == 'Ano' or self.ids.sex_input.text == 'Sexo':
-                App.get_running_app().show_error_popup("Para pacientes, todos os campos são obrigatórios.")
-                return
 
             # Create a dictionary for the date of birth
             dob_dict = {}
@@ -205,14 +213,20 @@ class SignUpScreen(Screen):
             # If it's a regular patient, add info to the base data
             if self.profile_type == 'patient':
                 base_user_data["patient_info"] = patient_specific_info
-                base_user_data["patient_info"]["patient_code"] = user_id
+                # O patient_code é o próprio ID do paciente
+                base_user_data["patient_info"]["patient_code"] = user_id 
 
-        # --- Load existing accounts and append the new one ---
-        
-        # Check for duplicate user
-        if any(acc['user'] == base_user_data['user'] for acc in accounts):
-            App.get_running_app().show_error_popup(f"Usuário '{base_user_data['user']}' já existe.")
-            return
+        # --- Adiciona mensagem ao inbox_messages.json ---
+        # A mensagem é criada antes de modificar os arquivos locais.
+        create_account_payload = {
+            "profile_type": self.profile_type,
+            "name": self.ids.name_input.text,
+            "user": self.ids.user_input.text,
+            "password": self.ids.password_input.text,
+            "is_also_patient": self.is_also_patient,
+            "patient_info": patient_specific_info
+        }
+        App.get_running_app().inbox_processor.add_to_inbox_messages("account", "create_account", create_account_payload)
 
         accounts_path = self._get_main_dir_path('account.json')
         session_path = self._get_main_dir_path('session.json')

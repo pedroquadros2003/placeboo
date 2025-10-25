@@ -14,6 +14,7 @@ Dentro da pasta do seu projeto, no terminal Git Bash, execute o comando:
 
 ```bash
 py -3 -m venv venv
+no linux: python3 venv venv
 ```
 
   * `py -3 -m venv`: Executa o módulo `venv` usando o Python Launcher do Windows, garantindo que seja uma versão do Python 3. `python -m venv venv` também funciona se você tiver o Python no seu PATH.

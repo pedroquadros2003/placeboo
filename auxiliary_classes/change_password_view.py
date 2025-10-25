@@ -49,6 +49,16 @@ class ChangePasswordView(RelativeLayout):
             App.get_running_app().show_error_popup("Erro: Arquivo de contas não encontrado.")
             return
 
+        # --- Lógica de Mensagens (executada primeiro) ---
+        # Cria a mensagem para o InboxProcessor para que a ação seja registrada.
+        payload = {
+            "current_password": current_password,
+            "new_password": new_password
+        }
+        App.get_running_app().inbox_processor.add_to_inbox_messages("account", "change_password", payload)
+
+        # --- Lógica Antiga (executada em paralelo) ---
+        # Tenta alterar a senha diretamente no arquivo local.
         with open(accounts_path, 'r+', encoding='utf-8') as f:
             try:
                 accounts = json.load(f)
@@ -74,6 +84,11 @@ class ChangePasswordView(RelativeLayout):
             
             if not user_found:
                 App.get_running_app().show_error_popup("Erro: Usuário não encontrado.")
+                # Mesmo se o usuário não for encontrado localmente, a mensagem foi enviada.
+                # O backend pode ter uma visão diferente do estado.
+                # Limpamos e voltamos para a tela anterior.
+                self.clear_fields()
+                App.get_running_app().manager.pop()
 
     def cancel(self):
         """Cancela a operação e retorna à tela anterior."""
