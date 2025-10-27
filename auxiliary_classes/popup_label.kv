@@ -1,12 +1,18 @@
 <PopupLabel>:
-    # Define o tamanho baseado no conteúdo do texto, com um padding
-    size_hint: None, None
-    size: self.texture_size[0] + dp(24), self.texture_size[1] + dp(12)
+    # Define a largura como 80% da tela e a altura como automática
+    size_hint: 0.8, None
+    height: self.texture_size[1] + dp(20) # Altura baseada no texto com quebra de linha + padding vertical
     
     # Posiciona na parte inferior central da tela
     pos_hint: {'center_x': 0.5}
     y: dp(30)
     
+    # Define a caixa de texto para permitir quebra de linha
+    text_size: self.width, None
+
+    # Centraliza o texto horizontalmente
+    halign: 'center'
+
     # Começa invisível
     opacity: 0
     

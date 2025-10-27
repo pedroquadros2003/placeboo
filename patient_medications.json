@@ -50,18 +50,18 @@
             "patient_user": "paciente.a@email.com"
         },
         {
-            "id": "med1761406242",
-            "generic_name": "Palonosetrona",
+            "id": "med1761575286",
+            "generic_name": "Paclitaxel",
             "presentation": "Adesivo",
-            "dosage": "ad",
-            "quantity": "qe",
+            "dosage": "a",
+            "quantity": "",
             "days_of_week": [
                 "Sex"
             ],
             "times_of_day": [
-                "09:30"
+                "08:00"
             ],
-            "start_date": "2025-10-25",
+            "start_date": "2025-10-27",
             "end_date": "",
             "observation": ""
         }

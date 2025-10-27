@@ -96,6 +96,10 @@ class SignUpScreen(Screen):
         if not self.ids.name_input.text or not self.ids.user_input.text or not self.ids.password_input.text:
             App.get_running_app().show_error_popup("Nome, Usuário e Senha são obrigatórios.")
             return
+        
+        if len(self.ids.password_input.text) < 6:
+            App.get_running_app().show_error_popup("A senha deve ter no mínimo 6 caracteres.")
+            return
 
         # --- Gather patient-specific data if applicable ---
         is_patient = self.profile_type == 'patient' or self.is_also_patient

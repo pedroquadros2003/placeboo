@@ -438,7 +438,7 @@ class MedicationsView(RelativeLayout):
                 size_hint=(0.5, None), # Button takes 50% of the container width
                 height=dp(40),
                 background_color=(0.85, 0.85, 0.85, 1), # Fundo cinza padrão
-                color=(0, 0, 0, 1), # Texto preto
+                color=(1, 1, 1, 1), # Texto branco
                 halign='left', # Alinha o texto à esquerda
                 padding=[dp(12), 0] # Adiciona padding horizontal
             )

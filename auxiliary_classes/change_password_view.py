@@ -40,8 +40,8 @@ class ChangePasswordView(RelativeLayout):
             App.get_running_app().show_error_popup("A nova senha e a confirmação não coincidem.")
             return
         
-        if len(new_password) < 3: # Basic password strength check
-            App.get_running_app().show_error_popup("A nova senha deve ter pelo menos 3 caracteres.")
+        if len(new_password) < 6: # Basic password strength check
+            App.get_running_app().show_error_popup("A nova senha deve ter no mínimo 6 caracteres.")
             return
 
         accounts_path = self._get_main_dir_path('account.json')
