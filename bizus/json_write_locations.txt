@@ -39,28 +39,40 @@ devido à garantia de validade e consistência dos registros no backend
 comandos in são para para o inbox local, para o registro no json locais.
 comandos out são para o registro no servidor externo
 
+Além dos comandos in que carregam o user_data, vamos criar uma classe de comandos in comeback que fornecem uma
+resposta a um determinado comando enviado ao servidor. Essa resposta tem o código do comando
+e um executed true or false, para saber se o comando foi de fato executado.
+Daí, localmente, teremos um json que guardará os comandos enviados 
+para o quais aguardamos a resposta (diretamente retirados da outbox)
+
+
 1
 diagnostic 
 add_diagnostic / delete_diagnostic / edit_diagnostic 
 in/out
 
+add_diagnostic_cback / delete_diagnostic_cback / edit_diagnostic_cback
+in
 
 2
 evolution 
 update_tracked_metrics / fill_metric 
 in/out
 
+update_tracked_metrics_cback / fill_metric_cback
+in
 
 3
 event
 add_event / delete_event / edit_event 
 in/out
 
-
+add_event_cback / delete_event_cback / edit_event_cback
+in
 4
 account
 
-success_login / fail_login
+try_login_cback
 in
 
 delete_account / create_account / change_password / try_login
@@ -70,22 +82,22 @@ out
 5
 linking_accounts
 
-establish_link 
+invite_patient_cback / respond_to_invitation_cback / unlink_accounts_cback
 in
 
-invite_patient  / respond_to_invitation
-out
 
-unlink_accounts
+unlink_accounts / invite_patient / respond_to_invitation
 in / out
 
 
 6
 medication 
+
 add_med / delete_med / edit_med 
 in/out
 
-
+add_med_cback / delete_med_cback / edit_med_cback
+in
 
 -----------------------------------------------------------------------------------
 

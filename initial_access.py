@@ -51,7 +51,7 @@ class LoginScreen(Screen):
         app = App.get_running_app()
         request_id = app.outbox_processor.add_to_outbox("account", "try_login", try_login_payload)
         app.pending_request_id = request_id # Armazena o ID da requisição
-        App.get_running_app().show_success_popup("Verificando credenciais...")
+        # O feedback (sucesso/erro) agora virá do backend.
 
     def go_to_signup(self):
         self.manager.get_screen('sign_up').profile_type = self.profile_type
@@ -154,7 +154,7 @@ class SignUpScreen(Screen):
         app = App.get_running_app()
         request_id = app.outbox_processor.add_to_outbox("account", "create_account", create_account_payload)
         app.pending_request_id = request_id # Armazena o ID da requisição
-        App.get_running_app().show_success_popup("Enviando dados para criação da conta...")
+        # O feedback (sucesso/erro) agora virá do backend.
 
     def enforce_text_limit(self, text_input, max_length):
         """Enforces a maximum character limit on a TextInput."""

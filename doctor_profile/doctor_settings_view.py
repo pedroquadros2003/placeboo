@@ -67,5 +67,5 @@ class DoctorSettingsView(RelativeLayout):
 
         # A lógica de deleção foi movida para o backend.
         # O cliente apenas envia a mensagem e faz o logout.
-        App.get_running_app().show_success_popup(f"Solicitação para deletar a conta de {doctor_user} enviada.")
+        # O feedback (sucesso/erro) agora virá do backend.
         self.logout() # Log out to clear session and return to initial screen

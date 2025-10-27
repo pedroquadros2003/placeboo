@@ -59,7 +59,7 @@ class ChangePasswordView(RelativeLayout):
 
         # A lógica de alteração foi movida para o backend.
         # O cliente apenas envia a mensagem e aguarda uma resposta (se aplicável).
-        App.get_running_app().show_success_popup("Solicitação de alteração de senha enviada.")
+        # O feedback (sucesso/erro) agora virá do backend.
         self.clear_fields()
         App.get_running_app().manager.pop() # Go back to previous screen
 

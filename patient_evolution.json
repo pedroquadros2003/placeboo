@@ -128,6 +128,11 @@
             "temperature": "35",
             "weight": "100",
             "heart_rate": "21"
+        },
+        "2025-10-27": {
+            "heart_rate": "25",
+            "temperature": "12",
+            "weight": "70"
         }
     },
     "14121641": {

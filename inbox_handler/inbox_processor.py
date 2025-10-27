@@ -10,13 +10,34 @@ class InboxProcessor:
     Processa mensagens da 'inbox' (vindas do backend) e atualiza o estado do cliente.
     """
 
+    # Dicionário de tradução para mensagens de sucesso de 'comeback'
+    ACTION_TRANSLATIONS = {
+        "add_diagnostic": "Diagnóstico adicionado",
+        "delete_diagnostic": "Diagnóstico removido",
+        "edit_diagnostic": "Diagnóstico editado",
+        "update_tracked_metrics": "Métricas rastreadas atualizadas",
+        "fill_metric": "Dados de evolução salvos",
+        "add_event": "Evento adicionado",
+        "delete_event": "Evento removido",
+        "edit_event": "Evento editado",
+        "delete_account": "Conta deletada",
+        "change_password": "Senha alterada",
+        "invite_patient": "Convite enviado",
+        "respond_to_invitation": "Resposta ao convite processada",
+        "unlink_accounts": "Conta desvinculada",
+        "add_med": "Medicação adicionada",
+        "delete_med": "Medicação removida",
+        "edit_med": "Medicação editada"
+    }
+
     def __init__(self, base_path: str):
-        """
+        '''
         Inicializa o processador de inbox.
 
         Args:
             base_path: O caminho raiz do projeto.
-        """
+        '''
+        
         self.base_path = base_path
         self.inbox_path = os.path.join(self.base_path, 'inbox_handler', 'inbox_messages.json')
         self.decoder = MessageDecoder()
@@ -77,12 +98,34 @@ class InboxProcessor:
         handler_method = getattr(self, handler_method_name, self._handle_unknown)
         
         print(f"[InboxProcessor] Mensagem entendida. Roteando para o método: {handler_method_name}")
-        
-        # Executa o método handler correspondente à mensagem.
-        handler_method(payload)
+
+        # Se for uma mensagem de 'comeback', usa o handler genérico.
+        if action.endswith('_cback'):
+            self._handle_comeback(action, payload)
+        else:
+            # Executa o método handler correspondente à mensagem.
+            handler_method(payload)
 
     def _handle_unknown(self, payload: Dict[str, Any]):
         print(f"[Inbox] Ação desconhecida ou não implementada no cliente.")
+
+    def _handle_comeback(self, action: str, payload: Dict[str, Any]):
+        """Handler genérico para todas as mensagens de 'comeback'."""
+        app = App.get_running_app()
+        request_id = payload.get("request_message_id")
+
+        if payload.get("executed"):
+            # Transforma 'add_diagnostic_cback' em 'Diagnóstico adicionado'
+            action_base_name = action.replace('_cback', '')
+            translated_message = self.ACTION_TRANSLATIONS.get(action_base_name, f"{action_base_name.replace('_', ' ').capitalize()} (sucesso)")
+            app.show_success_popup(f"{translated_message}!")
+        else:
+            reason = payload.get("reason", "A operação falhou.")
+            app.show_error_popup(f"Erro: {reason}")
+        
+        # Se a resposta for para a requisição pendente atual, limpa o ID.
+        if app.pending_request_id == request_id:
+            app.pending_request_id = None
 
     def _handle_account_success_login(self, payload: Dict[str, Any]):
         """Cria a sessão local e redireciona o usuário após o backend confirmar o login."""

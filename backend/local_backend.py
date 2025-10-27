@@ -2,7 +2,7 @@ import json
 import os
 import shutil
 from datetime import datetime
-import uuid
+from datetime import datetime, timezone, timedelta
 import random
 from backend.database_manager import PersistenceService
 
@@ -29,10 +29,16 @@ class LocalBackend:
         self.outbox_path = os.path.join(self.outbox_handler_path, 'outbox_messages.json')
         self.db = PersistenceService(base_path)
 
+    def _get_brasilia_timestamp(self) -> str:
+        """Retorna o timestamp atual no horário de Brasília (UTC-3), formatado."""
+        # Horário de Brasília é UTC-3
+        brasilia_time = datetime.now(timezone.utc) + timedelta(hours=-3)
+        return brasilia_time.isoformat(timespec='seconds')
+
     def _generate_server_message(self, obj, action, payload, origin_user_id="server"):
         """Cria uma nova mensagem com origem do servidor."""
-        timestamp = datetime.now().isoformat(timespec='seconds') + 'Z'
-        message_id = f"msg_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}"
+        timestamp = self._get_brasilia_timestamp()
+        message_id = f"msg_{datetime.now().strftime('%Y%m%d%H%M%S')}_{os.urandom(4).hex()}"
         return {
             "message_id": message_id,
             "timestamp": timestamp,
@@ -80,6 +86,9 @@ class LocalBackend:
 
             print(f"[Backend] Processando: {obj}/{action} de {origin_user}")
 
+            # Adiciona o timestamp de registro do servidor (horário de Brasília)
+            msg["timestamp"] = self._get_brasilia_timestamp()
+
             # 1. Redireciona a mensagem original para o inbox, a menos que seja uma ação "out-only".
             if (obj, action) not in OUT_ONLY_ACTIONS:
                 new_inbox_messages.append(msg)
@@ -92,11 +101,12 @@ class LocalBackend:
                 self._handle_create_account(msg, new_inbox_messages)
 
             elif obj == "account" and action == "delete_account":
-                self.db.delete_account(origin_user) # Ação de deleção no DB
+                success = self.db.delete_account(origin_user)
+                self._send_comeback(msg, new_inbox_messages, success)
 
             elif obj == "account" and action == "change_password":
                 success = self.db.change_password(origin_user, payload.get("current_password"), payload.get("new_password"))
-                # Poderíamos enviar uma mensagem de sucesso/falha de volta se quiséssemos
+                self._send_comeback(msg, new_inbox_messages, success)
 
             elif obj == "diagnostic":
                 self._handle_patient_data(msg, "patient_diagnostics.json")
@@ -109,16 +119,19 @@ class LocalBackend:
 
             elif obj == "evolution" and action == "fill_metric":
                 self.db.fill_evolution_metric(payload.get("patient_id"), payload.get("date"), payload.get("metrics"))
+                self._send_comeback(msg, new_inbox_messages, True) # Assume success for now
             elif obj == "evolution" and action == "update_tracked_metrics":
                 self.db.update_tracked_metrics(payload.get("patient_id"), payload.get("tracked_metrics"))
+                self._send_comeback(msg, new_inbox_messages, True) # Assume success for now
             
             elif obj == "linking_accounts" and action == "invite_patient":
                 # O origin_user é o médico que está convidando
                 status = self.db.add_invitation(origin_user, payload.get("patient_user_to_invite"))
-                # Poderíamos enviar uma mensagem de status de volta para a UI do médico
+                self._send_comeback(msg, new_inbox_messages, "sucesso" in status.lower(), reason=status)
 
             elif obj == "linking_accounts" and action == "respond_to_invitation": # Paciente responde
                 self.db.respond_to_invitation(origin_user, payload.get("doctor_id"), payload.get("response"))
+                self._send_comeback(msg, new_inbox_messages, True)
                 if payload.get("response") == "accept": # Notifica o médico se aceito
                     self._handle_accepted_invitation(payload, origin_user, new_inbox_messages)
             
@@ -136,6 +149,23 @@ class LocalBackend:
         # Limpa o outbox após o processamento
         self.db._write_db(self.outbox_path, [])
         print("[Backend] Outbox limpo.")
+
+    def _send_comeback(self, original_message, message_list, success, reason=""):
+        """Gera uma mensagem de 'comeback' para uma ação do cliente."""
+        original_obj = original_message.get("object")
+        original_action = original_message.get("action")
+        origin_user = original_message.get("origin_user_id")
+        
+        comeback_action = f"{original_action}_cback"
+        
+        payload = {
+            "request_message_id": original_message.get("message_id"),
+            "executed": success,
+            "reason": reason if not success else ""
+        }
+        
+        comeback_msg = self._generate_server_message(original_obj, comeback_action, payload, origin_user_id=origin_user)
+        message_list.append(comeback_msg)
 
     def _handle_patient_data(self, message, filename):
         """Handler genérico para CRUD de dados de paciente (diagnósticos, eventos, etc.)."""

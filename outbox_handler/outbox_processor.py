@@ -119,12 +119,11 @@ class OutboxProcessor:
             print(f"Aviso: Não foi possível determinar o origin_user_id para a mensagem {obj}/{action}. Mensagem não registrada no outbox.")
             return None
 
-        timestamp = datetime.now().isoformat(timespec='seconds') + 'Z'
         message_id = f"msg_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}"
 
         message = {
             "message_id": message_id,
-            "timestamp": timestamp,
+            # O timestamp será adicionado pelo backend ao processar a mensagem
             "origin_user_id": origin_user_id,
             "object": obj,
             "action": action,
