@@ -48,10 +48,10 @@ class LoginScreen(Screen):
 
         print(f"Sending login request for: {login_user}")
         try_login_payload = {"user": login_user, "password": login_password}
-        app = App.get_running_app()
-        request_id = app.outbox_processor.add_to_outbox("account", "try_login", try_login_payload)
+        app = App.get_running_app() # [R005]
+        request_id = app.outbox_processor.add_to_outbox("account", "try_login", try_login_payload, origin_user_override=login_user)
         app.pending_request_id = request_id # Armazena o ID da requisição
-        # O feedback (sucesso/erro) agora virá do backend.
+        App.get_running_app().show_success_popup("Verificando credenciais...")
 
     def go_to_signup(self):
         self.manager.get_screen('sign_up').profile_type = self.profile_type
@@ -77,15 +77,6 @@ class SignUpScreen(Screen):
         self.ids.sex_input.text = 'Sexo'
         self.ids.is_also_patient_switch.active = False
 
-    def _load_accounts(self):
-        """Safely loads accounts from the JSON file."""
-        accounts_path = self._get_main_dir_path('account.json')
-        if os.path.exists(accounts_path):
-            with open(accounts_path, 'r', encoding='utf-8') as f:
-                try: return json.load(f)
-                except json.JSONDecodeError: return []
-        return []
-
     def create_account(self):
         """
         Gathers data from the input fields, sends a 'create_account' message
@@ -96,15 +87,10 @@ class SignUpScreen(Screen):
         if not self.ids.name_input.text or not self.ids.user_input.text or not self.ids.password_input.text:
             App.get_running_app().show_error_popup("Nome, Usuário e Senha são obrigatórios.")
             return
-        
-        if len(self.ids.password_input.text) < 6:
-            App.get_running_app().show_error_popup("A senha deve ter no mínimo 6 caracteres.")
-            return
 
         # --- Gather patient-specific data if applicable ---
         is_patient = self.profile_type == 'patient' or self.is_also_patient
         if is_patient:
-            # --- Add validation for patient-specific fields ---
             if not self.ids.height_input.text or self.ids.day_input.text == '' or self.ids.month_spinner.text == 'Mês' or self.ids.year_spinner.text == 'Ano' or self.ids.sex_input.text == 'Sexo':
                 App.get_running_app().show_error_popup("Para pacientes, todos os campos são obrigatórios.")
                 return
@@ -152,7 +138,10 @@ class SignUpScreen(Screen):
             "patient_info": patient_specific_info
         }
         app = App.get_running_app()
-        request_id = app.outbox_processor.add_to_outbox("account", "create_account", create_account_payload)
+        # Passa o nome de usuário explicitamente para que o outbox saiba quem é a origem
+        username = self.ids.user_input.text
+        request_id = app.outbox_processor.add_to_outbox("account", "create_account", create_account_payload, origin_user_override=username)
+        print(f"[DEBUG] Setting pending_request_id: {request_id}")
         app.pending_request_id = request_id # Armazena o ID da requisição
         # O feedback (sucesso/erro) agora virá do backend.
 

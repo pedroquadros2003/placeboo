@@ -111,10 +111,6 @@ class OutboxProcessor:
         """
         origin_user_id = self._get_origin_user_id() or origin_user_override
         
-        # Se não houver sessão, verifica casos especiais como criação de conta ou tentativa de login.
-        if not origin_user_id and obj == 'account' and action in ['create_account', 'try_login']:
-            origin_user_id = payload.get('user')
-
         if not origin_user_id:
             print(f"Aviso: Não foi possível determinar o origin_user_id para a mensagem {obj}/{action}. Mensagem não registrada no outbox.")
             return None
@@ -144,7 +140,7 @@ class OutboxProcessor:
 
         with open(outbox_filepath, 'w', encoding='utf-8') as f:
             json.dump(all_messages, f, indent=4)
-        print(f"Mensagem {message.get('object')}/{message.get('action')} adicionada ao outbox_messages.json.")
+        print(f"[Outbox] Mensagem {message.get('object')}/{message.get('action')} adicionada ao outbox_messages.json.")
         return message_id
 
     def _handle_diagnostic_edit(self, payload: Dict[str, Any]):

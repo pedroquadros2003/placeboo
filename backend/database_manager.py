@@ -17,20 +17,46 @@ class PersistenceService:
         """
         self.db_path = base_path
 
+    def _get_filepath(self, filename: str) -> str:
+        """Constrói o caminho do arquivo, tratando os arquivos do backend como um caso especial."""
+        backend_files = [
+            'doctor_ids.json',
+            'patient_ids.json',
+            'placebo_transactions.json',
+            'processed_transaction_ids.json'
+        ]
+        
+        base_name = os.path.basename(filename)
+
+        if base_name in backend_files:
+            return os.path.join(self.db_path, 'backend', base_name)
+        else:
+            # Usa o caminho completo se fornecido, ou assume o diretório principal.
+            return filename if os.path.isabs(filename) else os.path.join(self.db_path, base_name)
+
     def _read_db(self, filename: str) -> List | Dict:
         """Lê um arquivo JSON de forma segura, retornando uma lista ou dicionário."""
-        filepath = os.path.join(self.db_path, filename)
+        filepath = self._get_filepath(filename)
+        # Define quais arquivos devem ser dicionários por padrão.
+        # Todos os outros serão tratados como listas.
+        dict_files = [
+            'patient_evolution.json',
+            'patient_diagnostics.json',
+            'patient_medications.json',
+            'patient_events.json'
+        ]
+
         if not os.path.exists(filepath):
-            return [] if "ids" in filename or "account" in filename else {}
+            return {} if os.path.basename(filename) in dict_files else []
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except (json.JSONDecodeError, FileNotFoundError):
-            return [] if "ids" in filename or "account" in filename else {}
+            return {} if os.path.basename(filename) in dict_files else []
 
     def _write_db(self, filename: str, data: List | Dict):
         """Escreve dados em um arquivo JSON."""
-        filepath = os.path.join(self.db_path, filename)
+        filepath = self._get_filepath(filename)
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=4)
 

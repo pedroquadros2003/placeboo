@@ -27,6 +27,9 @@ class LocalBackend:
         self.inbox_path = os.path.join(self.inbox_handler_path, 'inbox_messages.json')
         self.outbox_handler_path = os.path.join(self.base_path, 'outbox_handler')
         self.outbox_path = os.path.join(self.outbox_handler_path, 'outbox_messages.json')
+        self.backend_path = os.path.join(self.base_path, 'backend')
+        self.processed_ids_path = os.path.join(self.backend_path, 'processed_transaction_ids.json')
+        self.transactions_path = os.path.join(self.backend_path, 'placebo_transactions.json')
         self.db = PersistenceService(base_path)
 
     def _get_brasilia_timestamp(self) -> str:
@@ -48,16 +51,41 @@ class LocalBackend:
             "payload": payload
         }
 
-    def process_outbox(self):
+    ## Aqui, o backend diretamente faz adição de mensagens ao outbox
+    ## Futuramente, teremos que mudar essa lógica
+    def _ingest_from_outbox(self) -> list:
         """
-        Processa todas as mensagens no outbox, gera respostas e as move para o inbox.
+        Move mensagens do outbox do cliente para o log de transações principal
+        e retorna apenas as novas mensagens que foram ingeridas.
         """
         outbox_messages = self.db._read_db(self.outbox_path)
         if not outbox_messages:
+            return []
+
+        all_transactions = self.db._read_db(self.transactions_path)
+        all_transactions.extend(outbox_messages)
+        
+        self.db._write_db(self.transactions_path, all_transactions)
+        # O outbox não é mais limpo diretamente pelo backend.
+        print(f"[Backend] Ingestão de {len(outbox_messages)} novas mensagens do outbox.")
+        return outbox_messages
+
+
+    ## Aqui, o backend diretamente faz adição de mensagens ao inbox
+    ## Futuramente, teremos que mudar essa lógica
+    def run_processing_cycle(self):
+        """
+        Executa o ciclo completo de processamento do backend:
+        1. Ingestão de novas mensagens do outbox.
+        2. Processamento das novas transações e escrita das respostas no inbox.
+        """
+        new_transactions = self._ingest_from_outbox()
+        
+        if not new_transactions:
             return
 
-        inbox_messages = self.db._read_db(self.inbox_path)
         new_inbox_messages = []
+        processed_ids = set(self.db._read_db(self.processed_ids_path))
 
         # Ações que são apenas de saída (cliente -> servidor) e não devem ser retransmitidas para o inbox.
         # O backend as processa e gera uma resposta, se necessário.
@@ -78,11 +106,18 @@ class LocalBackend:
             ("evolution", "fill_metric"), ("evolution", "update_tracked_metrics"),
         }
 
-        for msg in outbox_messages:
+        for msg in new_transactions:
+            msg_id = msg.get("message_id")
+            if msg_id in processed_ids:
+                continue # Garante que a transação não seja processada duas vezes
+
             obj = msg.get("object")
             action = msg.get("action")
             payload = msg.get("payload")
             origin_user = msg.get("origin_user_id")
+
+            # Marca como processada antes de executar para evitar reprocessamento em caso de falha
+            processed_ids.add(msg_id)
 
             print(f"[Backend] Processando: {obj}/{action} de {origin_user}")
 
@@ -141,14 +176,22 @@ class LocalBackend:
             elif obj == "linking_accounts" and action == "invite_patient":
                  self._handle_new_invitation(payload, origin_user, new_inbox_messages)
 
+            # 3. Envia mensagem para o cliente limpar seu outbox
+            delete_payload = {"message_id_to_delete": msg_id}
+            delete_msg = self._generate_server_message("outbox", "delete_from_outbox", delete_payload, origin_user_id=origin_user)
+            new_inbox_messages.append(delete_msg)
+
+        ## Aqui, o backend diretamente faz adição de mensagens ao inbox
+        ## Futuramente, teremos que mudar essa lógica
         if new_inbox_messages:
-            inbox_messages.extend(new_inbox_messages)
-            self.db._write_db(self.inbox_path, inbox_messages)
+            # Lê o inbox atual e anexa as novas mensagens para não sobrescrever nada.
+            current_inbox = self.db._read_db(self.inbox_path)
+            current_inbox.extend(new_inbox_messages)
+            self.db._write_db(self.inbox_path, current_inbox)
             print(f"[Backend] {len(new_inbox_messages)} novas mensagens adicionadas ao inbox.")
 
-        # Limpa o outbox após o processamento
-        self.db._write_db(self.outbox_path, [])
-        print("[Backend] Outbox limpo.")
+        self.db._write_db(self.processed_ids_path, list(processed_ids)) # Salva os IDs processados
+        print("[Backend] Ciclo de processamento concluído.")
 
     def _send_comeback(self, original_message, message_list, success, reason=""):
         """Gera uma mensagem de 'comeback' para uma ação do cliente."""
@@ -194,6 +237,7 @@ class LocalBackend:
         if account:
             # Login bem-sucedido
             response_payload = {
+                "executed": True,
                 "user_data": {
                     "id": account.get("id"),
                     "name": account.get("name"),
@@ -202,12 +246,12 @@ class LocalBackend:
                 },
                 "request_message_id": original_msg_id
             }
-            server_msg = self._generate_server_message("account", "success_login", response_payload, origin_user_id=login_user)
+            server_msg = self._generate_server_message("account", "try_login_cback", response_payload, origin_user_id=login_user)
             message_list.append(server_msg)
         else:
             # Falha no login
-            response_payload = {"reason": "Usuário ou senha inválidos.", "request_message_id": original_msg_id}
-            server_msg = self._generate_server_message("account", "fail_login", response_payload, origin_user_id=login_user)
+            response_payload = {"executed": False, "reason": "Usuário ou senha inválidos.", "request_message_id": original_msg_id}
+            server_msg = self._generate_server_message("account", "try_login_cback", response_payload, origin_user_id=login_user)
             message_list.append(server_msg)
 
     def _handle_create_account(self, original_message, message_list):
@@ -224,8 +268,8 @@ class LocalBackend:
             return
 
         if any(acc['user'] == user for acc in accounts):
-            response_payload = {"reason": f"Usuário '{user}' já existe.", "request_message_id": original_msg_id}
-            server_msg = self._generate_server_message("account", "fail_login", response_payload, origin_user_id=user)
+            response_payload = {"executed": False, "reason": f"Usuário '{user}' já existe.", "request_message_id": original_msg_id}
+            server_msg = self._generate_server_message("account", "try_login_cback", response_payload, origin_user_id=user)
             message_list.append(server_msg)
             return
 
@@ -268,22 +312,15 @@ class LocalBackend:
         self.db.save_accounts(accounts)
         print(f"[Backend] Conta '{user}' criada com sucesso.")
 
-        # --- Envia mensagem de success_login para o cliente ---
-        login_response_payload = {
-            "user_data": {
-                "id": base_user_data.get("id"),
-                "name": base_user_data.get("name"),
-                "user": base_user_data.get("user"),
-                "profile_type": base_user_data.get("profile_type")
-            },
-            "request_message_id": original_msg_id
-        }
-        server_msg = self._generate_server_message("account", "success_login", login_response_payload, origin_user_id=user)
-        message_list.append(server_msg)
+        # Envia uma mensagem de confirmação (comeback) para o cliente.
+        self._send_comeback(original_message, message_list, True)
 
+    ## Aqui, o backend faz leitura da base de dados, precisará de mudanças quando ela 
+    ## não for mais local
     def _generate_unique_id(self, id_type):
         """Gera um ID numérico único e o salva no arquivo de IDs correspondente."""
         filename = f"{id_type}_ids.json"
+
         existing_ids = self.db._read_db(filename)
 
         while True:

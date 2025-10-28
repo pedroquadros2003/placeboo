@@ -1,10 +1,10 @@
 # Modelos de Mensagens JSON para Comunicação
 
-Este documento define a estrutura das mensagens JSON utilizadas para a comunicação entre o cliente (aplicativo) e o servidor (backend). Cada mensagem representa uma transação ou evento no sistema.
+Este documento define a estrutura das mensagens JSON utilizadas para a comunicação no sistema. Cada mensagem representa uma transação ou evento.
 
 ## Estrutura Base da Mensagem
 
-Todas as mensagens, sejam de `inbox` ou `outbox`, compartilham uma estrutura base para garantir consistência e rastreabilidade.
+Todas as mensagens compartilham uma estrutura base para garantir consistência e rastreabilidade.
 
 ```json
 {

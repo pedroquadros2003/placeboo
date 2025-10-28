@@ -78,9 +78,10 @@ class PlaceboApp (App):  ## Aplicações em Kivy terminam em App
 
     def run_sync_cycle(self, dt):
         """Simulates a client-server sync cycle."""
-        # 1. Backend processes outgoing messages from client
-        self.local_backend.process_outbox()
-        # 2. Client processes incoming messages from backend
+        # 1. O Backend processa as transações e escreve as respostas diretamente no inbox.
+        self.local_backend.run_processing_cycle()
+
+        # 2. O InboxProcessor do cliente processa todas as mensagens em sua caixa de entrada.
         self.inbox_processor.process_inbox()
 
 PlaceboApp().run()

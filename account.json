@@ -120,5 +120,12 @@
         "user": "pedri",
         "password": "pedri",
         "id": "71197692"
+    },
+    {
+        "profile_type": "doctor",
+        "name": "welber",
+        "user": "welber",
+        "password": "welber",
+        "id": "29160136"
     }
 ]

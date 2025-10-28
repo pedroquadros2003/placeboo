@@ -64,6 +64,5 @@ class PatientAppSettingsView(RelativeLayout):
         App.get_running_app().outbox_processor.add_to_outbox("account", "delete_account", payload)
 
         # A lógica de deleção foi movida para o backend.
-        # O cliente apenas envia a mensagem e faz o logout.
-        App.get_running_app().show_success_popup(f"Solicitação para deletar a conta de {patient_user} enviada.")
-        self.logout() # Faz o logout para limpar a sessão e retornar à tela inicial
+        # O cliente apenas envia a mensagem e aguarda a resposta do backend.
+        App.get_running_app().show_success_popup("Solicitação para deletar conta enviada...")

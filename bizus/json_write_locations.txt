@@ -99,6 +99,17 @@ in/out
 add_med_cback / delete_med_cback / edit_med_cback
 in
 
+
+7 inbox / outbox
+
+send_to_inbox / delete_from_outbox
+in
+
+
+
+
+
+
 -----------------------------------------------------------------------------------
 
 

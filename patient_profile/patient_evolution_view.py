@@ -192,8 +192,6 @@ class PatientEvolutionView(RelativeLayout):
         payload = {"patient_id": patient_id, "date": date_str, "metrics": new_data}
         App.get_running_app().outbox_processor.add_to_outbox("evolution", "fill_metric", payload)
 
-        print(f"Dados de evolução salvos para o paciente {patient_id} na data {date_str}.")
-
     def _get_evolution_data_for_date(self, patient_id, date_str):
         """Busca dados de evolução salvos para um paciente e data específicos."""
         evolution_path = self._get_main_dir_path('patient_evolution.json')
