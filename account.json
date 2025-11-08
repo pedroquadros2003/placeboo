@@ -121,5 +121,36 @@
         "user": "welber",
         "password": "welber",
         "id": "29160136"
+    },
+    {
+        "profile_type": "patient",
+        "name": "patofu",
+        "user": "patofu_patient_profile",
+        "password": "internal_use_only",
+        "id": "21439724",
+        "patient_info": {
+            "height_cm": "186",
+            "date_of_birth": {
+                "day": "31",
+                "month": "8",
+                "year": "2017"
+            },
+            "sex": "Outro",
+            "patient_code": "21439724",
+            "responsible_doctors": [
+                "81253409"
+            ]
+        }
+    },
+    {
+        "profile_type": "doctor",
+        "name": "patofu",
+        "user": "patofu",
+        "password": "patofu",
+        "id": "81253409",
+        "linked_patients": [
+            "21439724"
+        ],
+        "self_patient_id": "21439724"
     }
 ]

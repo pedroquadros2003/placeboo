@@ -159,5 +159,57 @@
             "end_date": "",
             "observation": ""
         }
+    ],
+    "patofu_patient_profile": [
+        {
+            "id": "med1762637382",
+            "generic_name": "Paclitaxel",
+            "presentation": "C\u00e1psula",
+            "dosage": "50 mg",
+            "quantity": "1 cp",
+            "days_of_week": [
+                "Todos os dias"
+            ],
+            "times_of_day": [
+                "05:06"
+            ],
+            "start_date": "2025-11-08",
+            "end_date": "",
+            "observation": "opcional, s\u00f3 que n\u00e3o",
+            "patient_user": "patofu_patient_profile"
+        },
+        {
+            "id": "med1762638035",
+            "generic_name": "Pantoprazol",
+            "presentation": "Comprimido",
+            "dosage": "45 mg",
+            "quantity": "23 cp",
+            "days_of_week": [
+                "Todos os dias"
+            ],
+            "times_of_day": [
+                "14:02"
+            ],
+            "start_date": "2025-11-08",
+            "end_date": "",
+            "observation": ""
+        },
+        {
+            "id": "med1762638350",
+            "generic_name": "Paclitaxel",
+            "presentation": "C\u00e1psula",
+            "dosage": "1 g",
+            "quantity": "2",
+            "days_of_week": [
+                "Ter"
+            ],
+            "times_of_day": [
+                "01:01"
+            ],
+            "start_date": "2025-11-08",
+            "end_date": "",
+            "observation": "",
+            "patient_user": "patofu_patient_profile"
+        }
     ]
 }

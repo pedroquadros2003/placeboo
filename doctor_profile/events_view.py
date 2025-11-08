@@ -38,6 +38,14 @@ class EventsView(RelativeLayout):
         self.year_list = [str(y) for y in range(current_year + 5, current_year - 5, -1)]
         self.load_events()
 
+    def on_current_patient_user(self, instance, value):
+        """Atualiza a view quando o paciente muda."""
+        if value:
+            self.load_events()
+        else:
+            # Limpa o conteúdo se nenhum paciente estiver selecionado
+            self.ids.events_list.clear_widgets()
+
     def load_events(self):
         events_path = self._get_main_dir_path('patient_events.json')
         """Loads event list for the selected patient from the JSON file."""

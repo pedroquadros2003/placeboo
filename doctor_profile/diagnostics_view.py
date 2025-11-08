@@ -199,14 +199,13 @@ class DiagnosticsView(RelativeLayout):
                 }
                 break
         
-        # self._save_to_file(None, is_new=False) # Lógica de escrita removida
-        self.cancel_edit()
-        self.load_diagnostics()
-        
         # Adiciona mensagem ao outbox_messages.json
         payload = self.diagnostics[i].copy() # Usa o diagnóstico atualizado
         payload['patient_user'] = self.current_patient_user
         App.get_running_app().outbox_processor.add_to_outbox("diagnostic", "edit_diagnostic", payload)
+        App.get_running_app().show_success_popup("Solicitação de edição de diagnóstico enviada.")
+        
+        self.cancel_edit()
         
     def _get_main_dir_path(self, filename):
         """Constructs the full path to a file in the main project directory."""

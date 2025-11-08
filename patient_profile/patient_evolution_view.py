@@ -33,13 +33,14 @@ class PatientEvolutionView(RelativeLayout):
 
     def on_enter(self):
         """Chamado quando a tela é exibida. Carrega os dados e preenche com a data de hoje."""
-        # Garante que os dados do paciente estão sempre atualizados ao entrar na tela
         self.load_logged_in_patient_info()
         self.fill_today_date()
 
-    def _get_main_dir_path(self, filename):
-        """Constrói o caminho completo para um arquivo no diretório principal."""
-        return os.path.join(App.get_running_app().get_user_data_path(), filename)
+    def on_logged_in_patient_info(self, instance, value):
+        """Chamado automaticamente quando a propriedade 'logged_in_patient_info' muda."""
+        if value:
+            # Quando as informações do paciente são carregadas, atualiza a data e os campos.
+            self.fill_today_date()
 
     def load_logged_in_patient_info(self):
         """Carrega os dados do paciente logado a partir de session.json e account.json."""
@@ -51,18 +52,36 @@ class PatientEvolutionView(RelativeLayout):
             try:
                 with open(session_path, 'r') as f:
                     session_data = json.load(f)
-                if session_data.get('logged_in') and session_data.get('profile_type') == 'patient':
-                    patient_user = session_data.get('user')
+                
+                session_user = session_data.get('user')
+                profile_type = session_data.get('profile_type')
+
+                if session_data.get('logged_in'):
+                    if profile_type == 'patient':
+                        patient_user = session_user
+                    elif profile_type == 'doctor':
+                        with open(accounts_path, 'r', encoding='utf-8') as acc_f:
+                            accounts = json.load(acc_f)
+                        doctor_account = next((acc for acc in accounts if acc.get('user') == session_user), None)
+                        if doctor_account and doctor_account.get('self_patient_id'):
+                            self_patient_account = next((acc for acc in accounts if acc.get('id') == doctor_account.get('self_patient_id')), None)
+                            if self_patient_account:
+                                patient_user = self_patient_account.get('user')
             except (json.JSONDecodeError, FileNotFoundError):
                 print("Erro ao carregar session.json.")
 
         if patient_user and os.path.exists(accounts_path):
             with open(accounts_path, 'r', encoding='utf-8') as f:
                 accounts = json.load(f)
-            self.logged_in_patient_info = next((acc for acc in accounts if acc.get('user') == patient_user), {})
+            self.logged_in_patient_info = next((acc for acc in accounts if acc.get('user') == patient_user), {}) # Dispara o on_logged_in_patient_info
         
         if not self.logged_in_patient_info:
             print("Nenhum paciente logado ou dados de sessão inválidos.")
+            self.ids.metrics_grid.clear_widgets() # Limpa a tela se não houver usuário
+
+    def _get_main_dir_path(self, filename):
+        """Constrói o caminho completo para um arquivo no diretório principal."""
+        return os.path.join(App.get_running_app().get_user_data_path(), filename)
 
     def fill_today_date(self):
         """Preenche os seletores de data com a data atual (de app_data.json ou do sistema)."""

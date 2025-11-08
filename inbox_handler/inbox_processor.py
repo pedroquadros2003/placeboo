@@ -15,7 +15,7 @@ class InboxProcessor:
     ACTION_TRANSLATIONS = {
         "add_diagnostic": "Diagnóstico adicionado",
         "delete_diagnostic": "Diagnóstico removido",
-        "edit_diagnostic": "Diagnóstico editado",
+        "edit_diagnostic": "Diagnóstico editado com sucesso",
         "update_tracked_metrics": "Métricas rastreadas atualizadas",
         "fill_metric": "Dados de evolução salvos",
         "add_event": "Evento adicionado",
@@ -82,8 +82,12 @@ class InboxProcessor:
             # 1. A mensagem é para o usuário logado.
             # 2. OU é uma resposta a uma requisição de login/criação de conta pendente.
             is_for_session_user = (session_user and msg_target_user == session_user) # Usuário já logado
-            is_login_response = (not session_user and current_pending_request_id and
-                                 payload.get("request_message_id") == current_pending_request_id) # Resposta a uma requisição pendente
+            
+            # Uma resposta a uma requisição pendente pode ser o _cback ou a instrução para deletar do outbox.
+            is_pending_response = (not session_user and current_pending_request_id and
+                                   (payload.get("request_message_id") == current_pending_request_id or
+                                    payload.get("message_id_to_delete") == current_pending_request_id))
+            is_login_response = is_pending_response
             should_process = is_for_session_user or is_login_response
             print(f"[DEBUG Inbox] -> is_for_session_user: {is_for_session_user}, is_login_response: {is_login_response} ==> Should Process: {should_process}")
             
@@ -154,6 +158,8 @@ class InboxProcessor:
             
             # Casos especiais de 'comeback'
             if action == "delete_account_cback":
+                # Exibe o popup de sucesso ANTES de fazer o logout.
+                app.show_success_popup("Conta deletada com sucesso.")
                 self._force_logout()
             elif action == "create_account_cback":
                 app.show_success_popup("Conta criada com sucesso! Faça o login.")

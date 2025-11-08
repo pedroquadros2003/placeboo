@@ -190,5 +190,228 @@
                 "weight": "70"
             }
         }
+    },
+    {
+        "message_id": "msg_1762637003_ad1ce9e2",
+        "origin_user_id": "paciente.a@email.com",
+        "object": "account",
+        "action": "try_logout",
+        "payload": {}
+    },
+    {
+        "message_id": "msg_1762637016_0e01a90e",
+        "origin_user_id": "pato",
+        "object": "account",
+        "action": "create_account",
+        "payload": {
+            "profile_type": "doctor",
+            "name": "pato",
+            "user": "pato",
+            "password": "123456",
+            "is_also_patient": false,
+            "patient_info": null
+        }
+    },
+    {
+        "message_id": "msg_1762637038_09e3e711",
+        "origin_user_id": "pato",
+        "object": "account",
+        "action": "try_login",
+        "payload": {
+            "user": "pato",
+            "password": "123456"
+        }
+    },
+    {
+        "message_id": "msg_1762637060_7efef492",
+        "origin_user_id": "pato",
+        "object": "account",
+        "action": "delete_account",
+        "payload": {
+            "user": "pato"
+        }
+    },
+    {
+        "message_id": "msg_1762637322_844c982f",
+        "origin_user_id": "patofu",
+        "object": "account",
+        "action": "create_account",
+        "payload": {
+            "profile_type": "doctor",
+            "name": "patofu",
+            "user": "patofu",
+            "password": "patofu",
+            "is_also_patient": true,
+            "patient_info": {
+                "height_cm": "186",
+                "date_of_birth": {
+                    "day": "31",
+                    "month": "8",
+                    "year": "2017"
+                },
+                "sex": "Outro"
+            }
+        }
+    },
+    {
+        "message_id": "msg_1762637337_dcdb3ac9",
+        "origin_user_id": "patofu",
+        "object": "account",
+        "action": "try_login",
+        "payload": {
+            "user": "patofu",
+            "password": "patofu"
+        }
+    },
+    {
+        "message_id": "msg_1762637382_9e567361",
+        "origin_user_id": "patofu",
+        "object": "medication",
+        "action": "add_med",
+        "payload": {
+            "id": "med1762637382",
+            "generic_name": "Paclitaxel",
+            "presentation": "C\u00e1psula",
+            "dosage": "50 mg",
+            "quantity": "1 cp",
+            "days_of_week": [
+                "Todos os dias"
+            ],
+            "times_of_day": [
+                "05:06"
+            ],
+            "start_date": "2025-11-08",
+            "end_date": "",
+            "observation": "opcional",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762637619_ca6a8f97",
+        "origin_user_id": "patofu",
+        "object": "medication",
+        "action": "edit_med",
+        "payload": {
+            "id": "med1762637382",
+            "generic_name": "Paclitaxel",
+            "presentation": "C\u00e1psula",
+            "dosage": "50 mg",
+            "days_of_week": [
+                "Todos os dias"
+            ],
+            "times_of_day": [
+                "05:06"
+            ],
+            "observation": "opcional, s\u00f3 que n\u00e3o",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762638035_88bb3067",
+        "origin_user_id": "patofu",
+        "object": "medication",
+        "action": "add_med",
+        "payload": {
+            "id": "med1762638035",
+            "generic_name": "Pantoprazol",
+            "presentation": "Comprimido",
+            "dosage": "45 mg",
+            "quantity": "23 cp",
+            "days_of_week": [
+                "Todos os dias"
+            ],
+            "times_of_day": [
+                "14:02"
+            ],
+            "start_date": "2025-11-08",
+            "end_date": "",
+            "observation": "",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762638350_6d6f5719",
+        "origin_user_id": "patofu",
+        "object": "medication",
+        "action": "add_med",
+        "payload": {
+            "id": "med1762638350",
+            "generic_name": "Paclitaxel",
+            "presentation": "C\u00e1psula",
+            "dosage": "1",
+            "quantity": "2",
+            "days_of_week": [
+                "Ter"
+            ],
+            "times_of_day": [
+                "01:01"
+            ],
+            "start_date": "2025-11-08",
+            "end_date": "",
+            "observation": "",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762638555_1951856f",
+        "origin_user_id": "patofu",
+        "object": "diagnostic",
+        "action": "add_diagnostic",
+        "payload": {
+            "id": "diag1762638555",
+            "cid_code": "F41.1",
+            "name": "Ansiedade generalizada",
+            "description": "ansioso o meninio",
+            "date_added": "2025-11-08 18:49:15",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762639239_ca264f96",
+        "origin_user_id": "patofu",
+        "object": "medication",
+        "action": "edit_med",
+        "payload": {
+            "id": "med1762638350",
+            "generic_name": "Paclitaxel",
+            "presentation": "C\u00e1psula",
+            "dosage": "1 g",
+            "days_of_week": [
+                "Ter"
+            ],
+            "times_of_day": [
+                "01:01"
+            ],
+            "observation": "",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762639260_98b85675",
+        "origin_user_id": "patofu",
+        "object": "diagnostic",
+        "action": "edit_diagnostic",
+        "payload": {
+            "id": "diag1762638555",
+            "cid_code": "F41.1",
+            "name": "Ansiedade generalizada",
+            "description": "ansioso o meninio",
+            "date_added": "2025-11-08 18:49:15",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762639374_fc3700a0",
+        "origin_user_id": "patofu",
+        "object": "diagnostic",
+        "action": "edit_diagnostic",
+        "payload": {
+            "id": "diag1762638555",
+            "cid_code": "F41.1",
+            "name": "Ansiedade generalizada",
+            "description": "ansioso o meninao",
+            "date_added": "2025-11-08 18:49:15",
+            "patient_user": "patofu_patient_profile"
+        }
     }
 ]

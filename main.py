@@ -85,4 +85,37 @@ class PlaceboApp (App):  ## Aplicações em Kivy terminam em App
         # 2. O InboxProcessor do cliente processa todas as mensagens em sua caixa de entrada.
         self.inbox_processor.process_inbox()
 
+        # 3. Força a atualização da view atual para refletir quaisquer mudanças nos dados.
+        self.refresh_current_view()
+
+    def refresh_current_view(self):
+        """
+        Identifica a tela/view atual e chama seu método de recarregamento de dados.
+        Isso garante que a UI esteja sempre sincronizada após cada ciclo.
+        """
+        if not self.manager or not self.manager.current_screen:
+            return
+        
+        current_screen = self.manager.current_screen
+        print(f"\n[DEBUG Refresh] Tentando atualizar a tela principal: '{current_screen.name}'")
+
+        # Verifica se a tela atual tem um método 'on_enter' ou 'load_data' e o chama.
+        # O método 'on_enter' é um padrão do Kivy que usamos para carregar dados.
+        if hasattr(current_screen, 'on_enter'):
+            print(f"[DEBUG Refresh] -> Chamando on_enter() para '{current_screen.name}'")
+            current_screen.on_enter()
+        
+        # Para as views aninhadas dentro de ScreenManagers (como na DoctorHomeScreen)
+        if hasattr(current_screen, 'ids') and 'content_manager' in current_screen.ids:
+            content_screen = current_screen.ids.content_manager.current_screen
+            
+            # Acessa a view de conteúdo real dentro da sub-tela
+            # Assumimos que a view de conteúdo tem um ID previsível (ex: 'medications_view_content')
+            # ou é a primeira filha. Acessar pelo ID é mais seguro.
+            if content_screen.children:
+                content_view = content_screen.children[0]
+                if hasattr(content_view, 'on_enter'):
+                    print(f"[DEBUG Refresh] -> Chamando on_enter() para a view de conteúdo '{content_view.__class__.__name__}'")
+                    content_view.on_enter()
+
 PlaceboApp().run()

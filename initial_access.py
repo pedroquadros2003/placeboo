@@ -141,9 +141,9 @@ class SignUpScreen(Screen):
         # Passa o nome de usuário explicitamente para que o outbox saiba quem é a origem
         username = self.ids.user_input.text
         request_id = app.outbox_processor.add_to_outbox("account", "create_account", create_account_payload, origin_user_override=username)
-        print(f"[DEBUG] Setting pending_request_id: {request_id}")
         app.pending_request_id = request_id # Armazena o ID da requisição
-        # O feedback (sucesso/erro) agora virá do backend.
+        # Exibe um popup de feedback imediato para o usuário.
+        App.get_running_app().show_success_popup("Solicitação de criação de conta enviada.")
 
     def enforce_text_limit(self, text_input, max_length):
         """Enforces a maximum character limit on a TextInput."""

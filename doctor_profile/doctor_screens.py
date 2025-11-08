@@ -101,30 +101,27 @@ class DoctorHomeScreen(Screen):
         if not patient_user:
             return
 
+        content_manager = self.ids.content_manager
+
         # Update Medications View
-        med_screen = self.ids.content_manager.get_screen('doctor_medications')
-        med_screen.children[0].current_patient_user = patient_user
-        med_screen.children[0].load_medications()
+        med_view = content_manager.get_screen('doctor_medications').ids.medications_view_content
+        med_view.current_patient_user = patient_user
 
         # Update Events View
-        events_screen = self.ids.content_manager.get_screen('doctor_events')
-        events_screen.children[0].current_patient_user = patient_user
-        events_screen.children[0].load_events()
+        events_view = content_manager.get_screen('doctor_events').ids.events_view_content
+        events_view.current_patient_user = patient_user
 
         # Update Diagnostics View
-        diagnostics_screen = self.ids.content_manager.get_screen('doctor_diagnostics')
-        diagnostics_screen.children[0].current_patient_user = patient_user
-        # The load_diagnostics method is called automatically by the on_current_patient_user property
+        diag_view = content_manager.get_screen('doctor_diagnostics').ids.diagnostics_view_content
+        diag_view.current_patient_user = patient_user
 
         # Update Patient Settings View
-        patient_settings_screen = self.ids.content_manager.get_screen('patient_settings')
-        patient_settings_screen.children[0].current_patient_user = patient_user
-        # The load_settings method is called automatically by the on_current_patient_user property
+        settings_view = content_manager.get_screen('patient_settings').ids.patient_settings_view_content
+        settings_view.current_patient_user = patient_user
 
         # Update Patient Evolution View
-        patient_evolution_screen = self.ids.content_manager.get_screen('doctor_evolution')
-        patient_evolution_screen.children[0].current_patient_user = patient_user
-        # The view will clear itself via on_current_patient_user
+        evolution_view = content_manager.get_screen('doctor_evolution').ids.evolution_view
+        evolution_view.current_patient_user = patient_user
 
 
 class DoctorMenuScreen(Screen):

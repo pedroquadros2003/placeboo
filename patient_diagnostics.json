@@ -39,5 +39,15 @@
             "description": "oi",
             "date_added": "2025-10-22 12:04:30"
         }
+    ],
+    "patofu_patient_profile": [
+        {
+            "id": "diag1762638555",
+            "cid_code": "F41.1",
+            "name": "Ansiedade generalizada",
+            "description": "ansioso o meninao",
+            "date_added": "2025-11-08 18:49:15",
+            "patient_user": "patofu_patient_profile"
+        }
     ]
 }

@@ -126,12 +126,15 @@
 
 <DoctorMedicationsContentScreen>:
     MedicationsView:
+        id: medications_view_content
 
 <DoctorEventsContentScreen>:
     EventsView:
+        id: events_view_content
 
 <DoctorDiagnosticsContentScreen>:
     DiagnosticsView:
+        id: diagnostics_view_content
 
 <DoctorSettingsScreen>:
     DoctorSettingsView:
@@ -139,10 +142,11 @@
 <PatientManagementScreen@Screen>:
     on_enter: patient_management_view.on_enter()
     PatientManagementView:
-        id: patient_management_view
+        id: patient_management_view_content
 
 <DoctorPatientSettingsContentScreen>:
     PatientSettingsView:
+        id: patient_settings_view_content
 
 <DoctorPatientEvolutionContentScreen>:
     on_enter: evolution_view.on_enter()

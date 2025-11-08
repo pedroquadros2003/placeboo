@@ -132,5 +132,5 @@ class ManageDoctorsView(RelativeLayout):
 class ManageDoctorsScreen(Screen):
     """Screen to host the ManageDoctorsView."""
     def on_enter(self, *args):
-        # Chama o método on_enter da view filha para carregar os dados
-        self.children[0].children[0].on_enter()
+        # Acessa a view de conteúdo diretamente pelo seu ID para carregar os dados.
+        self.ids.manage_doctors_view_content.on_enter()

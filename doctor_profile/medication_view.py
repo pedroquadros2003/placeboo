@@ -39,6 +39,14 @@ class MedicationsView(RelativeLayout):
         # The on_text event is now handled directly in the .kv file
         self.load_medications()
     
+    def on_current_patient_user(self, instance, value):
+        """Atualiza a view quando o paciente muda."""
+        if value:
+            self.load_medications()
+        else:
+            # Limpa o conteúdo se nenhum paciente estiver selecionado
+            self.ids.medications_list.clear_widgets()
+
     def _get_main_dir_path(self, filename):
         """Constructs the full path to a file in the main project directory."""
         return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
