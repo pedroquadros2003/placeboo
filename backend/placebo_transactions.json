@@ -652,5 +652,22 @@
             "user": "paciente.a@email.com",
             "password": "aaaaaa"
         }
+    },
+    {
+        "message_id": "msg_1762642842_cb3e229a",
+        "origin_user_id": "paciente.a@email.com",
+        "object": "account",
+        "action": "try_logout",
+        "payload": {}
+    },
+    {
+        "message_id": "msg_1762642857_76b632b4",
+        "origin_user_id": "patofu",
+        "object": "account",
+        "action": "try_login",
+        "payload": {
+            "user": "patofu",
+            "password": "patofu"
+        }
     }
 ]
