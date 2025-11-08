@@ -7,6 +7,8 @@ import json
 import os
 from datetime import datetime
 from kivy.metrics import dp
+from kivy.app import App
+
 
 # Loads the associated kv file
 Builder.load_file("patient_profile/patient_events_view.kv", encoding='utf-8')
@@ -18,11 +20,16 @@ class PatientEventsView(RelativeLayout):
 
     def on_kv_post(self, base_widget):
         """Called after the kv rules are applied. Loads initial data."""
+        self.on_enter()
+
+    def on_enter(self):
+        """Ponto de entrada padrão para carregar/recarregar os dados da tela."""
         self.load_logged_in_patient_info()
 
-    def _get_main_dir_path(self, filename):
-        """Constructs the full path to a file in the main project directory."""
-        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+    def on_logged_in_patient_info(self, instance, value):
+        """Chamado automaticamente quando a propriedade 'logged_in_patient_info' muda."""
+        if value:
+            self.load_events()
 
     def load_logged_in_patient_info(self):
         """Loads the logged-in patient's data from session.json and account.json."""
@@ -34,19 +41,34 @@ class PatientEventsView(RelativeLayout):
             try:
                 with open(session_path, 'r') as f:
                     session_data = json.load(f)
-                if session_data.get('logged_in') and session_data.get('profile_type') == 'patient':
-                    patient_user = session_data.get('user')
+                
+                session_user = session_data.get('user')
+                profile_type = session_data.get('profile_type')
+
+                if session_data.get('logged_in'):
+                    if profile_type == 'patient':
+                        patient_user = session_user
+                    elif profile_type == 'doctor':
+                        # Se um médico está logado, encontramos seu perfil de paciente associado.
+                        with open(accounts_path, 'r', encoding='utf-8') as acc_f:
+                            accounts = json.load(acc_f)
+                        doctor_account = next((acc for acc in accounts if acc.get('user') == session_user), None)
+                        if doctor_account and doctor_account.get('self_patient_id'):
+                            self_patient_account = next((acc for acc in accounts if acc.get('id') == doctor_account.get('self_patient_id')), None)
+                            if self_patient_account:
+                                patient_user = self_patient_account.get('user')
             except (json.JSONDecodeError, FileNotFoundError):
                 print("Error loading session.json.")
 
         if patient_user and os.path.exists(accounts_path):
             with open(accounts_path, 'r', encoding='utf-8') as f:
                 accounts = json.load(f)
-            self.logged_in_patient_info = next((acc for acc in accounts if acc.get('user') == patient_user), {})
-            self.load_events() # Call load_events directly after loading patient info
+            self.logged_in_patient_info = next((acc for acc in accounts if acc.get('user') == patient_user), {}) # Dispara o on_logged_in_patient_info
         
         if not self.logged_in_patient_info:
             print("No patient logged in or session data is invalid.")
+            self.events = [] # Limpa a lista se não houver usuário
+            self.populate_events_list()
 
     def load_events(self, *args):
         """Loads the event list for the logged-in patient from the JSON file."""
@@ -79,6 +101,10 @@ class PatientEventsView(RelativeLayout):
             print("Error loading patient_events.json")
             self.events = []
             self.populate_events_list()
+
+    def _get_main_dir_path(self, filename):
+        """Constructs the full path to a file in the main project directory."""
+        return os.path.join(App.get_running_app().get_user_data_path(), filename)
 
     def populate_events_list(self):
         """Clears and repopulates the event list widget."""

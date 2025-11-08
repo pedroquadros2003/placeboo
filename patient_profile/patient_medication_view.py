@@ -7,6 +7,8 @@ import json
 import os
 from datetime import datetime
 from kivy.metrics import dp
+from kivy.app import App
+
 
 # Loads the associated kv file
 Builder.load_file("patient_profile/patient_medication_view.kv", encoding='utf-8')
@@ -21,13 +23,16 @@ class PatientMedicationsView(RelativeLayout):
 
     def on_kv_post(self, base_widget):
         """Chamado após a aplicação das regras KV. Carrega o usuário do paciente e as medicações."""
-        self.load_logged_in_patient_user()
-        self.load_medications()
+        self.on_enter() # Garante o carregamento inicial
 
-    def _get_main_dir_path(self, filename):
-        """Constrói o caminho completo para um arquivo no diretório principal do projeto."""
-        # Assume que patient_medication_view.py está em 'PlaceboSRC/patient_profile/'
-        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+    def on_enter(self):
+        """Ponto de entrada padrão para carregar/recarregar os dados da tela."""
+        self.load_logged_in_patient_user() # Apenas dispara o carregamento do usuário
+
+    def on_logged_in_patient_user(self, instance, value):
+        """Chamado automaticamente quando a propriedade 'logged_in_patient_user' muda."""
+        if value:
+            self.load_medications()
 
     def load_logged_in_patient_user(self):
         """Carrega o usuário do paciente atualmente logado a partir de session.json."""
@@ -35,12 +40,33 @@ class PatientMedicationsView(RelativeLayout):
             try:
                 with open(self._get_main_dir_path('session.json'), 'r') as f:
                     session_data = json.load(f)
-                if session_data.get('logged_in') and session_data.get('profile_type') == 'patient':
-                    self.logged_in_patient_user = session_data.get('user')
+                
+                session_user = session_data.get('user')
+                profile_type = session_data.get('profile_type')
+
+                if session_data.get('logged_in'):
+                    if profile_type == 'patient':
+                        self.logged_in_patient_user = session_user
+                    elif profile_type == 'doctor':
+                        # Se um médico está logado, precisamos encontrar seu perfil de paciente associado.
+                        accounts_path = self._get_main_dir_path('account.json')
+                        with open(accounts_path, 'r', encoding='utf-8') as acc_f:
+                            accounts = json.load(acc_f)
+                        doctor_account = next((acc for acc in accounts if acc.get('user') == session_user), None)
+                        if doctor_account and doctor_account.get('self_patient_id'):
+                            self_patient_account = next((acc for acc in accounts if acc.get('id') == doctor_account.get('self_patient_id')), None)
+                            if self_patient_account:
+                                self.logged_in_patient_user = self_patient_account.get('user')
+
             except (json.JSONDecodeError, FileNotFoundError):
                 print("Erro ao carregar session.json para obter o usuário do paciente.")
         if not self.logged_in_patient_user:
             print("Nenhum paciente logado ou dados de sessão inválidos.")
+
+    def _get_main_dir_path(self, filename):
+        """Constrói o caminho completo para um arquivo no diretório principal do projeto."""
+        # Assume que patient_medication_view.py está em 'PlaceboSRC/patient_profile/'
+        return os.path.join(App.get_running_app().get_user_data_path(), filename)
 
     def populate_medications_list(self):
         """Limpa e repopula o widget da lista de medicações."""

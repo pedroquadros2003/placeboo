@@ -1,19 +1,18 @@
 <PatientEventsView>:
     ScrollView:
-        BoxLayout:
-            orientation: 'vertical'
+        canvas.before:
+            Color:
+                rgba: 0.95, 0.95, 0.95, 1 # Fundo branco para o ScrollView
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        GridLayout:
+            id: events_list
+            cols: 1
             padding: dp(10)
-            spacing: dp(10)
+            spacing: dp(15)
             size_hint_y: None
             height: self.minimum_height
-
-            GridLayout:
-                id: events_list
-                cols: 1
-                padding: dp(10)
-                spacing: dp(15)
-                size_hint_y: None
-                height: self.minimum_height
 
 <EventItem>:
     size_hint_y: None

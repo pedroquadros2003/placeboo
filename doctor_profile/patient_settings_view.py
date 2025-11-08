@@ -2,10 +2,13 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.lang import Builder
 from kivy.properties import StringProperty, DictProperty
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.checkbox import CheckBox
+from kivy.uix.checkbox import CheckBox, CheckBox
+from outbox_handler.outbox_processor import OutboxProcessor
 from kivy.uix.label import Label
 from kivy.app import App
 import json
+from datetime import datetime
+import uuid
 import os
 
 # Loads the associated kv file
@@ -28,7 +31,7 @@ class PatientSettingsView(RelativeLayout):
         'oxygen_saturation': 'Saturação de Oxigênio (%)'
     }
 
-    def _get_main_dir_path(self, filename):
+    def _get_main_dir_path(self, filename): # Isso é para arquivos como cid10.json
         return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
 
     def on_current_patient_user(self, instance, value):
@@ -66,7 +69,8 @@ class PatientSettingsView(RelativeLayout):
             return
 
         # Get old settings to find out which metrics were removed
-        old_settings = self._get_patient_settings()
+        old_settings = self._get_patient_settings() # This already returns a dict with 'id' at the top level
+        patient_id = old_settings.get('id') # Get patient_id before any file modification
         old_tracked_metrics = old_settings.get('tracked_metrics', [])
 
         new_selected_metrics = []
@@ -75,56 +79,10 @@ class PatientSettingsView(RelativeLayout):
             if checkbox.active:
                 new_selected_metrics.append(checkbox.metric_key)
 
-        # --- Save new settings to account.json ---
-        accounts_path = self._get_main_dir_path('account.json')
-        if not os.path.exists(accounts_path):
-            return
-
-        with open(accounts_path, 'r+', encoding='utf-8') as f:
-            try:
-                accounts = json.load(f)
-            except json.JSONDecodeError:
-                accounts = []
-
-            # Find the patient and update their settings
-            for i, acc in enumerate(accounts):
-                if acc.get('user') == self.current_patient_user:
-                    if 'patient_info' not in acc:
-                        accounts[i]['patient_info'] = {}
-                    accounts[i]['patient_info']['tracked_metrics'] = new_selected_metrics
-                    break
-            
-            # Write the updated accounts list back to the file
-            f.seek(0)
-            json.dump(accounts, f, indent=4)
-            f.truncate()
-
-        # --- Remove data for unselected metrics from patient_evolution.json ---
-        metrics_to_remove = set(old_tracked_metrics) - set(new_selected_metrics)
-        if metrics_to_remove and old_settings.get('id'):
-            patient_id = old_settings.get('id')
-            evolution_path = self._get_main_dir_path('patient_evolution.json')
-            if os.path.exists(evolution_path):
-                with open(evolution_path, 'r+', encoding='utf-8') as f:
-                    try:
-                        all_evolutions = json.load(f)
-                        patient_evolution = all_evolutions.get(patient_id, {})
-                        
-                        if patient_evolution:
-                            # Iterate through each day's record and remove the unselected metric
-                            for date_record in patient_evolution.values():
-                                for metric_key in metrics_to_remove:
-                                    if metric_key in date_record:
-                                        del date_record[metric_key]
-                            
-                            all_evolutions[patient_id] = patient_evolution
-                            f.seek(0)
-                            json.dump(all_evolutions, f, indent=4)
-                            f.truncate()
-                            print(f"Removed data for metrics {list(metrics_to_remove)} for patient {patient_id}")
-
-                    except json.JSONDecodeError:
-                        pass # File is empty or corrupt
+        # A lógica de escrita foi movida para o backend.
+        # A view apenas envia a mensagem para o outbox.
+        payload = {"patient_id": patient_id, "tracked_metrics": new_selected_metrics} # patient_id is already defined
+        App.get_running_app().outbox_processor.add_to_outbox("evolution", "update_tracked_metrics", payload)
 
         App.get_running_app().show_success_popup(f"Configurações salvas para {self.current_patient_user}.")
 

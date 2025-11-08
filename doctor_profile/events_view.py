@@ -6,11 +6,13 @@ from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.app import App
 import json
-from kivy.clock import Clock
+from kivy.clock import Clock, mainthread
+from outbox_handler.outbox_processor import OutboxProcessor
 import os
 from datetime import datetime
 from functools import partial
 from kivy.uix.button import Button
+import uuid
 from kivy.metrics import dp
 from auxiliary_classes.date_checker import get_days_for_month, MONTH_NAME_TO_NUM
 
@@ -35,6 +37,14 @@ class EventsView(RelativeLayout):
         current_year = datetime.now().year
         self.year_list = [str(y) for y in range(current_year + 5, current_year - 5, -1)]
         self.load_events()
+
+    def on_current_patient_user(self, instance, value):
+        """Atualiza a view quando o paciente muda."""
+        if value:
+            self.load_events()
+        else:
+            # Limpa o conteúdo se nenhum paciente estiver selecionado
+            self.ids.events_list.clear_widgets()
 
     def load_events(self):
         events_path = self._get_main_dir_path('patient_events.json')
@@ -222,23 +232,11 @@ class EventsView(RelativeLayout):
             "time": time
         }
 
-        all_events = {}
-        events_path = self._get_main_dir_path('patient_events.json')
-        if os.path.exists(events_path):
-            try:
-                with open(events_path, 'r', encoding='utf-8') as f:
-                    all_events = json.load(f)
-            except (json.JSONDecodeError, FileNotFoundError):
-                pass
-
-        patient_events = all_events.get(self.current_patient_user, [])
-        patient_events.append(new_event)
-        all_events[self.current_patient_user] = patient_events
-
-        with open(events_path, 'w', encoding='utf-8') as f:
-            json.dump(all_events, f, indent=4)
-
         App.get_running_app().show_success_popup(f"Evento '{name}' adicionado.")
+        # Adiciona mensagem ao outbox_messages.json para o backend processar
+        payload = new_event.copy()
+        payload['patient_user'] = self.current_patient_user # Adiciona patient_user ao payload para a mensagem
+        App.get_running_app().outbox_processor.add_to_outbox("event", "add_event", payload)
         self.load_events()
 
     def remove_event(self, event_id, *args):
@@ -247,20 +245,11 @@ class EventsView(RelativeLayout):
         if not event_to_remove:
             return
 
-        self.events.remove(event_to_remove)
-        self.populate_events_list()
-
-        events_path = self._get_main_dir_path('patient_events.json')
-        try:
-            with open(events_path, 'r+', encoding='utf-8') as f:
-                all_events = json.load(f)
-                all_events[self.current_patient_user] = self.events
-                f.seek(0)
-                json.dump(all_events, f, indent=4)
-                f.truncate()
-            print(f"Removed event {event_id} and updated file.")
-        except (json.JSONDecodeError, FileNotFoundError, KeyError) as e:
-            print("Error updating patient_events.json")
+        # Apenas envia a mensagem para o backend. A UI será atualizada no próximo ciclo de refresh.
+        App.get_running_app().show_success_popup("Solicitação de remoção enviada.")
+        payload = {"event_id": event_id, "patient_user": self.current_patient_user}
+        App.get_running_app().outbox_processor.add_to_outbox("event", "delete_event", payload)
+        
 
     def start_editing_event(self, event_data, *args):
         """Populates the input fields with the data of the event to be edited."""
@@ -311,26 +300,16 @@ class EventsView(RelativeLayout):
             return
         time = f"{hour}:{minute}"
 
-        # --- Update the data in the JSON file ---
-        events_path = self._get_main_dir_path('patient_events.json')
-        with open(events_path, 'r+', encoding='utf-8') as f:
-            all_events = json.load(f)
-            patient_events = all_events.get(self.current_patient_user, [])
-            
-            for i, event in enumerate(patient_events):
-                if event['id'] == self.editing_event_id:
-                    patient_events[i].update({
-                        "name": name,
-                        "date": date,
-                        "time": time,
-                        "description": description
-                    })
-                    break
-            
-            all_events[self.current_patient_user] = patient_events
-            f.seek(0)
-            json.dump(all_events, f, indent=4)
-            f.truncate()
+        # Prepara o payload para a outbox
+        payload = {
+            "id": self.editing_event_id,
+            "name": name,
+            "date": date,
+            "time": time,
+            "description": description,
+            "patient_user": self.current_patient_user
+        }
+        App.get_running_app().outbox_processor.add_to_outbox("event", "edit_event", payload)
 
         App.get_running_app().show_success_popup(f"Evento atualizado.")
         self.cancel_edit()

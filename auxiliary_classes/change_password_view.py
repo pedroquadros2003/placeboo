@@ -40,8 +40,8 @@ class ChangePasswordView(RelativeLayout):
             App.get_running_app().show_error_popup("A nova senha e a confirmação não coincidem.")
             return
         
-        if len(new_password) < 3: # Basic password strength check
-            App.get_running_app().show_error_popup("A nova senha deve ter pelo menos 3 caracteres.")
+        if len(new_password) < 6: # Basic password strength check
+            App.get_running_app().show_error_popup("A nova senha deve ter no mínimo 6 caracteres.")
             return
 
         accounts_path = self._get_main_dir_path('account.json')
@@ -49,31 +49,16 @@ class ChangePasswordView(RelativeLayout):
             App.get_running_app().show_error_popup("Erro: Arquivo de contas não encontrado.")
             return
 
-        with open(accounts_path, 'r+', encoding='utf-8') as f:
-            try:
-                accounts = json.load(f)
-            except json.JSONDecodeError:
-                accounts = []
-            
-            user_found = False
-            for i, account in enumerate(accounts):
-                if account.get('user') == self.current_user_name:
-                    user_found = True
-                    if account.get('password') == current_password: # DANGER: In a real app, you MUST hash the password!
-                        accounts[i]['password'] = new_password
-                        f.seek(0)
-                        json.dump(accounts, f, indent=4)
-                        f.truncate()
-                        App.get_running_app().show_success_popup("Senha alterada com sucesso!")
-                        self.clear_fields()
-                        App.get_running_app().manager.pop() # Go back to previous screen
-                        return
-                    else:
-                        App.get_running_app().show_error_popup("Senha atual incorreta.")
-                        return
-            
-            if not user_found:
-                App.get_running_app().show_error_popup("Erro: Usuário não encontrado.")
+        # --- Lógica de Mensagens (executada primeiro) ---
+        # Cria a mensagem para o OutboxProcessor para que a ação seja registrada.
+        payload = {
+            "current_password": current_password,
+            "new_password": new_password
+        }
+        App.get_running_app().outbox_processor.add_to_outbox("account", "change_password", payload)
+
+        # Apenas exibe um popup de solicitação. A tela não será mais fechada aqui.
+        App.get_running_app().show_success_popup("Solicitação de alteração de senha enviada.")
 
     def cancel(self):
         """Cancela a operação e retorna à tela anterior."""

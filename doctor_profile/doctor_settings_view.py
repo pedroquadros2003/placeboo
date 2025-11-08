@@ -2,6 +2,9 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.lang import Builder
 from kivy.app import App
 import os
+from outbox_handler.outbox_processor import OutboxProcessor
+from datetime import datetime
+import uuid
 import json
 
 # Loads the associated kv file
@@ -17,18 +20,11 @@ class DoctorSettingsView(RelativeLayout):
 
     def logout(self):
         """
-        Logs the user out by deleting the session file and returning to the initial screen.
+        Sends a logout request to the backend.
         """
-        print("Logging out...")
-        session_path = self._get_main_dir_path('session.json')
-        if os.path.exists(session_path):
-            try:
-                os.remove(self._get_main_dir_path('session.json'))
-                print("Session file deleted.")
-            except OSError as e:
-                print(f"Error deleting session file: {e}")
-        
-        App.get_running_app().manager.reset_to('initial_access')
+        print("Enviando solicitação de logout...")
+        App.get_running_app().outbox_processor.add_to_outbox("account", "try_logout", {})
+        App.get_running_app().show_success_popup("Solicitação de logout enviada.")
 
     def change_password(self):
         """Navigates to the change password screen."""
@@ -58,43 +54,11 @@ class DoctorSettingsView(RelativeLayout):
         doctor_user = session_data.get('user')
         if not doctor_user: return
 
-        # --- Update account.json ---
-        accounts_path = self._get_main_dir_path('account.json')
-        if os.path.exists(accounts_path):
-            with open(accounts_path, 'r+', encoding='utf-8') as f:
-                try:
-                    accounts = json.load(f)
-                    
-                    # Get doctor ID before removing the account
-                    doctor_account = next((acc for acc in accounts if acc.get('user') == doctor_user), None)
-                    doctor_id = doctor_account.get('id') if doctor_account else None
+        # Adiciona mensagem ao outbox_messages.json ANTES de deletar os dados
+        payload = {"user": doctor_user}
+        App.get_running_app().outbox_processor.add_to_outbox("account", "delete_account", payload)
 
-                    # Remove the doctor's account
-                    accounts = [acc for acc in accounts if acc.get('user') != doctor_user]
-
-                    # Unlink this doctor from any patient's responsible_doctors list
-                    for i, acc in enumerate(accounts):
-                        if acc.get('profile_type') == 'patient' and doctor_id:
-                            if 'responsible_doctors' in acc.get('patient_info', {}) and doctor_id in acc['patient_info']['responsible_doctors']:
-                                accounts[i]['patient_info']['responsible_doctors'].remove(doctor_id)
-
-                    f.seek(0)
-                    json.dump(accounts, f, indent=4)
-                    f.truncate()
-
-                    # --- Update doctor_ids.json ---
-                    doctor_ids_path = self._get_main_dir_path('doctor_ids.json')
-                    if doctor_id and os.path.exists(doctor_ids_path):
-                        with open(doctor_ids_path, 'r+', encoding='utf-8') as id_f:
-                            doctor_ids = json.load(id_f)
-                            if doctor_id in doctor_ids:
-                                doctor_ids.remove(doctor_id)
-                            id_f.seek(0)
-                            json.dump(doctor_ids, id_f, indent=4)
-                            id_f.truncate()
-
-                except (json.JSONDecodeError, FileNotFoundError):
-                    pass
-
-        App.get_running_app().show_success_popup(f"Conta e todos os dados associados para {doctor_user} foram deletados.")
-        self.logout() # Log out to clear session and return to initial screen
+        # A lógica de deleção foi movida para o backend.
+        # O cliente apenas envia a mensagem e faz o logout.
+        # O feedback e a ação de logout agora virão do backend.
+        App.get_running_app().show_success_popup("Solicitação para deletar conta enviada...")

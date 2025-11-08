@@ -27,6 +27,11 @@ class PatientHomeScreen(Screen):
         # Por padrão, exibe a tela de medicações [R024], mas apenas se nenhum conteúdo estiver selecionado.
         if not self.ids.content_manager.current:
             self.ids.content_manager.current = 'patient_medications'
+        
+        # Garante que a tela de conteúdo inicial seja carregada corretamente.
+        initial_content_screen = self.ids.content_manager.get_screen(self.ids.content_manager.current)
+        if hasattr(initial_content_screen, 'on_enter'):
+            initial_content_screen.on_enter()
 
     def load_and_set_date(self):
         """

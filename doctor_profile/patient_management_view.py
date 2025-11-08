@@ -3,9 +3,12 @@ from kivy.lang import Builder
 from kivy.properties import ListProperty, DictProperty, StringProperty
 from kivy.uix.label import Label
 from kivy.uix.button import Button
+from outbox_handler.outbox_processor import OutboxProcessor
 from kivy.app import App
 from functools import partial
 import json
+from datetime import datetime
+import uuid
 import os
 
 # Loads the associated kv file
@@ -54,6 +57,7 @@ class PatientManagementView(RelativeLayout):
         self.patient_map = {}
         for patient_id in linked_patient_ids:
             patient_account = next((acc for acc in accounts if acc.get('id') == patient_id), None)
+            
             if patient_account:
                 user = patient_account.get('user')
                 # Use "__Eu__" for the doctor's own patient profile
@@ -74,9 +78,13 @@ class PatientManagementView(RelativeLayout):
         """Clears and repopulates the patient list widget."""
         patient_list_widget = self.ids.patient_list
         patient_list_widget.clear_widgets()
+        # Ponto de teste 1: Verifica se a lista de widgets está vazia após a limpeza.
+        print(f"[DEBUG] Widgets na lista após clear_widgets(): {patient_list_widget.children}")
 
         if not self.patient_data:
             patient_list_widget.add_widget(Label(text='Nenhum paciente vinculado.', color=(0,0,0,1)))
+            # Ponto de teste 2: Verifica o conteúdo quando não há pacientes.
+            print(f"[DEBUG] Widgets na lista após adicionar 'Nenhum paciente': {patient_list_widget.children}")
             return
 
         for patient in self.patient_data:
@@ -97,6 +105,9 @@ class PatientManagementView(RelativeLayout):
                 item_container.add_widget(remove_button)
 
             patient_list_widget.add_widget(item_container)
+        
+        # Ponto de teste 3: Mostra a lista final de widgets que foram adicionados à tela.
+        print(f"[DEBUG] Lista final de widgets na tela: {patient_list_widget.children}")
 
     def invite_patient(self):
         """Sends an invitation to a patient by their username."""
@@ -111,96 +122,38 @@ class PatientManagementView(RelativeLayout):
             App.get_running_app().show_error_popup("Erro ao identificar o médico logado.")
             return
 
-        with open(accounts_path, 'r+', encoding='utf-8') as f:
-            accounts = json.load(f)
-            
-            # Find patient by username OR name, making it more flexible
-            patient_account = next((
-                acc for acc in accounts 
-                if (acc.get('user') == patient_user_to_invite or acc.get('name') == patient_user_to_invite) 
-                and acc.get('profile_type') == 'patient'
-            ), None)
-            if not patient_account:
-                App.get_running_app().show_error_popup(f"Paciente '{patient_user_to_invite}' não encontrado.")
-                return
-
-            patient_id = patient_account['id']
-
-            # Find doctor to get their ID
-            doctor_account = next((acc for acc in accounts if acc.get('user') == doctor_user), None)
-            if not doctor_account:
-                App.get_running_app().show_error_popup("Erro crítico: Conta do médico não encontrada.")
-                return
-            doctor_id = doctor_account.get('id')
-
-            # Check if patient is already linked to this doctor
-            if 'linked_patients' in doctor_account and patient_id in doctor_account['linked_patients']:
-                App.get_running_app().show_error_popup("Este paciente já está vinculado a você.")
-                return
-
-            # Find patient again to modify their account data
-            for i, acc in enumerate(accounts):
-                if acc.get('id') == patient_id:
-                    if 'invitations' not in acc:
-                        accounts[i]['invitations'] = []
-                    
-                    if doctor_id not in acc['invitations']:
-                        accounts[i]['invitations'].append(doctor_id)
-                        App.get_running_app().show_error_popup(f"Convite enviado para {patient_user_to_invite}.") # Success popup
-                    else:
-                        App.get_running_app().show_error_popup("Um convite já foi enviado para este paciente.")
-                    break
-
-            # Save changes back to file
-            f.seek(0)
-            json.dump(accounts, f, indent=4)
-            f.truncate()
+        # A lógica de validação e escrita foi movida para o backend.
+        # A view apenas envia a solicitação.
+        payload = {"patient_user_to_invite": patient_user_to_invite}
+        App.get_running_app().outbox_processor.add_to_outbox("linking_accounts", "invite_patient", payload)
+        App.get_running_app().show_success_popup(f"Convite enviado para {patient_user_to_invite}.")
         self.ids.patient_code_input.text = ''
 
     def remove_patient(self, patient_name, *args):
         """Unlinks a patient from the doctor."""
-        patient_user = self.patient_map.get(patient_name)
-        doctor_user = self._get_doctor_user()
-        accounts_path = self._get_main_dir_path('account.json')
-        if not doctor_user or not os.path.exists(accounts_path):
+        # Encontra os dados completos do paciente (incluindo o ID) a partir do nome.
+        patient_info = next((p for p in self.patient_data if p.get('name') == patient_name), None)
+        if not patient_info:
+            App.get_running_app().show_error_popup(f"Não foi possível encontrar os dados do paciente {patient_name}.")
             return
-
-        with open(accounts_path, 'r+', encoding='utf-8') as f:
-            accounts = json.load(f)
-            for i, acc in enumerate(accounts):
-                # Find doctor
-                if acc['user'] == doctor_user:
-                    doctor_id = acc.get('id')
-                    patient_account = next((p_acc for p_acc in accounts if p_acc.get('user') == patient_user), None)
-                    if not patient_account: return
-                    patient_id = patient_account.get('id')
-
-                    # Remove patient from doctor's list
-                    if 'linked_patients' in acc and patient_id in acc['linked_patients']:
-                        accounts[i]['linked_patients'].remove(patient_id)
-
-                    # Remove doctor from patient's list
-                    for j, p_acc_inner in enumerate(accounts):
-                        if p_acc_inner.get('id') == patient_id:
-                            if 'responsible_doctors' in p_acc_inner.get('patient_info', {}) and doctor_id in p_acc_inner['patient_info']['responsible_doctors']:
-                                accounts[j]['patient_info']['responsible_doctors'].remove(doctor_id)
-                            break
-                    
-                    f.seek(0)
-                    json.dump(accounts, f, indent=4)
-                    f.truncate()
-                    print(f"Paciente {patient_id} desvinculado.")
-                    self.load_linked_patients()
-                    break
+        
+        # A lógica de escrita foi movida para o backend.
+        # Agora estamos enviando o ID numérico correto.
+        payload = {"target_user_id": patient_info.get('id')}
+        App.get_running_app().outbox_processor.add_to_outbox("linking_accounts", "unlink_accounts", payload)
+        App.get_running_app().show_success_popup(f"Solicitação para desvincular {patient_name} enviada.")
 
     def _get_main_dir_path(self, filename):
         """Constructs the full path to a file in the main project directory."""
         return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
 
     def _get_doctor_user(self):
-        """Helper to get the current doctor's user from the session file."""
+        """Helper to get the current doctor's user from the session file in user_data."""
         session_path = self._get_main_dir_path('session.json')
         if os.path.exists(session_path):
             with open(session_path, 'r') as f:
-                return json.load(f).get('user')
+                try:
+                    return json.load(f).get('user')
+                except json.JSONDecodeError:
+                    return None
         return None

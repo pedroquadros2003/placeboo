@@ -1,0 +1,673 @@
+[
+    {
+        "message_id": "msg_1760570001_aaaa0001",
+        "origin_user_id": "peu",
+        "object": "account",
+        "action": "create_account",
+        "payload": {
+            "profile_type": "doctor",
+            "name": "peu",
+            "user": "peu",
+            "password": "senha123"
+        }
+    },
+    {
+        "message_id": "msg_1760570002_aaaa0002",
+        "origin_user_id": "paciente.a@email.com",
+        "object": "account",
+        "action": "create_account",
+        "payload": {
+            "profile_type": "patient",
+            "name": "Paciente A",
+            "user": "paciente.a@email.com",
+            "password": "aaaaaa",
+            "patient_info": {
+                "height_cm": "175",
+                "sex": "Masculino"
+            }
+        }
+    },
+    {
+        "message_id": "msg_1760570003_bbbb0001",
+        "origin_user_id": "peu",
+        "object": "linking_accounts",
+        "action": "invite_patient",
+        "payload": {
+            "patient_user_to_invite": "paciente.a@email.com"
+        }
+    },
+    {
+        "message_id": "msg_1760570004_bbbb0002",
+        "origin_user_id": "paciente.a@email.com",
+        "object": "linking_accounts",
+        "action": "respond_to_invitation",
+        "payload": {
+            "doctor_id": "10000001",
+            "response": "accept"
+        }
+    },
+    {
+        "message_id": "msg_1760570005_cccc0001",
+        "origin_user_id": "peu",
+        "object": "evolution",
+        "action": "update_tracked_metrics",
+        "payload": {
+            "patient_id": "20000001",
+            "tracked_metrics": [
+                "temperature",
+                "heart_rate",
+                "weight"
+            ]
+        }
+    },
+    {
+        "message_id": "msg_1760573510_dddd0001",
+        "origin_user_id": "peu",
+        "object": "medication",
+        "action": "add_med",
+        "payload": {
+            "patient_user": "paciente.a@email.com",
+            "id": "med1760573510",
+            "generic_name": "Paracetamol",
+            "presentation": "C\u00e1psula",
+            "dosage": "32 mg",
+            "quantity": "2",
+            "days_of_week": [
+                "Todos os dias"
+            ],
+            "times_of_day": [
+                "01:04"
+            ],
+            "start_date": "2025-10-15",
+            "end_date": "",
+            "observation": "3e3"
+        }
+    },
+    {
+        "message_id": "msg_1760579853_eeee0001",
+        "origin_user_id": "peu",
+        "object": "diagnostic",
+        "action": "add_diagnostic",
+        "payload": {
+            "patient_user": "paciente.a@email.com",
+            "id": "diag1760579853",
+            "cid_code": "E11d",
+            "name": "Diabetes mellitus n\u00e3o-insulino-dependente",
+            "description": "edeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeede",
+            "date_added": "2025-10-15 22:57:33"
+        }
+    },
+    {
+        "message_id": "msg_1760579955_ffff0001",
+        "origin_user_id": "peu",
+        "object": "diagnostic",
+        "action": "add_diagnostic",
+        "payload": {
+            "patient_user": "paciente.a@email.com",
+            "id": "diag1760579955",
+            "cid_code": "L23.9",
+            "name": "Dermatite al\u00e9rgica de contato de causa n\u00e3o especificada",
+            "description": "",
+            "date_added": "2025-10-15 22:59:15"
+        }
+    },
+    {
+        "message_id": "msg_1760581248_gggg0001",
+        "origin_user_id": "peu",
+        "object": "event",
+        "action": "add_event",
+        "payload": {
+            "patient_user": "paciente.a@email.com",
+            "id": "evt1760581248",
+            "name": "a",
+            "description": "212",
+            "date": "2028-04-21",
+            "time": "01:02"
+        }
+    },
+    {
+        "message_id": "msg_1760581470_hhhh0001",
+        "origin_user_id": "peu",
+        "object": "event",
+        "action": "add_event",
+        "payload": {
+            "patient_user": "paciente.a@email.com",
+            "id": "evt1760581470",
+            "name": "fre21e12e12e12e12e12e",
+            "description": "",
+            "date": "2028-05-21",
+            "time": "03:04"
+        }
+    },
+    {
+        "message_id": "msg_1761051035_iiii0001",
+        "origin_user_id": "peu",
+        "object": "diagnostic",
+        "action": "add_diagnostic",
+        "payload": {
+            "patient_user": "paciente.a@email.com",
+            "id": "diag1761051035",
+            "cid_code": "",
+            "name": "nanismo",
+            "description": "",
+            "date_added": "2025-10-21 09:50:35"
+        }
+    },
+    {
+        "message_id": "msg_1761575286_jjjj0001",
+        "origin_user_id": "peu",
+        "object": "medication",
+        "action": "add_med",
+        "payload": {
+            "patient_user": "paciente.a@email.com",
+            "id": "med1761575286",
+            "generic_name": "Paclitaxel",
+            "presentation": "Adesivo",
+            "dosage": "a",
+            "quantity": "",
+            "days_of_week": [
+                "Sex"
+            ],
+            "times_of_day": [
+                "08:00"
+            ],
+            "start_date": "2025-10-27",
+            "end_date": "",
+            "observation": ""
+        }
+    },
+    {
+        "message_id": "msg_1761575287_kkkk0001",
+        "origin_user_id": "paciente.a@email.com",
+        "object": "evolution",
+        "action": "fill_metric",
+        "payload": {
+            "patient_id": "20000001",
+            "date": "2025-10-27",
+            "metrics": {
+                "heart_rate": "65",
+                "temperature": "13",
+                "weight": "70"
+            }
+        }
+    },
+    {
+        "message_id": "msg_1762637003_ad1ce9e2",
+        "origin_user_id": "paciente.a@email.com",
+        "object": "account",
+        "action": "try_logout",
+        "payload": {}
+    },
+    {
+        "message_id": "msg_1762637016_0e01a90e",
+        "origin_user_id": "pato",
+        "object": "account",
+        "action": "create_account",
+        "payload": {
+            "profile_type": "doctor",
+            "name": "pato",
+            "user": "pato",
+            "password": "123456",
+            "is_also_patient": false,
+            "patient_info": null
+        }
+    },
+    {
+        "message_id": "msg_1762637038_09e3e711",
+        "origin_user_id": "pato",
+        "object": "account",
+        "action": "try_login",
+        "payload": {
+            "user": "pato",
+            "password": "123456"
+        }
+    },
+    {
+        "message_id": "msg_1762637060_7efef492",
+        "origin_user_id": "pato",
+        "object": "account",
+        "action": "delete_account",
+        "payload": {
+            "user": "pato"
+        }
+    },
+    {
+        "message_id": "msg_1762637322_844c982f",
+        "origin_user_id": "patofu",
+        "object": "account",
+        "action": "create_account",
+        "payload": {
+            "profile_type": "doctor",
+            "name": "patofu",
+            "user": "patofu",
+            "password": "patofu",
+            "is_also_patient": true,
+            "patient_info": {
+                "height_cm": "186",
+                "date_of_birth": {
+                    "day": "31",
+                    "month": "8",
+                    "year": "2017"
+                },
+                "sex": "Outro"
+            }
+        }
+    },
+    {
+        "message_id": "msg_1762637337_dcdb3ac9",
+        "origin_user_id": "patofu",
+        "object": "account",
+        "action": "try_login",
+        "payload": {
+            "user": "patofu",
+            "password": "patofu"
+        }
+    },
+    {
+        "message_id": "msg_1762637382_9e567361",
+        "origin_user_id": "patofu",
+        "object": "medication",
+        "action": "add_med",
+        "payload": {
+            "id": "med1762637382",
+            "generic_name": "Paclitaxel",
+            "presentation": "C\u00e1psula",
+            "dosage": "50 mg",
+            "quantity": "1 cp",
+            "days_of_week": [
+                "Todos os dias"
+            ],
+            "times_of_day": [
+                "05:06"
+            ],
+            "start_date": "2025-11-08",
+            "end_date": "",
+            "observation": "opcional",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762637619_ca6a8f97",
+        "origin_user_id": "patofu",
+        "object": "medication",
+        "action": "edit_med",
+        "payload": {
+            "id": "med1762637382",
+            "generic_name": "Paclitaxel",
+            "presentation": "C\u00e1psula",
+            "dosage": "50 mg",
+            "days_of_week": [
+                "Todos os dias"
+            ],
+            "times_of_day": [
+                "05:06"
+            ],
+            "observation": "opcional, s\u00f3 que n\u00e3o",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762638035_88bb3067",
+        "origin_user_id": "patofu",
+        "object": "medication",
+        "action": "add_med",
+        "payload": {
+            "id": "med1762638035",
+            "generic_name": "Pantoprazol",
+            "presentation": "Comprimido",
+            "dosage": "45 mg",
+            "quantity": "23 cp",
+            "days_of_week": [
+                "Todos os dias"
+            ],
+            "times_of_day": [
+                "14:02"
+            ],
+            "start_date": "2025-11-08",
+            "end_date": "",
+            "observation": "",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762638350_6d6f5719",
+        "origin_user_id": "patofu",
+        "object": "medication",
+        "action": "add_med",
+        "payload": {
+            "id": "med1762638350",
+            "generic_name": "Paclitaxel",
+            "presentation": "C\u00e1psula",
+            "dosage": "1",
+            "quantity": "2",
+            "days_of_week": [
+                "Ter"
+            ],
+            "times_of_day": [
+                "01:01"
+            ],
+            "start_date": "2025-11-08",
+            "end_date": "",
+            "observation": "",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762638555_1951856f",
+        "origin_user_id": "patofu",
+        "object": "diagnostic",
+        "action": "add_diagnostic",
+        "payload": {
+            "id": "diag1762638555",
+            "cid_code": "F41.1",
+            "name": "Ansiedade generalizada",
+            "description": "ansioso o meninio",
+            "date_added": "2025-11-08 18:49:15",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762639239_ca264f96",
+        "origin_user_id": "patofu",
+        "object": "medication",
+        "action": "edit_med",
+        "payload": {
+            "id": "med1762638350",
+            "generic_name": "Paclitaxel",
+            "presentation": "C\u00e1psula",
+            "dosage": "1 g",
+            "days_of_week": [
+                "Ter"
+            ],
+            "times_of_day": [
+                "01:01"
+            ],
+            "observation": "",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762639260_98b85675",
+        "origin_user_id": "patofu",
+        "object": "diagnostic",
+        "action": "edit_diagnostic",
+        "payload": {
+            "id": "diag1762638555",
+            "cid_code": "F41.1",
+            "name": "Ansiedade generalizada",
+            "description": "ansioso o meninio",
+            "date_added": "2025-11-08 18:49:15",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762639374_fc3700a0",
+        "origin_user_id": "patofu",
+        "object": "diagnostic",
+        "action": "edit_diagnostic",
+        "payload": {
+            "id": "diag1762638555",
+            "cid_code": "F41.1",
+            "name": "Ansiedade generalizada",
+            "description": "ansioso o meninao",
+            "date_added": "2025-11-08 18:49:15",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762641397_67d07d23",
+        "origin_user_id": "patofu",
+        "object": "medication",
+        "action": "edit_med",
+        "payload": {
+            "id": "med1762638350",
+            "generic_name": "Paclitaxel",
+            "presentation": "C\u00e1psula",
+            "dosage": "1 gramas",
+            "days_of_week": [
+                "Ter"
+            ],
+            "times_of_day": [
+                "01:01"
+            ],
+            "observation": "",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762641418_0feb9096",
+        "origin_user_id": "patofu",
+        "object": "medication",
+        "action": "delete_med",
+        "payload": {
+            "med_id": "med1762638350",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762641616_fa3bb99d",
+        "origin_user_id": "patofu",
+        "object": "medication",
+        "action": "delete_med",
+        "payload": {
+            "med_id": "med1762638035",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762641643_5f75d5b9",
+        "origin_user_id": "patofu",
+        "object": "diagnostic",
+        "action": "delete_diagnostic",
+        "payload": {
+            "diagnostic_id": "diag1762638555",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762641665_24688890",
+        "origin_user_id": "patofu",
+        "object": "account",
+        "action": "try_logout",
+        "payload": {}
+    },
+    {
+        "message_id": "msg_1762641680_d7e5dc7a",
+        "origin_user_id": "paciente.a@email.com",
+        "object": "account",
+        "action": "try_login",
+        "payload": {
+            "user": "paciente.a@email.com",
+            "password": "aaaaaa"
+        }
+    },
+    {
+        "message_id": "msg_1762641704_55ff74b2",
+        "origin_user_id": "paciente.a@email.com",
+        "object": "account",
+        "action": "try_logout",
+        "payload": {}
+    },
+    {
+        "message_id": "msg_1762641715_696cd16a",
+        "origin_user_id": "patofu",
+        "object": "account",
+        "action": "try_login",
+        "payload": {
+            "user": "patofu",
+            "password": "patofu"
+        }
+    },
+    {
+        "message_id": "msg_1762641884_30b052a4",
+        "origin_user_id": "patofu",
+        "object": "linking_accounts",
+        "action": "invite_patient",
+        "payload": {
+            "patient_user_to_invite": "Paciente A"
+        }
+    },
+    {
+        "message_id": "msg_1762641899_32c91343",
+        "origin_user_id": "patofu",
+        "object": "linking_accounts",
+        "action": "invite_patient",
+        "payload": {
+            "patient_user_to_invite": "paciente.a@email.com"
+        }
+    },
+    {
+        "message_id": "msg_1762641941_1bbf5ed2",
+        "origin_user_id": "patofu",
+        "object": "event",
+        "action": "add_event",
+        "payload": {
+            "id": "evt1762641941",
+            "name": "consultinha",
+            "description": "consulta teste",
+            "date": "2025-11-08",
+            "time": "02:05",
+            "patient_user": "patofu_patient_profile"
+        }
+    },
+    {
+        "message_id": "msg_1762641969_71cad0e9",
+        "origin_user_id": "patofu",
+        "object": "evolution",
+        "action": "update_tracked_metrics",
+        "payload": {
+            "patient_id": "21439724",
+            "tracked_metrics": [
+                "heart_rate",
+                "weight"
+            ]
+        }
+    },
+    {
+        "message_id": "msg_1762641988_9a0ef475",
+        "origin_user_id": "patofu",
+        "object": "evolution",
+        "action": "fill_metric",
+        "payload": {
+            "patient_id": "21439724",
+            "date": "2025-11-08",
+            "metrics": {
+                "heart_rate": "123",
+                "weight": "75"
+            }
+        }
+    },
+    {
+        "message_id": "msg_1762642012_5de943eb",
+        "origin_user_id": "patofu",
+        "object": "account",
+        "action": "try_logout",
+        "payload": {}
+    },
+    {
+        "message_id": "msg_1762642028_9b9caf59",
+        "origin_user_id": "paciente.a@email.com",
+        "object": "account",
+        "action": "try_login",
+        "payload": {
+            "user": "paciente.a@email.com",
+            "password": "aaaaaa"
+        }
+    },
+    {
+        "message_id": "msg_1762642036_99569376",
+        "origin_user_id": "paciente.a@email.com",
+        "object": "linking_accounts",
+        "action": "respond_to_invitation",
+        "payload": {
+            "doctor_id": "81253409",
+            "response": "accept"
+        }
+    },
+    {
+        "message_id": "msg_1762642055_be975ea9",
+        "origin_user_id": "paciente.a@email.com",
+        "object": "account",
+        "action": "try_logout",
+        "payload": {}
+    },
+    {
+        "message_id": "msg_1762642065_c2dc659f",
+        "origin_user_id": "patofu",
+        "object": "account",
+        "action": "try_login",
+        "payload": {
+            "user": "patofu",
+            "password": "patofu"
+        }
+    },
+    {
+        "message_id": "msg_1762642102_d5ee3cbd",
+        "origin_user_id": "patofu",
+        "object": "medication",
+        "action": "edit_med",
+        "payload": {
+            "id": "med1760573510",
+            "generic_name": "Paracetamol",
+            "presentation": "C\u00e1psula",
+            "dosage": "32 mg",
+            "days_of_week": [
+                "Todos os dias"
+            ],
+            "times_of_day": [
+                "01:04"
+            ],
+            "observation": "observado",
+            "patient_user": "paciente.a@email.com"
+        }
+    },
+    {
+        "message_id": "msg_1762642128_5199fa63",
+        "origin_user_id": "patofu",
+        "object": "evolution",
+        "action": "fill_metric",
+        "payload": {
+            "patient_id": "20000001",
+            "date": "2025-11-08",
+            "metrics": {
+                "temperature": "32",
+                "heart_rate": "123",
+                "weight": "70"
+            }
+        }
+    },
+    {
+        "message_id": "msg_1762642165_1a3d0d65",
+        "origin_user_id": "patofu",
+        "object": "account",
+        "action": "try_logout",
+        "payload": {}
+    },
+    {
+        "message_id": "msg_1762642182_99b10039",
+        "origin_user_id": "paciente.a@email.com",
+        "object": "account",
+        "action": "try_login",
+        "payload": {
+            "user": "paciente.a@email.com",
+            "password": "aaaaaa"
+        }
+    },
+    {
+        "message_id": "msg_1762642842_cb3e229a",
+        "origin_user_id": "paciente.a@email.com",
+        "object": "account",
+        "action": "try_logout",
+        "payload": {}
+    },
+    {
+        "message_id": "msg_1762642857_76b632b4",
+        "origin_user_id": "patofu",
+        "object": "account",
+        "action": "try_login",
+        "payload": {
+            "user": "patofu",
+            "password": "patofu"
+        }
+    }
+]

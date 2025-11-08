@@ -1,6 +1,13 @@
 {
     "paciente.a@email.com": [
         {
+            "id": "diag1761051035",
+            "cid_code": "",
+            "name": "nanismo",
+            "description": "",
+            "date_added": "2025-10-21 09:50:35"
+        },
+        {
             "id": "diag1760579955",
             "cid_code": "L23.9",
             "name": "Dermatite al\u00e9rgica de contato de causa n\u00e3o especificada",
@@ -13,13 +20,6 @@
             "name": "Diabetes mellitus n\u00e3o-insulino-dependente",
             "description": "edeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeedeede",
             "date_added": "2025-10-15 22:57:33"
-        },
-        {
-            "id": "diag1761051035",
-            "cid_code": "",
-            "name": "nanismo",
-            "description": "",
-            "date_added": "2025-10-21 09:50:35"
         }
     ],
     "e_patient_profile": [
@@ -30,5 +30,15 @@
             "description": "",
             "date_added": "2025-10-19 16:43:45"
         }
-    ]
+    ],
+    "jane.doe_patient_profile": [
+        {
+            "id": "diag1761145470",
+            "cid_code": "N39.0",
+            "name": "Infec\u00e7\u00e3o do trato urin\u00e1rio de localiza\u00e7\u00e3o n\u00e3o especificada",
+            "description": "oi",
+            "date_added": "2025-10-22 12:04:30"
+        }
+    ],
+    "patofu_patient_profile": []
 }

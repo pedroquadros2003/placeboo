@@ -33,25 +33,26 @@ class DoctorHomeScreen(Screen):
         self.load_linked_patients()
 
     def _get_main_dir_path(self, filename):
-        """Constructs the full path to a file in the main project directory."""
-        # Assumes main.py is in the parent directory of 'doctor_profile'
-        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+        """Constructs the full path to a file in the main project directory (e.g., cid10.json)."""
+        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename) # Isso é para arquivos como cid10.json
 
     def load_linked_patients(self):
         """Loads the doctor's linked patients to populate the spinner."""
         doctor_user = ""
         # Get logged-in doctor's user from session
-        if os.path.exists(self._get_main_dir_path('session.json')):
-            with open(self._get_main_dir_path('session.json'), 'r') as f:
+        session_path = self._get_main_dir_path('session.json')
+        if os.path.exists(session_path):
+            with open(session_path, 'r') as f:
                 session_data = json.load(f)
                 if session_data.get('profile_type') == 'doctor':
                     doctor_user = session_data.get('user')
 
-        if not doctor_user or not os.path.exists(self._get_main_dir_path('account.json')):
+        accounts_path = self._get_main_dir_path('account.json')
+        if not doctor_user or not os.path.exists(accounts_path):
             self.patient_list = ["Nenhum paciente vinculado"]
             return
 
-        with open(self._get_main_dir_path('account.json'), 'r', encoding='utf-8') as f:
+        with open(accounts_path, 'r', encoding='utf-8') as f:
             accounts = json.load(f)
 
         doctor_account = next((acc for acc in accounts if acc['user'] == doctor_user), None)
@@ -100,30 +101,27 @@ class DoctorHomeScreen(Screen):
         if not patient_user:
             return
 
+        content_manager = self.ids.content_manager
+
         # Update Medications View
-        med_screen = self.ids.content_manager.get_screen('doctor_medications')
-        med_screen.children[0].current_patient_user = patient_user
-        med_screen.children[0].load_medications()
+        med_view = content_manager.get_screen('doctor_medications').ids.medications_view_content
+        med_view.current_patient_user = patient_user
 
         # Update Events View
-        events_screen = self.ids.content_manager.get_screen('doctor_events')
-        events_screen.children[0].current_patient_user = patient_user
-        events_screen.children[0].load_events()
+        events_view = content_manager.get_screen('doctor_events').ids.events_view_content
+        events_view.current_patient_user = patient_user
 
         # Update Diagnostics View
-        diagnostics_screen = self.ids.content_manager.get_screen('doctor_diagnostics')
-        diagnostics_screen.children[0].current_patient_user = patient_user
-        # The load_diagnostics method is called automatically by the on_current_patient_user property
+        diag_view = content_manager.get_screen('doctor_diagnostics').ids.diagnostics_view_content
+        diag_view.current_patient_user = patient_user
 
         # Update Patient Settings View
-        patient_settings_screen = self.ids.content_manager.get_screen('patient_settings')
-        patient_settings_screen.children[0].current_patient_user = patient_user
-        # The load_settings method is called automatically by the on_current_patient_user property
+        settings_view = content_manager.get_screen('patient_settings').ids.patient_settings_view_content
+        settings_view.current_patient_user = patient_user
 
         # Update Patient Evolution View
-        patient_evolution_screen = self.ids.content_manager.get_screen('doctor_evolution')
-        patient_evolution_screen.children[0].current_patient_user = patient_user
-        # The view will clear itself via on_current_patient_user
+        evolution_view = content_manager.get_screen('doctor_evolution').ids.evolution_view
+        evolution_view.current_patient_user = patient_user
 
 
 class DoctorMenuScreen(Screen):

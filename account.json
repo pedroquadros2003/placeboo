@@ -3,11 +3,9 @@
         "profile_type": "doctor",
         "name": "peu",
         "user": "peu",
-        "password": "123",
+        "password": "senha123",
         "linked_patients": [
-            "20000001",
-            "20000002",
-            "20000003"
+            "20000001"
         ],
         "id": "10000001"
     },
@@ -15,7 +13,7 @@
         "profile_type": "patient",
         "name": "Paciente A",
         "user": "paciente.a@email.com",
-        "password": "aaa",
+        "password": "aaaaaa",
         "patient_info": {
             "height_cm": "175",
             "date_of_birth": {},
@@ -23,13 +21,16 @@
             "patient_code": "20000001",
             "tracked_metrics": [
                 "temperature",
+                "heart_rate",
                 "weight"
             ],
             "responsible_doctors": [
-                "10000001"
+                "10000001",
+                "81253409"
             ]
         },
-        "id": "20000001"
+        "id": "20000001",
+        "invitations": []
     },
     {
         "profile_type": "patient",
@@ -41,9 +42,7 @@
             "date_of_birth": {},
             "sex": "Feminino",
             "patient_code": "20000002",
-            "responsible_doctors": [
-                "10000001"
-            ]
+            "responsible_doctors": []
         },
         "id": "20000002"
     },
@@ -57,9 +56,7 @@
             "date_of_birth": {},
             "sex": "Masculino",
             "patient_code": "20000003",
-            "responsible_doctors": [
-                "10000001"
-            ]
+            "responsible_doctors": []
         },
         "id": "20000003",
         "invitations": []
@@ -94,5 +91,73 @@
             "14121641"
         ],
         "self_patient_id": "14121641"
+    },
+    {
+        "profile_type": "patient",
+        "name": "pedro",
+        "user": "pedro_patient_profile",
+        "password": "internal_use_only",
+        "id": "46564315",
+        "patient_info": {
+            "height_cm": "1242",
+            "date_of_birth": {
+                "day": "12",
+                "month": "8",
+                "year": "2011"
+            },
+            "sex": "Feminino",
+            "patient_code": "46564315",
+            "responsible_doctors": []
+        }
+    },
+    {
+        "profile_type": "doctor",
+        "name": "pedri",
+        "user": "pedri",
+        "password": "pedri",
+        "id": "71197692"
+    },
+    {
+        "profile_type": "doctor",
+        "name": "welber",
+        "user": "welber",
+        "password": "welber",
+        "id": "29160136"
+    },
+    {
+        "profile_type": "patient",
+        "name": "patofu",
+        "user": "patofu_patient_profile",
+        "password": "internal_use_only",
+        "id": "21439724",
+        "patient_info": {
+            "height_cm": "186",
+            "date_of_birth": {
+                "day": "31",
+                "month": "8",
+                "year": "2017"
+            },
+            "sex": "Outro",
+            "patient_code": "21439724",
+            "responsible_doctors": [
+                "81253409"
+            ],
+            "tracked_metrics": [
+                "heart_rate",
+                "weight"
+            ]
+        }
+    },
+    {
+        "profile_type": "doctor",
+        "name": "patofu",
+        "user": "patofu",
+        "password": "patofu",
+        "id": "81253409",
+        "linked_patients": [
+            "21439724",
+            "20000001"
+        ],
+        "self_patient_id": "21439724"
     }
 ]

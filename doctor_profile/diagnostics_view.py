@@ -9,8 +9,10 @@ from kivy.clock import Clock
 from kivy.metrics import dp
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
+from outbox_handler.outbox_processor import OutboxProcessor
 from functools import partial
+import uuid
 
 # Loads the associated kv file
 Builder.load_file("doctor_profile/diagnostics_view.kv", encoding='utf-8')
@@ -155,15 +157,20 @@ class DiagnosticsView(RelativeLayout):
             "date_added": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
 
-        self._save_to_file(new_diagnostic, is_new=True)
         self.clear_input_fields()
         self.load_diagnostics()
+        
+        # Adiciona mensagem ao outbox_messages.json
+        payload = new_diagnostic.copy()
+        payload['patient_user'] = self.current_patient_user # Adiciona patient_user ao payload para o payload da mensagem
+        App.get_running_app().outbox_processor.add_to_outbox("diagnostic", "add_diagnostic", payload)
 
     def remove_diagnostic(self, diagnostic_id, *args):
         """Removes a diagnostic."""
-        self.diagnostics = [d for d in self.diagnostics if d['id'] != diagnostic_id]
-        self._save_to_file(None, is_new=False) # Save the modified list
-        self.populate_diagnostics_list()
+        # Apenas envia a mensagem para o backend. A UI será atualizada no próximo ciclo de refresh.
+        App.get_running_app().show_success_popup("Solicitação de remoção enviada.")
+        payload = {"diagnostic_id": diagnostic_id, "patient_user": self.current_patient_user}
+        App.get_running_app().outbox_processor.add_to_outbox("diagnostic", "delete_diagnostic", payload)
 
     def start_editing_diagnostic(self, diagnostic_data, *args):
         """Populates input fields to start editing."""
@@ -188,32 +195,14 @@ class DiagnosticsView(RelativeLayout):
                 }
                 break
         
-        self._save_to_file(None, is_new=False)
+        # Adiciona mensagem ao outbox_messages.json
+        payload = self.diagnostics[i].copy() # Usa o diagnóstico atualizado
+        payload['patient_user'] = self.current_patient_user
+        App.get_running_app().outbox_processor.add_to_outbox("diagnostic", "edit_diagnostic", payload)
+        App.get_running_app().show_success_popup("Solicitação de edição de diagnóstico enviada.")
+        
         self.cancel_edit()
-        self.load_diagnostics()
-
-    def _save_to_file(self, new_data, is_new=False):
-        """Helper function to read, update, and write to the JSON file."""
-        diagnostics_path = self._get_main_dir_path('patient_diagnostics.json')
-        all_diagnostics = {}
-        if os.path.exists(diagnostics_path):
-            try:
-                with open(diagnostics_path, 'r', encoding='utf-8') as f:
-                    all_diagnostics = json.load(f)
-            except (json.JSONDecodeError, FileNotFoundError):
-                pass
-
-        patient_diagnostics = all_diagnostics.get(self.current_patient_user, [])
-        if is_new:
-            patient_diagnostics.append(new_data)
-        else: # This means we are saving an edit or removal
-            patient_diagnostics = self.diagnostics
-
-        all_diagnostics[self.current_patient_user] = patient_diagnostics
-
-        with open(diagnostics_path, 'w', encoding='utf-8') as f:
-            json.dump(all_diagnostics, f, indent=4)
-
+        
     def _get_main_dir_path(self, filename):
         """Constructs the full path to a file in the main project directory."""
         return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)

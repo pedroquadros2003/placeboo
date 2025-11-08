@@ -6,8 +6,9 @@ from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from datetime import datetime
 from kivy.metrics import dp
-import json
+from kivy.app import App
 import os
+import json
 
 from auxiliary_classes.date_checker import MONTH_NAME_TO_NUM
 
@@ -32,13 +33,14 @@ class PatientEvolutionView(RelativeLayout):
 
     def on_enter(self):
         """Chamado quando a tela é exibida. Carrega os dados e preenche com a data de hoje."""
-        # Garante que os dados do paciente estão sempre atualizados ao entrar na tela
         self.load_logged_in_patient_info()
         self.fill_today_date()
 
-    def _get_main_dir_path(self, filename):
-        """Constrói o caminho completo para um arquivo no diretório principal."""
-        return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+    def on_logged_in_patient_info(self, instance, value):
+        """Chamado automaticamente quando a propriedade 'logged_in_patient_info' muda."""
+        if value:
+            # Quando as informações do paciente são carregadas, atualiza a data e os campos.
+            self.fill_today_date()
 
     def load_logged_in_patient_info(self):
         """Carrega os dados do paciente logado a partir de session.json e account.json."""
@@ -50,18 +52,36 @@ class PatientEvolutionView(RelativeLayout):
             try:
                 with open(session_path, 'r') as f:
                     session_data = json.load(f)
-                if session_data.get('logged_in') and session_data.get('profile_type') == 'patient':
-                    patient_user = session_data.get('user')
+                
+                session_user = session_data.get('user')
+                profile_type = session_data.get('profile_type')
+
+                if session_data.get('logged_in'):
+                    if profile_type == 'patient':
+                        patient_user = session_user
+                    elif profile_type == 'doctor':
+                        with open(accounts_path, 'r', encoding='utf-8') as acc_f:
+                            accounts = json.load(acc_f)
+                        doctor_account = next((acc for acc in accounts if acc.get('user') == session_user), None)
+                        if doctor_account and doctor_account.get('self_patient_id'):
+                            self_patient_account = next((acc for acc in accounts if acc.get('id') == doctor_account.get('self_patient_id')), None)
+                            if self_patient_account:
+                                patient_user = self_patient_account.get('user')
             except (json.JSONDecodeError, FileNotFoundError):
                 print("Erro ao carregar session.json.")
 
         if patient_user and os.path.exists(accounts_path):
             with open(accounts_path, 'r', encoding='utf-8') as f:
                 accounts = json.load(f)
-            self.logged_in_patient_info = next((acc for acc in accounts if acc.get('user') == patient_user), {})
+            self.logged_in_patient_info = next((acc for acc in accounts if acc.get('user') == patient_user), {}) # Dispara o on_logged_in_patient_info
         
         if not self.logged_in_patient_info:
             print("Nenhum paciente logado ou dados de sessão inválidos.")
+            self.ids.metrics_grid.clear_widgets() # Limpa a tela se não houver usuário
+
+    def _get_main_dir_path(self, filename):
+        """Constrói o caminho completo para um arquivo no diretório principal."""
+        return os.path.join(App.get_running_app().get_user_data_path(), filename)
 
     def fill_today_date(self):
         """Preenche os seletores de data com a data atual (de app_data.json ou do sistema)."""
@@ -184,21 +204,12 @@ class PatientEvolutionView(RelativeLayout):
         if systolic_input and diastolic_input and systolic_input.text and diastolic_input.text:
             new_data['blood_pressure'] = f"{systolic_input.text}/{diastolic_input.text}"
 
-        all_evolutions = {}
-        evolution_path = self._get_main_dir_path('patient_evolution.json')
-        if os.path.exists(evolution_path):
-            with open(evolution_path, 'r', encoding='utf-8') as f:
-                try: all_evolutions = json.load(f)
-                except json.JSONDecodeError: pass
-        
-        patient_evolution = all_evolutions.get(patient_id, {})
-        patient_evolution[date_str] = new_data
-        all_evolutions[patient_id] = patient_evolution
+        # A lógica de escrita foi movida para o backend.
+        # A view apenas envia a mensagem para o outbox.
 
-        with open(evolution_path, 'w', encoding='utf-8') as f:
-            json.dump(all_evolutions, f, indent=4)
-
-        print(f"Dados de evolução salvos para o paciente {patient_id} na data {date_str}.")
+        # Adiciona mensagem ao outbox_messages.json para sincronização
+        payload = {"patient_id": patient_id, "date": date_str, "metrics": new_data}
+        App.get_running_app().outbox_processor.add_to_outbox("evolution", "fill_metric", payload)
 
     def _get_evolution_data_for_date(self, patient_id, date_str):
         """Busca dados de evolução salvos para um paciente e data específicos."""

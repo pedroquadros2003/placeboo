@@ -14,15 +14,20 @@ def load_window_settings():
 load_window_settings()
 
 from kivy.app import App
-from kivy.properties import ObjectProperty
+from kivy.properties import ObjectProperty, StringProperty
 from kivy.lang import Builder
+from kivy.clock import Clock
 from navigation_screen_manager import NavigationScreenManager
 # Importa as telas para que o Kivy as reconheça ao carregar os arquivos .kv
+from outbox_handler.outbox_processor import OutboxProcessor
+from inbox_handler.inbox_processor import InboxProcessor
+import os
 from initial_access import InitialAccessScreen, LoginScreen, SignUpScreen
 from patient_profile.patient_screens import PatientHomeScreen, PatientMenuScreen
 from patient_profile.patient_screens import PatientAppSettingsScreen, ManageDoctorsScreen
 from doctor_profile.doctor_screens import DoctorHomeScreen, DoctorMenuScreen, DoctorSettingsScreen
 from doctor_profile.graph_view_screen import GraphViewScreen
+from backend.local_backend import LocalBackend
  
 # Importa as classes de view que não são telas, mas são usadas nos arquivos .kv
 from patient_profile.patient_settings_view import PatientAppSettingsView
@@ -35,10 +40,30 @@ class MyScreenManager(NavigationScreenManager):
 
 class PlaceboApp (App):  ## Aplicações em Kivy terminam em App
     manager = ObjectProperty(None)
+    outbox_processor = ObjectProperty(None)
+    inbox_processor = ObjectProperty(None)
+    local_backend = ObjectProperty(None)
+    pending_request_id = StringProperty(None, allownone=True)
     
     def build(self):
         self.manager = MyScreenManager()
+        main_path = os.path.dirname(__file__)
+        
+        # Initialize LocalBackend (Server simulation)
+        self.local_backend = LocalBackend(main_path)
+        
+        # Client-side processors, agora com acesso ao db manager do backend
+        self.outbox_processor = OutboxProcessor(main_path)
+        self.inbox_processor = InboxProcessor(main_path, self.local_backend.db)
+
+        # Simulate client-server sync cycle every 5 seconds
+        Clock.schedule_interval(self.run_sync_cycle, 5)
         return self.manager
+
+    
+    def get_user_data_path(self):
+        """Returns the main path of the project."""
+        return os.path.dirname(__file__)
 
     def show_popup(self, message, is_success=False):
         """Exibe um popup (erro ou sucesso) na parte inferior da tela."""
@@ -51,5 +76,54 @@ class PlaceboApp (App):  ## Aplicações em Kivy terminam em App
 
     def show_error_popup(self, message): self.show_popup(message, is_success=False)
     def show_success_popup(self, message): self.show_popup(message, is_success=True)
+
+    def run_sync_cycle(self, dt):
+        """Simulates a client-server sync cycle."""
+        # 1. O Backend processa as transações e escreve as respostas diretamente no inbox.
+        self.local_backend.run_processing_cycle()
+
+        # 2. O InboxProcessor do cliente processa todas as mensagens em sua caixa de entrada.
+        self.inbox_processor.process_inbox()
+
+        # 3. Força a atualização da view atual para refletir quaisquer mudanças nos dados.
+        self.refresh_current_view()
+
+    def refresh_current_view(self):
+        """
+        Identifica a tela/view atual e chama seu método de recarregamento de dados.
+        Isso garante que a UI esteja sempre sincronizada após cada ciclo.
+        """
+        if not self.manager or not self.manager.current_screen:
+            return
+        
+        current_screen = self.manager.current_screen
+        print(f"\n[DEBUG Refresh] Tentando atualizar a tela principal: '{current_screen.name}'")
+
+        # Verifica se a tela atual tem um método 'on_enter' ou 'load_data' e o chama.
+        # O método 'on_enter' é um padrão do Kivy que usamos para carregar dados.
+        if hasattr(current_screen, 'on_enter'):
+            print(f"[DEBUG Refresh] -> Chamando on_enter() para '{current_screen.name}'")
+            current_screen.on_enter()
+        
+        # Para as views aninhadas dentro de ScreenManagers (como na DoctorHomeScreen)
+        if hasattr(current_screen, 'ids') and 'content_manager' in current_screen.ids:
+            content_screen = current_screen.ids.content_manager.current_screen
+            
+            # Acessa a view de conteúdo real dentro da sub-tela
+            # Assumimos que a view de conteúdo tem um ID previsível (ex: 'medications_view_content')
+            # ou é a primeira filha. Acessar pelo ID é mais seguro.
+            # Mapeia o nome da tela para o método de load correspondente na sua view.
+            load_method_map = {
+                'doctor_medications': 'load_medications',
+                'doctor_events': 'load_events',
+                'doctor_diagnostics': 'load_diagnostics',
+            }
+            
+            load_method_name = load_method_map.get(content_screen.name)
+            if load_method_name and content_screen.children:
+                content_view = content_screen.children[0] # A view é a filha da tela de conteúdo
+                if hasattr(content_view, load_method_name):
+                    print(f"[DEBUG Refresh] -> Forçando atualização. Chamando {load_method_name}() para a view '{content_view.__class__.__name__}'")
+                    getattr(content_view, load_method_name)()
 
 PlaceboApp().run()

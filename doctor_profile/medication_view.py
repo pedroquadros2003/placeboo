@@ -4,12 +4,14 @@ from kivy.graphics import Color, Rectangle
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import ListProperty, StringProperty
 from kivy.uix.label import Label
-from kivy.uix.button import Button
 from kivy.app import App
+from kivy.uix.button import Button
+from outbox_handler.outbox_processor import OutboxProcessor
 from kivy.clock import Clock
 import json
 import os
 from datetime import datetime
+import uuid
 from functools import partial
 from kivy.metrics import dp
 
@@ -37,13 +39,21 @@ class MedicationsView(RelativeLayout):
         # The on_text event is now handled directly in the .kv file
         self.load_medications()
     
+    def on_current_patient_user(self, instance, value):
+        """Atualiza a view quando o paciente muda."""
+        if value:
+            self.load_medications()
+        else:
+            # Limpa o conteúdo se nenhum paciente estiver selecionado
+            self.ids.medications_list.clear_widgets()
+
     def _get_main_dir_path(self, filename):
         """Constructs the full path to a file in the main project directory."""
         return os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
 
     def load_generic_medications(self):
         """Loads the list of generic medications from a JSON file."""
-        if os.path.exists(self._get_main_dir_path('generic_medications.json')):
+        if os.path.exists(self._get_main_dir_path('generic_medications.json')): # Caminho corrigido
             try:
                 with open('generic_medications.json', 'r', encoding='utf-8') as f:
                     self.generic_med_list = json.load(f)
@@ -217,20 +227,11 @@ class MedicationsView(RelativeLayout):
         if not med_to_remove:
             return
 
-        self.medications.remove(med_to_remove)
-        self.populate_medications_list()
+        # Apenas envia a mensagem para o backend. A UI será atualizada no próximo ciclo de refresh.
+        App.get_running_app().show_success_popup("Solicitação de remoção enviada.")
+        payload = {"med_id": med_id, "patient_user": self.current_patient_user} # Adiciona patient_user ao payload para a mensagem
+        App.get_running_app().outbox_processor.add_to_outbox("medication", "delete_med", payload)
 
-        medications_path = self._get_main_dir_path('patient_medications.json')
-        try:
-            with open(medications_path, 'r+', encoding='utf-8') as f:
-                all_meds = json.load(f)
-                all_meds[self.current_patient_user] = self.medications
-                f.seek(0)
-                json.dump(all_meds, f, indent=4)
-                f.truncate()
-            print(f"Removed medication {med_id} and updated file.")
-        except (json.JSONDecodeError, FileNotFoundError, KeyError):
-            App.get_running_app().show_error_popup("Erro ao salvar alterações.")
 
     def add_medication(self):
         """
@@ -285,23 +286,11 @@ class MedicationsView(RelativeLayout):
             "observation": observation
         }
 
-        all_meds = {}
-        medications_path = self._get_main_dir_path('patient_medications.json')
-        if os.path.exists(medications_path):
-            try:
-                with open(medications_path, 'r', encoding='utf-8') as f:
-                    all_meds = json.load(f)
-            except (json.JSONDecodeError, FileNotFoundError):
-                pass
-
-        patient_meds = all_meds.get(self.current_patient_user, [])
-        patient_meds.append(new_med)
-        all_meds[self.current_patient_user] = patient_meds
-
-        with open(medications_path, 'w', encoding='utf-8') as f:
-            json.dump(all_meds, f, indent=4)
-
         App.get_running_app().show_success_popup(f"Medicação '{generic_name}' adicionada.")
+        # Adiciona mensagem ao outbox_messages.json para o backend processar
+        payload = new_med.copy()
+        payload['patient_user'] = self.current_patient_user # Adiciona patient_user ao payload para a mensagem
+        App.get_running_app().outbox_processor.add_to_outbox("medication", "add_med", payload)
         self.load_medications()
 
     def start_editing_medication(self, med_data, *args):
@@ -360,30 +349,18 @@ class MedicationsView(RelativeLayout):
 
         time_selected = f"{hour}:{minute}"
 
-        # --- Update the data in the JSON file ---
-        medications_path = self._get_main_dir_path('patient_medications.json')
-        all_meds = {}
-        with open(medications_path, 'r+', encoding='utf-8') as f:
-            all_meds = json.load(f)
-            patient_meds = all_meds.get(self.current_patient_user, [])
-            
-            for i, med in enumerate(patient_meds):
-                if med['id'] == self.editing_med_id:
-                    patient_meds[i].update({
-                        "generic_name": generic_name,
-                        "presentation": presentation,
-                        "dosage": dosage,
-                        "quantity": quantity,
-                        "days_of_week": days_of_week,
-                        "times_of_day": [time_selected],
-                        "observation": observation
-                    })
-                    break
-            
-            all_meds[self.current_patient_user] = patient_meds
-            f.seek(0)
-            json.dump(all_meds, f, indent=4)
-            f.truncate()
+        # Adiciona mensagem ao outbox_messages.json
+        payload = {
+            "id": self.editing_med_id,
+            "generic_name": generic_name,
+            "presentation": presentation if presentation != 'Apresentação' else 'Comprimido',
+            "dosage": dosage,
+            "days_of_week": days_of_week,
+            "times_of_day": [time_selected],
+            "observation": observation,
+            "patient_user": self.current_patient_user
+        }
+        App.get_running_app().outbox_processor.add_to_outbox("medication", "edit_med", payload)
 
         App.get_running_app().show_success_popup(f"Medicação atualizada.")
         self.cancel_edit() # Clear fields and exit edit mode
@@ -465,7 +442,7 @@ class MedicationsView(RelativeLayout):
                 size_hint=(0.5, None), # Button takes 50% of the container width
                 height=dp(40),
                 background_color=(0.85, 0.85, 0.85, 1), # Fundo cinza padrão
-                color=(0, 0, 0, 1), # Texto preto
+                color=(1, 1, 1, 1), # Texto branco
                 halign='left', # Alinha o texto à esquerda
                 padding=[dp(12), 0] # Adiciona padding horizontal
             )
