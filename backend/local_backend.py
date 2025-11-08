@@ -124,13 +124,13 @@ class LocalBackend:
             # Adiciona o timestamp de registro do servidor (horário de Brasília)
             msg["timestamp"] = self._get_brasilia_timestamp()
 
-            # 1. Redireciona a mensagem original para o inbox, a menos que seja uma ação "out-only".
-            if (obj, action) not in OUT_ONLY_ACTIONS:
-                new_inbox_messages.append(msg)
 
             # 2. Gera respostas específicas do servidor
             if obj == "account" and action == "try_login":
                 self._handle_login(msg, new_inbox_messages)
+
+            elif obj == "account" and action == "try_logout":
+                self._send_comeback(msg, new_inbox_messages, True)
 
             elif obj == "account" and action == "create_account":
                 self._handle_create_account(msg, new_inbox_messages)
@@ -141,7 +141,8 @@ class LocalBackend:
 
             elif obj == "account" and action == "change_password":
                 success = self.db.change_password(origin_user, payload.get("current_password"), payload.get("new_password"))
-                self._send_comeback(msg, new_inbox_messages, success)
+                reason = "Senha atual incorreta." if not success else ""
+                self._send_comeback(msg, new_inbox_messages, success, reason=reason)
 
             elif obj == "diagnostic":
                 self._handle_patient_data(msg, "patient_diagnostics.json")
@@ -182,6 +183,10 @@ class LocalBackend:
 
             elif obj == "linking_accounts" and action == "invite_patient":
                  self._handle_new_invitation(payload, origin_user, new_inbox_messages)
+
+            # 1. Redireciona a mensagem original para o inbox, a menos que seja uma ação "out-only".
+            if (obj, action) not in OUT_ONLY_ACTIONS:
+                new_inbox_messages.append(msg)
 
             # 3. Envia mensagem para o cliente limpar seu outbox
             delete_payload = {"message_id_to_delete": msg_id}

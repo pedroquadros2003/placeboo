@@ -20,18 +20,11 @@ class DoctorSettingsView(RelativeLayout):
 
     def logout(self):
         """
-        Logs the user out by deleting the session file and returning to the initial screen.
+        Sends a logout request to the backend.
         """
-        print("Logging out...")
-        session_path = self._get_main_dir_path('session.json')
-        if os.path.exists(session_path):
-            try:
-                os.remove(session_path)
-                print("Session file deleted.")
-            except OSError as e:
-                print(f"Error deleting session file: {e}")
-        
-        App.get_running_app().manager.reset_to('initial_access')
+        print("Enviando solicitação de logout...")
+        App.get_running_app().outbox_processor.add_to_outbox("account", "try_logout", {})
+        App.get_running_app().show_success_popup("Solicitação de logout enviada.")
 
     def change_password(self):
         """Navigates to the change password screen."""

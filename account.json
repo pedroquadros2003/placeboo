@@ -3,7 +3,7 @@
         "profile_type": "doctor",
         "name": "peu",
         "user": "peu",
-        "password": "peu",
+        "password": "senha123",
         "linked_patients": [
             "20000001"
         ],
@@ -13,7 +13,7 @@
         "profile_type": "patient",
         "name": "Paciente A",
         "user": "paciente.a@email.com",
-        "password": "aaa",
+        "password": "aaaaaa",
         "patient_info": {
             "height_cm": "175",
             "date_of_birth": {},

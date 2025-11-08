@@ -1,4 +1,4 @@
-﻿# Placebo App – Visão Geral das Classes e Fluxos
+﻿## Placebo App – Visão Geral das Classes e Fluxos
 
 Este README descreve, em alto nível, as principais classes do projeto, sua localização e responsabilidades.
 
@@ -121,6 +121,15 @@ Gerencia o ciclo de vida e a autenticação das contas de usuário.
     }
     ```
 
+*   **`try_logout`**: Solicitação para fazer logout.
+    ```json
+    {
+      "object": "account",
+      "action": "try_logout",
+      "payload": {}
+    }
+    ```
+
 *   **`change_password`**: Solicitação para alterar a senha.
     ```json
     {
@@ -156,6 +165,19 @@ Gerencia o ciclo de vida e a autenticação das contas de usuário.
           "profile_type": "doctor"
         }
       } 
+    }
+    ```
+
+*   **`try_logout_cback`**: Resposta a uma tentativa de logout.
+    ```json
+    {
+      "object": "account",
+      "action": "try_logout_cback",
+      "payload": {
+        "request_message_id": "msg_id_original_do_logout",
+        "executed": true,
+        "reason": ""
+      }
     }
     ```
 

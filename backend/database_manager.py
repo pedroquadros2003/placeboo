@@ -60,6 +60,16 @@ class PersistenceService:
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=4)
 
+    def delete_file(self, filename: str):
+        """Deleta um arquivo JSON de forma segura."""
+        filepath = self._get_filepath(filename)
+        if os.path.exists(filepath):
+            try:
+                os.remove(filepath)
+                print(f"[DB] Arquivo {filename} deletado com sucesso.")
+            except OSError as e:
+                print(f"[DB] Erro ao deletar o arquivo {filename}: {e}")
+
     def get_accounts(self) -> List[Dict[str, Any]]:
         """Retorna todas as contas de usuário."""
         return self._read_db('account.json')
@@ -67,6 +77,11 @@ class PersistenceService:
     def save_accounts(self, accounts: List[Dict[str, Any]]):
         """Salva a lista de contas de usuário."""
         self._write_db('account.json', accounts)
+
+    def save_session(self, session_data: Dict[str, Any]):
+        """Salva os dados da sessão do usuário."""
+        self._write_db('session.json', session_data)
+        print(f"[DB] Arquivo session.json salvo para o usuário {session_data.get('user')}.")
 
     def get_patient_data(self, filename: str) -> Dict[str, Any]:
         """Retorna dados específicos de pacientes (diagnósticos, eventos, etc.)."""

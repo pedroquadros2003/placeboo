@@ -49,17 +49,18 @@ class PlaceboApp (App):  ## Aplicações em Kivy terminam em App
         self.manager = MyScreenManager()
         main_path = os.path.dirname(__file__)
         
-        # Client-side processors
-        self.outbox_processor = OutboxProcessor(main_path)
-        self.inbox_processor = InboxProcessor(main_path)
-
         # Initialize LocalBackend (Server simulation)
         self.local_backend = LocalBackend(main_path)
+        
+        # Client-side processors, agora com acesso ao db manager do backend
+        self.outbox_processor = OutboxProcessor(main_path)
+        self.inbox_processor = InboxProcessor(main_path, self.local_backend.db)
 
         # Simulate client-server sync cycle every 5 seconds
         Clock.schedule_interval(self.run_sync_cycle, 5)
         return self.manager
 
+    
     def get_user_data_path(self):
         """Returns the main path of the project."""
         return os.path.dirname(__file__)

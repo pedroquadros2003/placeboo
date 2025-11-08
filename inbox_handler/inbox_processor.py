@@ -4,6 +4,7 @@ from typing import Dict, Any
 from kivy.app import App
 from kivy.clock import mainthread
 from inbox_handler.message_decoder import MessageDecoder
+from backend.database_manager import PersistenceService
 
 class InboxProcessor:
     """
@@ -25,21 +26,24 @@ class InboxProcessor:
         "invite_patient": "Convite enviado",
         "respond_to_invitation": "Resposta ao convite processada",
         "unlink_accounts": "Conta desvinculada",
+        "try_logout": "Logout realizado com sucesso",
         "add_med": "Medicação adicionada",
         "delete_med": "Medicação removida",
         "edit_med": "Medicação editada"
     }
 
-    def __init__(self, base_path: str):
+    def __init__(self, base_path: str, db_manager: PersistenceService):
         '''
         Inicializa o processador de inbox.
 
         Args:
             base_path: O caminho raiz do projeto.
+            db_manager: Instância do PersistenceService para manipulação de arquivos.
         '''
         
         self.base_path = base_path
         self.inbox_path = os.path.join(self.base_path, 'inbox_handler', 'inbox_messages.json')
+        self.db = db_manager
         self.processed_inbox_ids_path = os.path.join(self.base_path, 'inbox_handler', 'processed_inbox_ids.json')
         self.decoder = MessageDecoder()
 
@@ -92,6 +96,11 @@ class InboxProcessor:
                 # 2. Roteá-la se a decodificação for bem-sucedida
                 if decoded_message:
                     self._route_message(decoded_message)
+
+                    # Se a ação foi um login bem-sucedido, a sessão foi criada.
+                    # Reavaliamos o session_user para processar mensagens subsequentes no mesmo ciclo.
+                    if msg.get("action") == "try_login_cback" and payload.get("executed"):
+                        session_user = app.outbox_processor._get_origin_user_id()
                 
                 processed_ids_this_cycle.add(msg_id)
             else:
@@ -120,6 +129,8 @@ class InboxProcessor:
         # Se for uma mensagem de 'comeback', usa o handler genérico.
         if action.endswith('_cback') and action != 'try_login_cback':
             print(f"[InboxProcessor] Mensagem de comeback. Roteando para o método: _handle_comeback")
+            if action == 'try_logout_cback': # Caso especial de logout
+                self._handle_try_logout_cback(payload)
             self._handle_comeback(action, payload)
         else:
             # Para todas as outras mensagens, busca um handler específico.
@@ -147,6 +158,12 @@ class InboxProcessor:
             elif action == "create_account_cback":
                 app.show_success_popup("Conta criada com sucesso! Faça o login.")
                 app.manager.reset_to('login')
+            # Caso especial para alteração de senha: fecha a tela em caso de sucesso.
+            elif action == "change_password_cback":
+                change_password_screen = app.manager.get_screen('change_password')
+                app.show_success_popup(f"{translated_message}!")
+                change_password_screen.ids.change_password_view_content.clear_fields()
+                app.manager.pop()
             # Caso especial para desvinculação: recarrega a tela de gerenciamento correspondente.
             elif action == "unlink_accounts_cback":
                 app.show_success_popup(f"{translated_message}!")
@@ -175,14 +192,8 @@ class InboxProcessor:
     def _force_logout(self):
         """Força o logout do cliente, limpando a sessão."""
         print("[Inbox] Forçando logout após ação bem-sucedida (ex: delete_account).")
-        session_path = os.path.join(self.base_path, 'session.json')
-        if os.path.exists(session_path):
-            try:
-                os.remove(session_path)
-                print("[Inbox] Arquivo de sessão deletado.")
-            except OSError as e:
-                print(f"[Inbox] Erro ao deletar arquivo de sessão: {e}")
-        
+        # Centraliza a deleção do arquivo de sessão no database_manager
+        self.db.delete_file('session.json')
         App.get_running_app().manager.reset_to('initial_access')
 
     def _handle_account_try_login_cback(self, payload: Dict[str, Any]):
@@ -194,9 +205,8 @@ class InboxProcessor:
             user_data = payload.get('user_data')
             if not user_data: return
 
-            session_path = os.path.join(self.base_path, 'session.json')
             session_data = {'logged_in': True, 'user': user_data['user'], 'profile_type': user_data['profile_type']}
-            self._write_json(session_path, session_data)
+            self.db.save_session(session_data)
 
             print(f"[Inbox] Login/Criação bem-sucedido para {user_data['user']}. Redirecionando...")
             manager = app.manager
@@ -213,6 +223,20 @@ class InboxProcessor:
         if app.pending_request_id == payload.get("request_message_id"):
             print(f"[DEBUG Inbox] Clearing pending_request_id after login/create response: {app.pending_request_id}")
             app.pending_request_id = None
+
+    @mainthread
+    def _handle_try_logout_cback(self, payload: Dict[str, Any]):
+        """
+        Processa a confirmação de logout, limpando a sessão e resetando a UI.
+        """
+        if payload.get("executed"):
+            print("[Inbox] Recebido try_logout_cback. Executando logout no cliente.")
+            self._force_logout()
+        else:
+            # Em teoria, um logout não deveria falhar, mas tratamos o caso.
+            reason = payload.get("reason", "Falha ao tentar fazer logout.")
+            App.get_running_app().show_error_popup(f"Erro: {reason}")
+
     def _handle_outbox_delete_from_outbox(self, payload: Dict[str, Any]):
         """Remove uma mensagem específica do outbox do cliente."""
         msg_id_to_delete = payload.get("message_id_to_delete")

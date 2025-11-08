@@ -1,12 +1,1 @@
-[
-    {
-        "message_id": "msg_1762632221_5c84dc94",
-        "origin_user_id": "peu",
-        "object": "account",
-        "action": "try_login",
-        "payload": {
-            "user": "peu",
-            "password": "peu"
-        }
-    }
-]
+[]

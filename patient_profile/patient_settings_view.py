@@ -17,18 +17,11 @@ class PatientAppSettingsView(RelativeLayout):
 
     def logout(self):
         """
-        Faz o logout do usuário deletando o arquivo de sessão e retornando para a tela inicial.
+        Envia uma solicitação de logout para o backend.
         """
-        print("Fazendo logout...")
-        session_path = self._get_main_dir_path('session.json')
-        if os.path.exists(session_path):
-            try:
-                os.remove(session_path)
-                print("Arquivo de sessão deletado.")
-            except OSError as e:
-                print(f"Erro ao deletar arquivo de sessão: {e}")
-        
-        App.get_running_app().manager.reset_to('initial_access')
+        print("Enviando solicitação de logout...")
+        App.get_running_app().outbox_processor.add_to_outbox("account", "try_logout", {})
+        App.get_running_app().show_success_popup("Solicitação de logout enviada.")
 
     def change_password(self):
         """Navigates to the change password screen."""

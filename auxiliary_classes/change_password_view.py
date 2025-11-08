@@ -57,11 +57,8 @@ class ChangePasswordView(RelativeLayout):
         }
         App.get_running_app().outbox_processor.add_to_outbox("account", "change_password", payload)
 
-        # A lógica de alteração foi movida para o backend.
-        # O cliente apenas envia a mensagem e aguarda uma resposta (se aplicável).
-        # O feedback (sucesso/erro) agora virá do backend.
-        self.clear_fields()
-        App.get_running_app().manager.pop() # Go back to previous screen
+        # Apenas exibe um popup de solicitação. A tela não será mais fechada aqui.
+        App.get_running_app().show_success_popup("Solicitação de alteração de senha enviada.")
 
     def cancel(self):
         """Cancela a operação e retorna à tela anterior."""
