@@ -227,12 +227,8 @@ class MedicationsView(RelativeLayout):
         if not med_to_remove:
             return
 
-        self.medications.remove(med_to_remove)
-        self.populate_medications_list()
-
-        # A lógica de escrita foi movida para o backend.
+        # Apenas envia a mensagem para o backend. A UI será atualizada no próximo ciclo de refresh.
         App.get_running_app().show_success_popup("Solicitação de remoção enviada.")
-        # Adiciona mensagem ao outbox_messages.json
         payload = {"med_id": med_id, "patient_user": self.current_patient_user} # Adiciona patient_user ao payload para a mensagem
         App.get_running_app().outbox_processor.add_to_outbox("medication", "delete_med", payload)
 

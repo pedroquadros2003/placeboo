@@ -112,10 +112,18 @@ class PlaceboApp (App):  ## Aplicações em Kivy terminam em App
             # Acessa a view de conteúdo real dentro da sub-tela
             # Assumimos que a view de conteúdo tem um ID previsível (ex: 'medications_view_content')
             # ou é a primeira filha. Acessar pelo ID é mais seguro.
-            if content_screen.children:
-                content_view = content_screen.children[0]
-                if hasattr(content_view, 'on_enter'):
-                    print(f"[DEBUG Refresh] -> Chamando on_enter() para a view de conteúdo '{content_view.__class__.__name__}'")
-                    content_view.on_enter()
+            # Mapeia o nome da tela para o método de load correspondente na sua view.
+            load_method_map = {
+                'doctor_medications': 'load_medications',
+                'doctor_events': 'load_events',
+                'doctor_diagnostics': 'load_diagnostics',
+            }
+            
+            load_method_name = load_method_map.get(content_screen.name)
+            if load_method_name and content_screen.children:
+                content_view = content_screen.children[0] # A view é a filha da tela de conteúdo
+                if hasattr(content_view, load_method_name):
+                    print(f"[DEBUG Refresh] -> Forçando atualização. Chamando {load_method_name}() para a view '{content_view.__class__.__name__}'")
+                    getattr(content_view, load_method_name)()
 
 PlaceboApp().run()

@@ -167,12 +167,8 @@ class DiagnosticsView(RelativeLayout):
 
     def remove_diagnostic(self, diagnostic_id, *args):
         """Removes a diagnostic."""
-        # A remoção local é otimista. A fonte da verdade será o backend.
-        self.diagnostics = [d for d in self.diagnostics if d['id'] != diagnostic_id]
-        # self._save_to_file(None, is_new=False) # Lógica de escrita removida
-        self.populate_diagnostics_list()
-        
-        # Adiciona mensagem ao outbox_messages.json
+        # Apenas envia a mensagem para o backend. A UI será atualizada no próximo ciclo de refresh.
+        App.get_running_app().show_success_popup("Solicitação de remoção enviada.")
         payload = {"diagnostic_id": diagnostic_id, "patient_user": self.current_patient_user}
         App.get_running_app().outbox_processor.add_to_outbox("diagnostic", "delete_diagnostic", payload)
 

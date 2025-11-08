@@ -25,10 +25,12 @@
                 "weight"
             ],
             "responsible_doctors": [
-                "10000001"
+                "10000001",
+                "81253409"
             ]
         },
-        "id": "20000001"
+        "id": "20000001",
+        "invitations": []
     },
     {
         "profile_type": "patient",
@@ -139,6 +141,10 @@
             "patient_code": "21439724",
             "responsible_doctors": [
                 "81253409"
+            ],
+            "tracked_metrics": [
+                "heart_rate",
+                "weight"
             ]
         }
     },
@@ -149,7 +155,8 @@
         "password": "patofu",
         "id": "81253409",
         "linked_patients": [
-            "21439724"
+            "21439724",
+            "20000001"
         ],
         "self_patient_id": "21439724"
     }

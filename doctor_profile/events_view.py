@@ -245,12 +245,8 @@ class EventsView(RelativeLayout):
         if not event_to_remove:
             return
 
-        self.events.remove(event_to_remove)
-        self.populate_events_list()
-
-        # A lógica de escrita foi movida para o backend.
+        # Apenas envia a mensagem para o backend. A UI será atualizada no próximo ciclo de refresh.
         App.get_running_app().show_success_popup("Solicitação de remoção enviada.")
-        # Adiciona mensagem ao outbox_messages.json
         payload = {"event_id": event_id, "patient_user": self.current_patient_user}
         App.get_running_app().outbox_processor.add_to_outbox("event", "delete_event", payload)
         

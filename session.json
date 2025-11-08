@@ -1,5 +1,5 @@
 {
     "logged_in": true,
-    "user": "patofu",
-    "profile_type": "doctor"
+    "user": "paciente.a@email.com",
+    "profile_type": "patient"
 }
