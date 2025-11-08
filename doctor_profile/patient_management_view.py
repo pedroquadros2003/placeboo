@@ -57,6 +57,7 @@ class PatientManagementView(RelativeLayout):
         self.patient_map = {}
         for patient_id in linked_patient_ids:
             patient_account = next((acc for acc in accounts if acc.get('id') == patient_id), None)
+            
             if patient_account:
                 user = patient_account.get('user')
                 # Use "__Eu__" for the doctor's own patient profile
@@ -77,9 +78,13 @@ class PatientManagementView(RelativeLayout):
         """Clears and repopulates the patient list widget."""
         patient_list_widget = self.ids.patient_list
         patient_list_widget.clear_widgets()
+        # Ponto de teste 1: Verifica se a lista de widgets está vazia após a limpeza.
+        print(f"[DEBUG] Widgets na lista após clear_widgets(): {patient_list_widget.children}")
 
         if not self.patient_data:
             patient_list_widget.add_widget(Label(text='Nenhum paciente vinculado.', color=(0,0,0,1)))
+            # Ponto de teste 2: Verifica o conteúdo quando não há pacientes.
+            print(f"[DEBUG] Widgets na lista após adicionar 'Nenhum paciente': {patient_list_widget.children}")
             return
 
         for patient in self.patient_data:
@@ -100,6 +105,9 @@ class PatientManagementView(RelativeLayout):
                 item_container.add_widget(remove_button)
 
             patient_list_widget.add_widget(item_container)
+        
+        # Ponto de teste 3: Mostra a lista final de widgets que foram adicionados à tela.
+        print(f"[DEBUG] Lista final de widgets na tela: {patient_list_widget.children}")
 
     def invite_patient(self):
         """Sends an invitation to a patient by their username."""
@@ -123,13 +131,17 @@ class PatientManagementView(RelativeLayout):
 
     def remove_patient(self, patient_name, *args):
         """Unlinks a patient from the doctor."""
-        patient_user = self.patient_map.get(patient_name)
+        # Encontra os dados completos do paciente (incluindo o ID) a partir do nome.
+        patient_info = next((p for p in self.patient_data if p.get('name') == patient_name), None)
+        if not patient_info:
+            App.get_running_app().show_error_popup(f"Não foi possível encontrar os dados do paciente {patient_name}.")
+            return
         
         # A lógica de escrita foi movida para o backend.
-        payload = {"target_user": patient_user}
+        # Agora estamos enviando o ID numérico correto.
+        payload = {"target_user_id": patient_info.get('id')}
         App.get_running_app().outbox_processor.add_to_outbox("linking_accounts", "unlink_accounts", payload)
         App.get_running_app().show_success_popup(f"Solicitação para desvincular {patient_name} enviada.")
-        self.load_linked_patients() # Atualização otimista da UI
 
     def _get_main_dir_path(self, filename):
         """Constructs the full path to a file in the main project directory."""

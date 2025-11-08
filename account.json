@@ -5,9 +5,7 @@
         "user": "peu",
         "password": "peu",
         "linked_patients": [
-            "20000001",
-            "20000002",
-            "20000003"
+            "20000001"
         ],
         "id": "10000001"
     },
@@ -42,9 +40,7 @@
             "date_of_birth": {},
             "sex": "Feminino",
             "patient_code": "20000002",
-            "responsible_doctors": [
-                "10000001"
-            ]
+            "responsible_doctors": []
         },
         "id": "20000002"
     },
@@ -58,9 +54,7 @@
             "date_of_birth": {},
             "sex": "Masculino",
             "patient_code": "20000003",
-            "responsible_doctors": [
-                "10000001"
-            ]
+            "responsible_doctors": []
         },
         "id": "20000003",
         "invitations": []

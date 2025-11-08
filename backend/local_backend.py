@@ -171,7 +171,14 @@ class LocalBackend:
                     self._handle_accepted_invitation(payload, origin_user, new_inbox_messages)
             
             elif obj == "linking_accounts" and action == "unlink_accounts":
-                self.db.unlink_account(origin_user, payload.get("target_user_id"))
+                target_user_id = payload.get("target_user_id")
+                self.db.unlink_account(origin_user, target_user_id)
+                # 1. Envia uma mensagem de confirmação de volta para o cliente que solicitou.
+                self._send_comeback(msg, new_inbox_messages, True)
+                # 2. Notifica o outro usuário envolvido na desvinculação para que sua UI seja atualizada.
+                # A mensagem é enviada para o 'target_user_id', que é o ID do paciente.
+                unlink_notification = self._generate_server_message(obj, action, payload, origin_user_id=target_user_id)
+                new_inbox_messages.append(unlink_notification)
 
             elif obj == "linking_accounts" and action == "invite_patient":
                  self._handle_new_invitation(payload, origin_user, new_inbox_messages)

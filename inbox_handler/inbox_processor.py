@@ -95,31 +95,37 @@ class InboxProcessor:
                 
                 processed_ids_this_cycle.add(msg_id)
             else:
-                # Se a mensagem não for para o usuário atual, ela permanece na caixa de entrada
-                remaining_messages.append(msg)
+                # Se a mensagem não foi processada, verificamos se ela deve ser mantida.
+                # Mantemos apenas as respostas de login/criação de conta pendentes.
+                # Todas as outras mensagens que não são para o usuário atual são descartadas.
+                is_pending_login_response = (current_pending_request_id and
+                                             payload.get("request_message_id") == current_pending_request_id)
+
+                if is_pending_login_response:
+                    remaining_messages.append(msg)
         
-        # Atualiza o histórico de IDs processados e limpa o inbox
+        # Atualiza o histórico de IDs processados e o arquivo do inbox.
+        # Esta reescrita é crucial para remover as mensagens processadas e evitar loops infinitos.
         if processed_ids_this_cycle:
             updated_history = processed_ids_history.union(processed_ids_this_cycle)
             self._write_json(self.processed_inbox_ids_path, list(updated_history))
-            self._write_json(self.inbox_path, remaining_messages)
+        self._write_json(self.inbox_path, remaining_messages)
 
     def _route_message(self, message: Dict[str, Any]):
         """Direciona a mensagem para o handler apropriado."""
         obj = message.get('object') # Já validado pelo decoder
         action = message.get('action') # Já validado pelo decoder
         payload = message.get('payload', {}) # Já validado pelo decoder
-
-        handler_method_name = f"_handle_{obj}_{action}"
-        handler_method = getattr(self, handler_method_name, self._handle_unknown)
         
-        print(f"[InboxProcessor] Mensagem entendida. Roteando para o método: {handler_method_name}")
-
         # Se for uma mensagem de 'comeback', usa o handler genérico.
         if action.endswith('_cback') and action != 'try_login_cback':
+            print(f"[InboxProcessor] Mensagem de comeback. Roteando para o método: _handle_comeback")
             self._handle_comeback(action, payload)
         else:
-            # Executa o método handler correspondente à mensagem.
+            # Para todas as outras mensagens, busca um handler específico.
+            handler_method_name = f"_handle_{obj}_{action}"
+            handler_method = getattr(self, handler_method_name, self._handle_unknown)
+            print(f"[InboxProcessor] Mensagem entendida. Roteando para o método: {handler_method_name}")
             handler_method(payload)
 
     def _handle_unknown(self, payload: Dict[str, Any]):
@@ -141,6 +147,25 @@ class InboxProcessor:
             elif action == "create_account_cback":
                 app.show_success_popup("Conta criada com sucesso! Faça o login.")
                 app.manager.reset_to('login')
+            # Caso especial para desvinculação: recarrega a tela de gerenciamento correspondente.
+            elif action == "unlink_accounts_cback":
+                app.show_success_popup(f"{translated_message}!")
+                # Acessa o ScreenManager interno da DoctorHomeScreen pelo seu ID.
+                doctor_home_screen = app.manager.get_screen('doctor_home')
+                content_manager = doctor_home_screen.ids.content_manager
+                
+                if content_manager.current == 'doctor_patient_management':
+                    # Acessa a view pelo ID que definimos no arquivo .kv
+                    patient_management_screen = content_manager.get_screen('doctor_patient_management')
+                    patient_management_screen.ids.patient_management_view_content.load_linked_patients()
+                    print("[DEBUG] Chamando load_linked_patients() para o médico.")
+
+                # Se o paciente está na tela de gerenciamento, atualiza a lista dele.
+                elif app.manager.current == 'patient_manage_doctors':
+                    patient_manage_screen = app.manager.get_screen('patient_manage_doctors')
+                    patient_manage_screen.ids.manage_doctors_view_content.load_data()
+                    print("[DEBUG] Chamando load_data() para o paciente.")
+          
             else:
                 app.show_success_popup(f"{translated_message}!")
         else:
@@ -212,4 +237,17 @@ class InboxProcessor:
         if msg_id_to_forget in processed_ids_history:
             processed_ids_history.remove(msg_id_to_forget)
             self._write_json(self.processed_inbox_ids_path, list(processed_ids_history))
-            print(f"[Inbox] ID de mensagem {msg_id_to_forget} removido do histórico de processamento.")
+
+    @mainthread
+    def _handle_linking_accounts_unlink_accounts(self, payload: Dict[str, Any]):
+        """
+        Processa a mensagem de broadcast para desvinculação.
+        Para o cliente que originou a ação, esta mensagem é apenas para confirmação e não dispara UI.
+        Para o outro cliente (o alvo da desvinculação), este método pode ser expandido para
+        recarregar sua respectiva view (ex: a lista de médicos do paciente).
+        """
+        print("[Inbox] Mensagem de broadcast 'unlink_accounts' recebida e processada.")
+        # Conforme solicitado, este método não fará nenhuma atualização de UI.
+        # A atualização da tela do usuário que iniciou a ação é de responsabilidade
+        # exclusiva do método _handle_comeback, que processa a mensagem _cback.
+        pass
